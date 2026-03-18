@@ -17,9 +17,12 @@ export default function ShipForm({ token }: Props) {
 
   if (done) {
     return (
-      <div className="text-center py-4 space-y-2">
-        <p className="text-lg font-semibold text-gray-900">You're all set!</p>
-        <p className="text-sm text-gray-500">Your case is on its way soon!</p>
+      <div className="text-center py-4 space-y-3">
+        <p className="text-2xl">🍷</p>
+        <p className="text-lg font-semibold text-gray-900">Your case is being packed.</p>
+        <p className="text-sm text-gray-500">
+          We&apos;ll drop you a message as soon as it&apos;s on its way. Nice one.
+        </p>
       </div>
     )
   }
