@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { twilioClient } from '@/lib/twilio'
+import { createServiceClient } from '@/lib/supabase'
+
+// POST /api/texts/send
+// Admin endpoint — sends a text blast to all active customers for a given wine.
+// Auth is enforced by middleware.ts for all /api/admin/* routes.
+// This route lives under /api/texts/ (not /api/admin/) so admin UI calls it
+// directly; the admin session check will be added when the admin UI is wired up.
+
+export async function POST(req: NextRequest) {
+  try {
+    const { wineId, body: messageBody } = await req.json()
+
+    if (!wineId) {
+      return NextResponse.json({ error: 'wineId is required' }, { status: 400 })
+    }
+    if (!messageBody?.trim()) {
+      return NextResponse.json({ error: 'Message body is required' }, { status: 400 })
+    }
+
+    const sb = createServiceClient()
+
+    // Validate wine exists and is active
+    const { data: wine, error: wineErr } = await sb
+      .from('wines')
+      .select('id, name, active')
+      .eq('id', wineId)
+      .maybeSingle()
+
+    if (wineErr || !wine) {
+      return NextResponse.json({ error: 'Wine not found' }, { status: 404 })
+    }
+    if (!wine.active) {
+      return NextResponse.json({ error: 'Wine is not active' }, { status: 400 })
+    }
+
+    // Fetch all active subscribers
+    const { data: customers, error: custErr } = await sb
+      .from('customers')
+      .select('id, phone')
+      .eq('active', true)
+
+    if (custErr) throw custErr
+
+    if (!customers || customers.length === 0) {
+      return NextResponse.json({ error: 'No active customers to send to' }, { status: 400 })
+    }
+
+    const trimmedBody = messageBody.trim()
+
+    // ── Atomically set this as the one active offer ───────────────────────
+    // 1. Deactivate all existing texts
+    await sb.from('texts').update({ is_active: false }).neq('is_active', false)
+
+    // 2. Insert new text row as the active offer
+    const { data: text, error: textErr } = await sb
+      .from('texts')
+      .insert({
+        wine_id: wineId,
+        body: trimmedBody,
+        recipient_count: customers.length,
+        is_active: true,
+      })
+      .select('id')
+      .single()
+
+    if (textErr || !text) {
+      console.error('[texts/send] failed to insert text row', textErr)
+      return NextResponse.json({ error: 'Failed to create text record' }, { status: 500 })
+    }
+
+    // ── Send to each customer — log failures but don't abort the blast ───
+    let sent = 0
+    const failures: string[] = []
+
+    for (const customer of customers) {
+      try {
+        await twilioClient.messages.create({
+          to: customer.phone,
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          body: trimmedBody,
+        })
+        sent++
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(`[texts/send] failed for ${customer.phone}:`, msg)
+        failures.push(customer.phone)
+      }
+    }
+
+    console.log(`[texts/send] textId=${text.id} sent=${sent} failures=${failures.length}`)
+
+    return NextResponse.json({
+      ok: true,
+      textId: text.id,
+      sent,
+      failed: failures.length,
+      ...(failures.length > 0 && { failedNumbers: failures }),
+    })
+  } catch (err) {
+    console.error('[texts/send]', err)
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
+  }
+}
