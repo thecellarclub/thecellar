@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
-import WineForm from '../../_components/WineForm'
+import WineForm from '../../../_components/WineForm'
 import Link from 'next/link'
 
 export default async function WineEditPage({

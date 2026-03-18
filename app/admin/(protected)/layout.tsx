@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import AdminNav from './_components/AdminNav'
-import SignOutButton from './_components/SignOutButton'
+import AdminNav from '../_components/AdminNav'
+import SignOutButton from '../_components/SignOutButton'
 
 export const metadata = { title: 'Cellar Text Admin' }
 

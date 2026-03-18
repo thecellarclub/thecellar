@@ -3,8 +3,8 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp } from '@/lib/format'
-import ToggleWineActive from '../_components/ToggleWineActive'
-import WineFormPanel from '../_components/WineFormPanel'
+import ToggleWineActive from '../../_components/ToggleWineActive'
+import WineFormPanel from '../../_components/WineFormPanel'
 import Link from 'next/link'
 
 export default async function WinesPage() {

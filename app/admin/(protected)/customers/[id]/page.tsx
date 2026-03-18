@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
-import DeactivateButton from '../../_components/DeactivateButton'
+import DeactivateButton from '../../../_components/DeactivateButton'
 import Link from 'next/link'
 
 function StatusBadge({ status }: { status: string }) {
