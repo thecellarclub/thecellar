@@ -15,12 +15,15 @@ function calculateAge(dob: Date): number {
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, dobDay, dobMonth, dobYear, ageConsent, marketingConsent } =
+    const { firstName, lastName, dobDay, dobMonth, dobYear, ageConsent, marketingConsent } =
       await req.json()
 
     // Validate required fields
     if (!firstName?.trim()) {
       return NextResponse.json({ error: 'First name is required' }, { status: 400 })
+    }
+    if (!lastName?.trim()) {
+      return NextResponse.json({ error: 'Last name is required' }, { status: 400 })
     }
     if (!dobDay || !dobMonth || !dobYear) {
       return NextResponse.json({ error: 'Date of birth is required' }, { status: 400 })
@@ -105,6 +108,7 @@ export async function POST(req: NextRequest) {
       phone: normalisedPhone,
       email,
       first_name: firstName.trim(),
+      last_name: lastName.trim(),
       stripe_customer_id: session.stripeCustomerId,
       stripe_payment_method_id: paymentMethodId,
       dob: dobString,
@@ -133,7 +137,7 @@ export async function POST(req: NextRequest) {
     // Send welcome SMS — non-blocking, don't fail signup if this errors
     sendSms(
       normalisedPhone,
-      `Welcome to The Cellar Club, ${firstName.trim()}! Save this number as "The Cellar Club" so you recognise it when we text. Daniel will be in touch with your first drop soon.`
+      `Welcome to The Cellar Club, ${firstName.trim()}. Save this number as "The Cellar Club" — it's how we reach you.\n\nHere's the deal: Daniel texts you a wine 1–2 times a week. Reply with how many bottles you want. We'll confirm the total — text YES to confirm and we charge your card. Your bottles go into your cellar. Fill 12 and we ship the whole case to you free.\n\nYou're starting on Bailey membership. Hit £500 in a year and you unlock Elvet. £1,000 gets you to Palatine. Better tiers, better perks.\n\nFirst drop coming soon.`
     ).catch((err) => console.error('[complete] welcome SMS failed', err))
 
     // Clear session

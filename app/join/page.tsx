@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent, Suspense } from 'react'
+import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -14,13 +14,14 @@ function buildPhone(raw: string): string {
 function JoinPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [phone, setPhone] = useState(searchParams.get('phone') ?? '')
+  const phoneParam = searchParams.get('phone') ?? ''
+  const [phone, setPhone] = useState(phoneParam)
   const [error, setError] = useState('')
   const [alreadySignedUp, setAlreadySignedUp] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [autoSubmitting, setAutoSubmitting] = useState(!!phoneParam)
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function sendCode(e164: string) {
     setError('')
     setAlreadySignedUp(false)
     setLoading(true)
@@ -29,7 +30,7 @@ function JoinPageInner() {
       const res = await fetch('/api/signup/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: buildPhone(phone) }),
+        body: JSON.stringify({ phone: e164 }),
       })
 
       const data = await res.json()
@@ -48,7 +49,28 @@ function JoinPageInner() {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
+      setAutoSubmitting(false)
     }
+  }
+
+  useEffect(() => {
+    if (phoneParam) {
+      sendCode(buildPhone(phoneParam))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    await sendCode(buildPhone(phone))
+  }
+
+  if (autoSubmitting) {
+    return (
+      <div className="bg-maroon-dark border border-cream/12 p-8">
+        <p className="font-sans text-sm text-cream/60">Sending code…</p>
+      </div>
+    )
   }
 
   return (

@@ -89,6 +89,11 @@ export async function POST(
     reason: 'admin_refund',
   })
 
+  // 5b. Mark order as refunded so portal payments tab reflects it
+  if (stripeRefundId && order_id) {
+    await sb.from('orders').update({ stripe_charge_status: 'refunded' }).eq('id', order_id)
+  }
+
   // 6. Remove or decrement cellar entry — only if not yet shipped (preserve shipment history)
   if (!cellarRow.shipped_at) {
     if (quantity === cellarRow.quantity) {

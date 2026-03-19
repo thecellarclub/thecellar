@@ -14,6 +14,7 @@ const YEARS = Array.from({ length: 100 }, (_, i) => currentYear - 18 - i)
 export default function DetailsPage() {
   const router = useRouter()
   const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [dobDay, setDobDay] = useState('')
   const [dobMonth, setDobMonth] = useState('')
   const [dobYear, setDobYear] = useState('')
@@ -39,6 +40,7 @@ export default function DetailsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstName,
+          lastName,
           dobDay: parseInt(dobDay),
           dobMonth: parseInt(dobMonth),
           dobYear: parseInt(dobYear),
@@ -93,6 +95,23 @@ export default function DetailsPage() {
             placeholder="Jane"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
+          />
+        </div>
+
+        {/* Last name */}
+        <div>
+          <label htmlFor="lastName" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+            Last name
+          </label>
+          <input
+            id="lastName"
+            type="text"
+            autoComplete="family-name"
+            placeholder="Smith"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             required
             className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
           />
@@ -190,7 +209,7 @@ export default function DetailsPage() {
 
         <button
           type="submit"
-          disabled={loading || !firstName.trim() || !dobDay || !dobMonth || !dobYear}
+          disabled={loading || !firstName.trim() || !lastName.trim() || !dobDay || !dobMonth || !dobYear}
           className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Completing sign-up…' : 'Complete sign-up'}

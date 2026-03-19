@@ -91,49 +91,9 @@ function CellarDoorSvg() {
         strokeWidth="1"
       />
 
-      {/* ── Vertical plank lines ──────────────────────────────────────── */}
-      {[350, 410, 470, 530, 590, 650].map((x) => (
-        <line key={x} x1={x} y1="310" x2={x} y2="770" stroke="#F0E6DC" strokeWidth="0.7" />
-      ))}
-
-      {/* ── Horizontal centre rail ────────────────────────────────────── */}
-      <line x1="286" y1="548" x2="714" y2="548" stroke="#F0E6DC" strokeWidth="1.5" />
-
-      {/* ── Top strap hinge (pivot left, strap tapering right) ─────────── */}
-      <circle cx="268" cy="395" r="20" stroke="#F0E6DC" strokeWidth="1.5" />
-      <path d="M 268 382 L 515 384 L 511 406 L 268 408 Z" stroke="#F0E6DC" strokeWidth="1" />
-      <circle cx="350" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-      <circle cx="430" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-      <circle cx="505" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-
-      {/* ── Bottom strap hinge ───────────────────────────────────────── */}
-      <circle cx="268" cy="688" r="20" stroke="#F0E6DC" strokeWidth="1.5" />
-      <path d="M 268 675 L 515 677 L 511 699 L 268 701 Z" stroke="#F0E6DC" strokeWidth="1" />
-      <circle cx="350" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-      <circle cx="430" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-      <circle cx="505" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
-
       {/* ── Iron ring handle (right side, mid-height ≈ y=546) ─────────── */}
       <circle cx="666" cy="546" r="30" stroke="#F0E6DC" strokeWidth="1.5" />
       <circle cx="666" cy="546" r="16" stroke="#F0E6DC" strokeWidth="1.5" />
-
-      {/* ── Keystone at arch crown (x=500, y=78) ─────────────────────── */}
-      <path
-        d="M 488 108 L 492 80 L 500 64 L 508 80 L 512 108 Z"
-        stroke="#F0E6DC"
-        strokeWidth="1.5"
-      />
-
-      {/* ── Hairline inner glow — light from inside the cellar ─────────── */}
-      <path
-        d="M 291 768 L 291 313 A 209 209 0 0 1 709 313 L 709 768"
-        stroke="#F0E6DC"
-        strokeWidth="0.5"
-        strokeOpacity="0.4"
-      />
-
-      {/* ── Door threshold ───────────────────────────────────────────── */}
-      <line x1="236" y1="782" x2="764" y2="782" stroke="#F0E6DC" strokeWidth="1.5" />
     </svg>
   )
 }
@@ -307,10 +267,6 @@ export default function HomePage() {
           {/* Sign-up form */}
           <HeroSignupForm />
 
-          {/* Reassurance */}
-          <p className="font-sans text-cream/40 text-xs">
-            You&apos;re only ever charged when you confirm an order.
-          </p>
           <p className="font-sans text-cream/35 text-xs mt-2">
             Already a member?{' '}
             <Link href="/portal" className="underline underline-offset-2 text-cream/45 hover:text-cream/70 transition-colors">

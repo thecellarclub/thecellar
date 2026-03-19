@@ -21,6 +21,7 @@ interface Customer {
   texts_snoozed_until: string | null
   tier: string
   sms_awaiting: string | null
+  concierge_status: string | null
 }
 
 interface Wine {
@@ -1037,7 +1038,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Customer lookup ──────────────────────────────────────────────────
     const { data: customer } = await sb
       .from('customers')
-      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, active, texts_snoozed_until, tier, sms_awaiting')
+      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, active, texts_snoozed_until, tier, sms_awaiting, concierge_status')
       .eq('phone', from)
       .maybeSingle() as { data: Customer | null }
 
@@ -1084,10 +1085,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           direction: 'inbound',
         })
         const name = customer.first_name ?? customer.phone
-        await notifyAdmin(
-          `New question from ${name}`,
-          `Message: ${body}\nPhone: ${customer.phone}`
-        )
+        // Reopen closed concierge thread if needed
+        if (customer.concierge_status === 'closed') {
+          await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+          await notifyAdmin(
+            `Concierge thread reopened — ${name}`,
+            `${name} sent a new message after their thread was closed.\n\nMessage: ${body}\nPhone: ${customer.phone}`
+          )
+        } else {
+          await notifyAdmin(
+            `New question from ${name}`,
+            `Message: ${body}\nPhone: ${customer.phone}`
+          )
+        }
         await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
         return twimlOk()
       }
@@ -1195,7 +1205,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       if (message) {
         await sb.from('concierge_messages').insert({ customer_id: customer.id, direction: 'inbound', message })
         const name = customer.first_name ?? customer.phone
-        await notifyAdmin(`New question from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
+        // Reopen closed concierge thread if needed
+        if (customer.concierge_status === 'closed') {
+          await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+          await notifyAdmin(
+            `Concierge thread reopened — ${name}`,
+            `${name} sent a new message after their thread was closed.\n\nMessage: ${message}\nPhone: ${customer.phone}`
+          )
+        } else {
+          await notifyAdmin(`New question from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
+        }
         await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
         return twimlOk()
       }

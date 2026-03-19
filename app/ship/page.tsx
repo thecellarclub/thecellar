@@ -89,6 +89,27 @@ export default async function ShipPage({
     }
   }
 
+  // Fallback: use customer's saved default_address if no previous shipment address
+  if (!savedAddress) {
+    const { data: customerData } = await sb
+      .from('customers')
+      .select('default_address')
+      .eq('id', shipment.customer_id)
+      .maybeSingle()
+
+    if (customerData?.default_address) {
+      const addr = customerData.default_address as Record<string, string>
+      if (addr.line1 && addr.city && addr.postcode) {
+        savedAddress = {
+          line1: addr.line1,
+          line2: addr.line2 ?? null,
+          city: addr.city,
+          postcode: addr.postcode,
+        }
+      }
+    }
+  }
+
   // Fetch bottles in this shipment (cellar rows linked to shipment_id, joined with wines)
   const bottles: BottleEntry[] = []
   const { data: cellarRows } = await sb
