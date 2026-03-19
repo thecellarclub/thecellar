@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
+import { normaliseUKPhone } from '@/lib/phone'
 
 function calculateAge(dob: Date): number {
   const today = new Date()
@@ -52,6 +53,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
     }
 
+    let normalisedPhone: string
+    try {
+      normalisedPhone = normaliseUKPhone(session.phone)
+    } catch {
+      return NextResponse.json({ error: 'Invalid phone in session. Please start again.' }, { status: 400 })
+    }
+
     // Get payment method — prefer one stored in session, else retrieve from SetupIntent
     let paymentMethodId = session.paymentMethodId
     if (!paymentMethodId && session.setupIntentId) {
@@ -82,7 +90,7 @@ export async function POST(req: NextRequest) {
     const { data: existingPhone } = await supabase
       .from('customers')
       .select('id')
-      .eq('phone', session.phone)
+      .eq('phone', normalisedPhone)
       .single()
 
     if (existingPhone) {
@@ -93,7 +101,7 @@ export async function POST(req: NextRequest) {
     const dobString = `${dobYear}-${String(dobMonth).padStart(2, '0')}-${String(dobDay).padStart(2, '0')}`
 
     const { error: insertError } = await supabase.from('customers').insert({
-      phone: session.phone,
+      phone: normalisedPhone,
       email,
       first_name: firstName.trim(),
       stripe_customer_id: session.stripeCustomerId,

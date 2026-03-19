@@ -343,76 +343,123 @@ export default function ConciergeClientView({ threads }: { threads: ConciergeThr
       </div>
 
       {/* ── DESKTOP (hidden below md) ── */}
-      <div className="hidden md:block space-y-4">
-        {threads.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400 text-sm">
-            No concierge messages yet
-          </div>
-        ) : (
-          threads.map((thread) => (
-            <div key={thread.customerId} className="bg-white rounded-lg border border-gray-200">
-              {/* Thread header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                <div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {thread.firstName ?? 'Unknown'}
-                  </span>
-                  <span className="ml-2 font-mono text-xs text-gray-500">
-                    {thread.phone ?? '—'}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-400">
-                  {thread.messages.length} message{thread.messages.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+      <div className="hidden md:flex border border-gray-200 rounded-lg overflow-hidden bg-white" style={{ minHeight: '600px' }}>
+        {/* Left panel — thread list */}
+        <div className="w-80 shrink-0 border-r border-gray-200 overflow-y-auto flex flex-col">
+          {threads.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 text-sm flex-1 flex items-center justify-center">
+              No concierge messages yet
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {threads.map((thread) => {
+                const lastMsg = thread.messages[thread.messages.length - 1]
+                const unanswered = isUnanswered(thread)
+                const isSelected = selectedId === thread.customerId
 
-              {/* Messages */}
-              <div className="px-4 py-3 space-y-2">
-                {thread.messages.map((msg) => {
-                  const isOutbound = msg.direction === 'outbound'
-                  return (
+                // Derive closed status: last message outbound and >24h ago
+                const isClosed =
+                  lastMsg?.direction === 'outbound' &&
+                  Date.now() - new Date(lastMsg.created_at).getTime() > 24 * 60 * 60 * 1000
+
+                return (
+                  <button
+                    key={thread.customerId}
+                    onClick={() => setSelectedId(thread.customerId)}
+                    className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${
+                      isSelected ? 'bg-gray-100' : ''
+                    }`}
+                  >
+                    {/* Unanswered dot */}
                     <div
-                      key={msg.id}
-                      className={`flex gap-2 text-sm ${
-                        isOutbound ? 'flex-row-reverse' : 'flex-row'
-                      }`}
-                    >
-                      <span
-                        className={`shrink-0 text-xs mt-0.5 select-none ${
-                          isOutbound ? 'text-blue-400' : 'text-gray-400'
-                        }`}
-                        title={isOutbound ? 'Outbound (admin)' : 'Inbound (customer)'}
-                      >
-                        {isOutbound ? '→' : '←'}
-                      </span>
-                      <div
-                        className={`rounded-lg px-3 py-2 max-w-prose text-sm ${
-                          isOutbound
-                            ? 'bg-gray-900 text-white ml-auto'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        <p>{msg.message}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            isOutbound ? 'text-gray-400' : 'text-gray-500'
+                      className="shrink-0 rounded-full mt-1.5"
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        background: unanswered ? '#9B1B30' : 'transparent',
+                        border: unanswered ? 'none' : '1.5px solid #d1d5db',
+                      }}
+                      aria-hidden="true"
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                        <p className={`text-sm truncate ${unanswered ? 'font-bold text-gray-900' : 'font-medium text-gray-800'}`}>
+                          {thread.firstName ?? thread.phone ?? 'Unknown'}
+                        </p>
+                        {lastMsg && (
+                          <span className="text-xs text-gray-400 shrink-0">{timeAgo(lastMsg.created_at)}</span>
+                        )}
+                      </div>
+                      {lastMsg && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {lastMsg.direction === 'outbound' ? 'You: ' : ''}
+                          {lastMsg.message}
+                        </p>
+                      )}
+                      {isClosed && (
+                        <span className="mt-1 inline-block text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                          closed
+                        </span>
+                      )}
+                      {unanswered && (
+                        <span className="mt-1 inline-block text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600">
+                          needs reply
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right panel — selected conversation */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedId && threads.find((t) => t.customerId === selectedId) ? (() => {
+            const thread = threads.find((t) => t.customerId === selectedId)!
+            return (
+              <>
+                {/* Conversation header */}
+                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
+                  <p className="text-sm font-medium text-gray-900">{thread.firstName ?? 'Unknown'}</p>
+                  <p className="text-xs text-gray-500 font-mono">{thread.phone ?? '—'}</p>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                  {thread.messages.map((msg) => {
+                    const isOutbound = msg.direction === 'outbound'
+                    return (
+                      <div key={msg.id} className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+                        <div
+                          className={`max-w-prose rounded-lg px-3 py-2 text-sm ${
+                            isOutbound ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {formatDateTime(msg.created_at)}
-                        </p>
+                          <p>{msg.message}</p>
+                          <p className={`text-xs mt-1 ${isOutbound ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {formatDateTime(msg.created_at)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
 
-              {/* Reply form */}
-              <div className="px-4 pb-4">
-                <DesktopReplyForm customerId={thread.customerId} />
-              </div>
+                {/* Reply form */}
+                <div className="shrink-0 border-t border-gray-200 px-4 py-3">
+                  <DesktopReplyForm customerId={thread.customerId} />
+                </div>
+              </>
+            )
+          })() : (
+            <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+              Select a conversation to view messages
             </div>
-          ))
-        )}
+          )}
+        </div>
       </div>
     </>
   )

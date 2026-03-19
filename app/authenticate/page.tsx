@@ -46,6 +46,13 @@ export default async function AuthenticatePage({
   // Retrieve the PaymentIntent to get the client_secret for Stripe Elements
   const pi = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id)
 
+  if (pi.status === 'canceled') {
+    return <ErrorPage message="This payment link has expired. Reply YES to your last message to get a new one." />
+  }
+  if (pi.status === 'succeeded') {
+    return <ErrorPage message="This order has already been paid — you're all set." />
+  }
+
   // Fetch wine name for confirmation message
   const { data: wine } = await sb
     .from('wines')

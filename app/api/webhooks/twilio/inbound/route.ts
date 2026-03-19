@@ -598,6 +598,20 @@ async function handleYes(
     .eq('id', order.wine_id)
     .maybeSingle()
 
+  // Guard: no PM in DB
+  if (!customer.stripe_payment_method_id) {
+    const billingToken = crypto.randomUUID()
+    await sb.from('customers').update({
+      billing_token: billingToken,
+      billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    }).eq('id', customer.id)
+    await sb.from('orders').update({ order_status: 'cancelled', stripe_charge_status: 'failed' }).eq('id', order.id)
+    const { data: wineForPm } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
+    if (wineForPm) await sb.from('wines').update({ stock_bottles: wineForPm.stock_bottles + order.quantity }).eq('id', order.wine_id)
+    await sendSms(from, `We don't have a payment card on file. Add one at ${APP_URL}/billing?token=${billingToken} or update your details at ${APP_URL}/portal. Reply YES once done.`)
+    return twimlOk()
+  }
+
   // ── Charge via Stripe ────────────────────────────────────────────────────
   let paymentIntent: Stripe.PaymentIntent
 
@@ -657,8 +671,37 @@ async function handleYes(
       return twimlOk()
     }
 
-    console.error('[twilio/inbound] Stripe error (YES)', err)
-    await sendSms(from, `Something went wrong processing your payment. Please try again.`)
+    const stripeErr = err as { type?: string; code?: string; message?: string; raw?: unknown }
+    console.error('[twilio/inbound] Stripe error (YES)', {
+      type: stripeErr?.type,
+      code: stripeErr?.code,
+      message: stripeErr?.message,
+      customerId: customer.stripe_customer_id,
+      paymentMethodId: customer.stripe_payment_method_id,
+    })
+
+    const isInvalidPM =
+      stripeErr?.code === 'payment_method_not_found' ||
+      stripeErr?.code === 'resource_missing' ||
+      stripeErr?.type === 'invalid_request_error'
+
+    if (isInvalidPM) {
+      const billingToken = crypto.randomUUID()
+      await sb.from('customers').update({
+        billing_token: billingToken,
+        billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        stripe_payment_method_id: null,
+      }).eq('id', customer.id)
+
+      await sb.from('orders').update({ order_status: 'cancelled', stripe_charge_status: 'failed' }).eq('id', order.id)
+      const { data: wine } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
+      if (wine) await sb.from('wines').update({ stock_bottles: wine.stock_bottles + order.quantity }).eq('id', order.wine_id)
+
+      await sendSms(from, `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} — you can also add a backup card in your account at ${APP_URL}/portal. Reply YES once updated.`)
+      return twimlOk()
+    }
+
+    await sendSms(from, `Something went wrong processing your payment. Please reply YES to try again, or visit ${APP_URL}/portal for help.`)
     return twimlOk()
   }
 

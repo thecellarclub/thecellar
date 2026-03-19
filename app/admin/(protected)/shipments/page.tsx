@@ -96,15 +96,15 @@ export default async function ShipmentsPage() {
                   return (
                     <tr key={s.id} className="hover:bg-gray-50 align-top">
                       <td className="px-4 py-3 border-b border-gray-100">
-                        {c ? (
-                          <Link href={`/admin/customers/${c.id}`} className="hover:underline font-medium">
-                            {c.first_name}
-                          </Link>
-                        ) : (
-                          '—'
+                        <Link href={`/admin/shipments/${s.id}`} className="hover:underline font-medium text-gray-900">
+                          {c ? c.first_name : '—'}
+                        </Link>
+                        {c && (
+                          <>
+                            <br />
+                            <span className="text-gray-500 text-xs">{c.phone}</span>
+                          </>
                         )}
-                        <br />
-                        <span className="text-gray-400 text-xs">{c?.phone}</span>
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-gray-600 text-xs">
                         {addressParts.length > 0 ? addressParts.join(', ') : '—'}

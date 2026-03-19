@@ -74,6 +74,10 @@ export async function GET(req: NextRequest) {
 
     if (daysSinceCase >= 104 && customer.case_nudge_2_sent_at) {
       // ── Auto-ship: charge £15 and create pending shipment ─────────────────
+      if (!customer.stripe_payment_method_id) {
+        console.warn('[cron/case-nudges] Customer has no payment method, skipping', customer.id)
+        continue
+      }
       try {
         const pi = await stripe.paymentIntents.create({
           amount: 1500,
