@@ -1,17 +1,22 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
-export default function JoinPage() {
+function JoinPageInner() {
   const router = useRouter()
-  const [phone, setPhone] = useState('')
+  const searchParams = useSearchParams()
+  const [phone, setPhone] = useState(searchParams.get('phone') ?? '')
   const [error, setError] = useState('')
+  const [alreadySignedUp, setAlreadySignedUp] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+    setAlreadySignedUp(false)
     setLoading(true)
 
     try {
@@ -25,7 +30,7 @@ export default function JoinPage() {
 
       if (!res.ok) {
         if (data.error === 'looks_like_already_signed_up') {
-          setError("Looks like you're already signed up. Check your texts!")
+          setAlreadySignedUp(true)
         } else {
           setError(data.error || 'Something went wrong. Please try again.')
         }
@@ -41,20 +46,17 @@ export default function JoinPage() {
   }
 
   return (
-    <div className="bg-stone-900 rounded-2xl border border-stone-700 p-8">
+    <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
-        <p className="text-xs font-medium tracking-widest text-stone-500 uppercase mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
           Step 1 of 4
         </p>
-        <h2 className="text-xl font-light text-stone-100">Your mobile number</h2>
-        <p className="mt-1 text-sm text-stone-400">
-          We&apos;ll send a verification code to confirm it&apos;s you.
-        </p>
+        <h2 className="font-serif text-2xl text-cream">Your mobile number</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="phone" className="block text-sm text-stone-400 mb-1.5">
+          <label htmlFor="phone" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             UK mobile number
           </label>
           <input
@@ -65,12 +67,22 @@ export default function JoinPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
-            className="w-full bg-stone-800 border border-stone-600 rounded-lg px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-stone-400 transition-colors text-base"
+            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
           />
+          <p className="font-sans text-xs text-cream/35 mt-1.5">UK numbers only (07xxx or +447xxx)</p>
         </div>
 
+        {alreadySignedUp && (
+          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+            Looks like you&apos;re already signed up.{' '}
+            <Link href="/portal" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
+              Log in here →
+            </Link>
+          </p>
+        )}
+
         {error && (
-          <p className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-4 py-3">
+          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
             {error}
           </p>
         )}
@@ -78,11 +90,19 @@ export default function JoinPage() {
         <button
           type="submit"
           disabled={loading || !phone.trim()}
-          className="w-full bg-stone-100 hover:bg-white text-stone-900 font-medium rounded-lg px-4 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Sending code…' : 'Send verification code'}
         </button>
       </form>
     </div>
+  )
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense>
+      <JoinPageInner />
+    </Suspense>
   )
 }
