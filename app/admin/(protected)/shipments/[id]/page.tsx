@@ -32,11 +32,15 @@ export default async function ShipmentDetailPage({
   const { id } = await params
   const sb = createServiceClient()
 
-  const { data: shipment } = await sb
+  const { data: shipment, error: shipmentError } = await sb
     .from('shipments')
-    .select('id, status, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, stripe_payment_intent_id, customers(id, first_name, phone)')
+    .select('id, status, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
     .eq('id', id)
     .maybeSingle()
+
+  if (shipmentError) {
+    console.error('[admin/shipments/detail] query error', shipmentError)
+  }
 
   if (!shipment) notFound()
 
