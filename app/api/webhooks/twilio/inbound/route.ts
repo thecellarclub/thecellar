@@ -36,6 +36,16 @@ interface TextBlast {
   wines: Wine
 }
 
+interface WineRow {
+  name: string
+  producer: string | null
+  region: string | null
+  vintage: number | null
+  price_pence: number
+  stock_bottles: number
+  description: string | null
+}
+
 interface CellarRow {
   quantity: number
   wines: {
@@ -887,6 +897,42 @@ async function handleYes(
   return twimlOk()
 }
 
+// ─── OFFER flow ───────────────────────────────────────────────────────────────
+
+async function handleOffer(
+  from: string,
+  sb: ReturnType<typeof createServiceClient>
+): Promise<NextResponse> {
+  const { data: activeText } = await sb
+    .from('texts')
+    .select('id, wines(name, producer, region, vintage, price_pence, stock_bottles, description)')
+    .eq('is_active', true)
+    .maybeSingle() as { data: { id: string; wines: WineRow } | null }
+
+  if (!activeText || !activeText.wines) {
+    await sendSms(from, `There's no active offer right now. We'll text you when the next one is ready.`)
+    return twimlOk()
+  }
+
+  const w = activeText.wines
+
+  if (!w.stock_bottles || w.stock_bottles <= 0) {
+    await sendSms(from, `Sorry — that one sold out. We'll be in touch with the next drop.`)
+    return twimlOk()
+  }
+
+  const price = `£${(w.price_pence / 100).toFixed(2)}`
+  const vintage = w.vintage ? `${w.vintage} ` : ''
+  const origin = [w.region].filter(Boolean).join(', ')
+  const desc = w.description ? `\n\n${w.description}` : ''
+
+  await sendSms(
+    from,
+    `This week's offer: ${vintage}${w.name}${origin ? ` (${origin})` : ''} — ${price} per bottle.${desc}\n\nReply with how many bottles you'd like.`
+  )
+  return twimlOk()
+}
+
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -949,7 +995,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (customer.sms_awaiting) {
       if (body === 'exit') {
         await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
-        await sendSms(from, `No problem. Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles\nSTATUS — your tier and progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`)
+        await sendSms(from, `No problem. Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles\nOFFER — see this week's wine again\nSTATUS — your tier and progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`)
         return twimlOk()
       }
 
@@ -1105,6 +1151,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return twimlOk()
     }
 
+    // ── OFFER ─────────────────────────────────────────────────────────────
+    if (body === 'offer') {
+      return await handleOffer(from, sb)
+    }
+
     // ── YES → charge pending order ────────────────────────────────────────
     if (body === 'yes') {
       return await handleYes(from, customer, sb)
@@ -1119,7 +1170,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Anything else → menu ─────────────────────────────────────────────
     await sendSms(
       from,
-      `Hey! Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles (free at 12, £15 before that)\nSTATUS — your tier and cellar progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine for us to feature\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`
+      `Hey! Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles (free at 12, £15 before that)\nOFFER — see this week's wine again\nSTATUS — your tier and cellar progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine for us to feature\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`
     )
     return twimlOk()
   } catch (err) {

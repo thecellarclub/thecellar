@@ -3,6 +3,7 @@ import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { normaliseUKPhone } from '@/lib/phone'
+import { sendSms } from '@/lib/twilio'
 
 function calculateAge(dob: Date): number {
   const today = new Date()
@@ -128,6 +129,12 @@ export async function POST(req: NextRequest) {
     await stripe.customers.update(session.stripeCustomerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
+
+    // Send welcome SMS — non-blocking, don't fail signup if this errors
+    sendSms(
+      normalisedPhone,
+      `Welcome to The Cellar Club, ${firstName.trim()}! Save this number as "The Cellar Club" so you recognise it when we text. Daniel will be in touch with your first drop soon.`
+    ).catch((err) => console.error('[complete] welcome SMS failed', err))
 
     // Clear session
     session.destroy()

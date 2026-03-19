@@ -106,42 +106,68 @@ export async function handlePostCharge({
       `Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping — or reply SHIP any time to send what you have for £15.`
     )
   } else if (totalBottles === threshold) {
-    // ── Scenario 2: exactly threshold bottles ─────────────────────────────────
-    // Build wine list from all current cellar rows
+    // ── Scenario 2: exactly threshold bottles — case complete ─────────────────
+
+    // Build wine list
     const wineCounts: Record<string, number> = {}
     for (const row of rows) {
       wineCounts[row.wine_id] = (wineCounts[row.wine_id] ?? 0) + row.quantity
     }
-
     const wineIds = Object.keys(wineCounts)
-    const { data: wines } = await sb
-      .from('wines')
-      .select('id, name')
-      .in('id', wineIds)
-
+    const { data: wines } = await sb.from('wines').select('id, name').in('id', wineIds)
     const wineMap: Record<string, string> = {}
-    for (const w of wines ?? []) {
-      wineMap[w.id] = w.name
-    }
-
+    for (const w of wines ?? []) { wineMap[w.id] = w.name }
     const wineLines = wineIds
       .map((id) => `${wineCounts[id]}x ${wineMap[id] ?? 'wine'}`)
       .join('\n')
 
     // Reset case timer
-    await sb
-      .from('customers')
-      .update({
-        case_started_at: null,
-        case_nudge_1_sent_at: null,
-        case_nudge_2_sent_at: null,
-      })
-      .eq('id', customerId)
+    await sb.from('customers').update({
+      case_started_at: null,
+      case_nudge_1_sent_at: null,
+      case_nudge_2_sent_at: null,
+    }).eq('id', customerId)
 
-    await sendSms(
-      customerPhone,
-      `Your case is complete! Here's what's in it:\n\n${wineLines}\n\nWe'll text you a delivery link shortly. Reply SHIP any time to confirm your address.`
-    )
+    // Check for saved address
+    const { data: cust } = await sb
+      .from('customers')
+      .select('default_address')
+      .eq('id', customerId)
+      .maybeSingle()
+
+    const addr = cust?.default_address as Record<string, string> | null
+
+    if (addr?.line1) {
+      // Address saved — create token but ask to confirm by SMS first
+      const shipToken = crypto.randomUUID()
+      await sb.from('shipments').insert({
+        customer_id: customerId,
+        status: 'pending',
+        token: shipToken,
+        bottle_count: threshold,
+        shipping_fee_pence: 0,
+      })
+      const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
+      await sendSms(
+        customerPhone,
+        `Your case is complete!\n\n${wineLines}\n\nWe'll ship to: ${addrLine}\n\nReply YES to confirm or SHIP to change your address.`
+      )
+    } else {
+      // No saved address — send the link now
+      const shipToken = crypto.randomUUID()
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+      await sb.from('shipments').insert({
+        customer_id: customerId,
+        status: 'pending',
+        token: shipToken,
+        bottle_count: threshold,
+        shipping_fee_pence: 0,
+      })
+      await sendSms(
+        customerPhone,
+        `Your case is complete!\n\n${wineLines}\n\nConfirm your delivery address here: ${appUrl}/ship?token=${shipToken}`
+      )
+    }
   } else {
     // ── Scenario 3: more than 12 bottles ─────────────────────────────────────
     // Walk oldest rows first, accumulate until we have exactly 12 to ship

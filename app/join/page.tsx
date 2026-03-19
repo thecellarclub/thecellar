@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+function buildPhone(raw: string): string {
+  const stripped = raw.replace(/[\s\-]/g, '')
+  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
+  return '+44' + stripped
+}
+
 function JoinPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -23,7 +29,7 @@ function JoinPageInner() {
       const res = await fetch('/api/signup/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: buildPhone(phone) }),
       })
 
       const data = await res.json()
@@ -59,17 +65,21 @@ function JoinPageInner() {
           <label htmlFor="phone" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             UK mobile number
           </label>
-          <input
-            id="phone"
-            type="tel"
-            autoComplete="tel"
-            placeholder="07700 900000"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
-          />
-          <p className="font-sans text-xs text-cream/35 mt-1.5">UK numbers only (07xxx or +447xxx)</p>
+          <div className="flex items-stretch border border-cream/20 focus-within:border-cream/50 transition-colors">
+            <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+              +44
+            </span>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="7700 900000"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              className="flex-1 bg-maroon px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+            />
+          </div>
         </div>
 
         {alreadySignedUp && (

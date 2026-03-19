@@ -3,6 +3,12 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 
+function buildPhone(raw: string): string {
+  const stripped = raw.replace(/[\s\-]/g, '')
+  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
+  return '+44' + stripped
+}
+
 export default function PortalLoginForm() {
   const router = useRouter()
   const [phone, setPhone] = useState('')
@@ -14,11 +20,13 @@ export default function PortalLoginForm() {
     setError('')
     setLoading(true)
 
+    const builtPhone = buildPhone(phone)
+
     try {
       const res = await fetch('/api/portal/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: builtPhone }),
       })
 
       if (!res.ok) {
@@ -27,8 +35,8 @@ export default function PortalLoginForm() {
         return
       }
 
-      // Store phone in sessionStorage for verify page
-      sessionStorage.setItem('portal_phone', phone)
+      // Store E.164 phone in sessionStorage for verify page
+      sessionStorage.setItem('portal_phone', builtPhone)
       router.push('/portal/verify')
     } catch {
       setError('Something went wrong. Please try again.')
@@ -43,16 +51,21 @@ export default function PortalLoginForm() {
         <label htmlFor="phone" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
           Mobile number
         </label>
-        <input
-          id="phone"
-          type="tel"
-          autoComplete="tel"
-          placeholder="07700 900000"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
-        />
+        <div className="flex items-stretch border border-cream/20 focus-within:border-cream/50 transition-colors">
+          <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+            +44
+          </span>
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="7700 900000"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            className="flex-1 bg-maroon px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+          />
+        </div>
       </div>
 
       {error && (

@@ -54,7 +54,7 @@ A wine subscription SMS service for Craig's Crush wine bar in Durham. Customers 
 | Admin: refund + manual add | ✅ Done |
 | Sign-up address step (/join/address) | ✅ Done |
 | SMS-based SHIP confirmation (YES/CHANGE) | ✅ Done |
-| Customer portal (/portal) | ✅ Done |
+| Customer portal (/portal) | ✅ Done (was 404 in prod — fixed by pushing code) |
 | Tier system (Bailey / Elvet / Palatine) | ✅ Done |
 | Homepage tier section (THE LEVELS) | ✅ Done |
 | Admin mobile optimisation (hamburger nav, card layouts, chat-bubble threads) | ✅ Done |
@@ -63,61 +63,80 @@ A wine subscription SMS service for Craig's Crush wine bar in Durham. Customers 
 | `/authenticate` page (3DS) | ✅ Done |
 | `/billing` page (card update) | ✅ Done |
 | Compliance pages (/privacy, /terms) | ✅ Done |
-| Phone number normalisation bug | ✅ Done (migration 011 ready to apply) |
+| Phone number normalisation bug | ✅ Done (migration 011 apply to live DB) |
 | Remove "Crush/Norse guests only" restriction text | ✅ Done |
-| Landing page visual overhaul | ⏳ To do (prompt ready: claude-code-prompt-landing-page-v2.md) |
-| Login link for existing members (join page + homepage) | ⏳ To do |
-| Refund SMS confirmation | ⏳ To verify in prod |
-| Shipping address pre-fill on /ship page | ⏳ To do |
+| Landing page v2 (maroon, bottle SVG, pull quote) | ✅ Done (v2 run) |
+| Landing page v3 (revert fonts/sections, new hero, refined quote, tier copy) | ✅ Done |
+| Login link for existing members (join page + homepage) | ✅ Done |
+| +44 prefix on phone inputs (homepage, join, portal) | ⏳ Prompt ready |
+| OFFER SMS command | ⏳ Prompt ready |
+| Post-charge Scenario 2 ship SMS bug | ⏳ Prompt ready |
+| Welcome SMS with "save this number" instruction | ⏳ Prompt ready |
+| Admin panel: payment failure hardening | ✅ Done |
+| Admin panel: shipment detail page + dispatch button | ✅ Done |
+| Admin panel: concierge desktop two-panel inbox | ✅ Done |
+| Admin panel: customer detail page restructure (Cellar/Shipped/Payments) | ✅ Done |
+| Concierge: close/reopen thread, ordering, filter | ✅ Done |
+| Portal: payments tab + shipments tab | ✅ Done |
+| Portal: tier spend progress bar | ✅ Done |
+| SMS two-step flow (REQUEST/QUESTION with sms_awaiting state) | ✅ Done |
+| Admin panel: font contrast fixes | ✅ Done |
+| Refund flow: verify Stripe call vs cellar-only removal | ✅ Done |
+| 3DS PaymentIntent expiry handling on /authenticate | ✅ Done |
+| Null PM guard in cron case-nudges | ✅ Done |
+| Shipping address pre-fill on /ship page | ⏳ Backlog |
 
 ---
 
-## Known bugs
+## Known bugs / outstanding issues
 
-### 1. Phone number normalisation / Twilio lookup mismatch
-**Symptom:** Registering with `07826665548` correctly errors with "already signed up". But texting the Cellar Club number returns "sorry, we don't recognise this number."
+### 1. Phone number normalisation — ✅ Code fixed, migration 011 pending on live DB
+Twilio sends `from` in E.164 (+447xxx). Webhook now normalises before DB lookup. Migration 011 normalises existing records. **Apply migration 011 to live Supabase DB.**
 
-**Root cause (likely):** Numbers may be stored inconsistently in the DB (some as `07xxx`, some as `+447xxx`) depending on when they were registered. The signup `send-code` route normalises to E.164 before the duplicate check, but if the stored number is in a different format the Twilio webhook's raw `.eq('phone', from)` lookup fails. Twilio always sends `from` in E.164 (`+447xxx`).
+### 2. Payment failure — root cause unknown
+Stripe is throwing something other than a card decline (generic catch block hit). Logging improved in `admin-qa` prompt so next failure will log `type/code/message`. Most likely cause: payment method not set up for off-session use, or test/live mode mismatch. Check Vercel logs after next failure.
 
-**Fix needed:**
-- Add `normaliseUKPhone` call inside the Twilio inbound webhook on the `from` field before DB lookup (defensive, even though Twilio sends E.164)
-- Write and run a one-off Supabase migration to normalise all existing `phone` values to E.164
-- Lock down signup to UK-only (see below)
+### 3. Post-charge Scenario 2 ship SMS — ✅ Fix written (not yet applied)
+`lib/post-charge.ts` Scenario 2 (exactly 12 bottles) sends "We'll text you a delivery link shortly. Reply SHIP any time to confirm your address." — no link is ever sent. Fix: create pending shipment immediately and send the link in the same message (same as Scenario 3). Included in `claude-code-prompt-sms-ui-fixes.md`.
 
-### 2. "Crush/Norse guests only" restriction text — not true, remove it
-Two places in the codebase say the club is for guests who've visited Crush/Norse/Coarse/Isla. This is wrong — the club is open to anyone.
+### 4. Refund flow — needs verification
+Current RefundButton may only remove cellar rows without calling `stripe.refunds.create()`. Needs to be checked and fixed if so. Covered in `claude-code-prompt-admin-qa.md`.
 
-- `app/join/layout.tsx` line ~23: `For guests who've visited Coarse, Isla, or Crush.`
-- `app/join/page.tsx` line ~53: `The Cellar Club is for guests who've visited Crush or Norse.`
+### 5. 3DS PaymentIntent expiry (~24 hours)
+PaymentIntents in `requires_action` state are cancelled by Stripe after ~24h. The /authenticate page needs to handle `canceled` status gracefully. Covered in `claude-code-prompt-admin-qa.md`.
 
-Just delete both lines. Nothing needs replacing.
-
-### 3. International SMS / UK-only decision
-**Decision: UK-only at launch.** It's a Durham wine bar, we ship UK-only anyway, and international Twilio SMS is expensive ($0.05–0.20+ per message vs ~$0.04 for UK→UK). No reason to complicate it.
-
-**Implementation:**
-- Update `normaliseUKPhone` to explicitly reject non-UK numbers with a clear error message
-- Update the phone input UI on `/join` to clarify UK numbers only
-- Both `07xxx` and `+447xxx` formats should be accepted and normalised to E.164 — handle the edge case where someone enters `+447` but WITHOUT the leading zero correctly (currently handled)
-- The error message if non-UK: "We currently only accept UK numbers — give us your 07 number."
+### 6. Twilio display name — not possible for two-way SMS (UK)
+UK regulatory rules: alphanumeric sender IDs are one-way only. Two-way SMS requires a mobile number. The mobile number is correct — customers just need to save it. Welcome SMS "save this number as The Cellar Club" instruction added via `claude-code-prompt-sms-ui-fixes.md`.
 
 ---
 
-## Claude Code prompts ready to run
+## Claude Code prompts
 
-Saved in project root:
+### Ready to run
 
-| Prompt file | What it does | Status |
-|---|---|---|
-| `claude-code-prompt-fixes-2026-03-19.md` | Phone normalisation bug, remove restriction text, UK-only enforcement | ⏳ Ready |
-| `claude-code-prompt-landing-page-update.md` | Full visual overhaul — sections, cards, dividers, story copy, bottle SVG | ⏳ Ready |
-| `claude-code-prompt-refund-fix.md` | Refund hang fix, SMS after refund, /ship address pre-fill | ⏳ To verify |
+| Prompt file | What it covers |
+|---|---|
+| `claude-code-prompt-sms-ui-fixes.md` | +44 prefix on phone inputs (homepage, join, portal). OFFER SMS command. Post-charge Scenario 2 ship SMS fix. Welcome SMS with "save this number" instruction. |
 
-Previously run (archived):
-- `claude-code-prompt-order-confirmation.md` — ✅ Done
-- `claude-code-prompt-portal-and-tiers-FINAL.md` — ✅ Done
-- `claude-code-prompt-email-notifications-fix.md` — ✅ Done
-- `claude-code-prompt-admin-mobile.md` — ✅ Done
+### Previously run ✅
+- `claude-code-prompt-landing-page-v3.md` — revert v2 bulk changes, new hero, styled pull quote, membership card copy ✅
+- `claude-code-prompt-admin-qa.md` — payment hardening, shipment detail, concierge desktop two-panel, contrast fixes ✅
+- `claude-code-prompt-portal-progress-bar.md` — tier spend progress bar in portal ✅
+- `claude-code-prompt-admin-portal-sms-improvements.md` — customer detail restructure, concierge close/filter, portal tabs, SMS two-step flow ✅
+- `claude-code-prompt-fixes-2026-03-19.md` — phone normalisation, restriction text removal, UK-only enforcement ✅
+- `claude-code-prompt-landing-page-v2.md` — maroon, bottle SVG, pull quote, tier copy, login links ✅
+- `claude-code-prompt-order-confirmation.md` ✅
+- `claude-code-prompt-portal-and-tiers-FINAL.md` ✅
+- `claude-code-prompt-email-notifications-fix.md` ✅
+- `claude-code-prompt-admin-mobile.md` ✅
+
+### Migrations to apply to live Supabase DB
+After running prompts, these SQL files need to be run in the Supabase SQL editor:
+- **011** — normalise existing phone numbers to E.164 (apply now)
+- **012** — add `tracking_provider` to shipments (after admin-qa prompt)
+- **013** — add `shipment_id` to cellar (after admin-portal-sms prompt)
+- **014** — add `concierge_status` to customers (after admin-portal-sms prompt)
+- **015** — add `sms_awaiting` to customers (after admin-portal-sms prompt)
 
 ---
 
@@ -157,7 +176,10 @@ Previously run (archived):
 - Admin notifications: REQUEST + QUESTION → hello@crushwines.co
 
 ### SMS commands (full list)
-NUMBER, YES, CHANGE, ACCOUNT, STOP/UNSUBSCRIBE, CELLAR, SHIP, SHIP CONFIRM, PAUSE, STATUS, REQUEST, QUESTION
+NUMBER, YES, CHANGE, ACCOUNT, STOP/UNSUBSCRIBE, CELLAR, SHIP, SHIP CONFIRM, PAUSE, STATUS, REQUEST, QUESTION, OFFER (adding — see sms-ui-fixes prompt)
+
+### SMS two-step flow (sms_awaiting state) — pending
+Currently REQUEST/QUESTION require the trigger word to be repeated in the reply (e.g. "REQUEST Chateau Musar"). This is clunky. New flow: bare trigger word sets `sms_awaiting = 'request'|'question'` on customer. Next inbound message (whatever it says) is processed as the content. EXIT returns to main menu. Backward compat: "REQUEST something" (with content in same message) still works.
 
 ### Portal (/portal)
 - No-password login via SMS OTP
@@ -203,4 +225,4 @@ NUMBER, YES, CHANGE, ACCOUNT, STOP/UNSUBSCRIBE, CELLAR, SHIP, SHIP CONFIRM, PAUS
 - **Birthday gift (Palatine)** — manual for now
 
 ## Last updated
-2026-03-19 — Bug: phone normalisation mismatch. Remove restriction text. UK-only decision. Landing page overhaul still pending.
+2026-03-19 (session 2) — Prompts 1–4 run (landing-page-v3, admin-qa, portal-progress-bar, admin-portal-sms-improvements). One remaining: claude-code-prompt-sms-ui-fixes.md. Migrations 012–015 need applying to live DB. Payment failure root cause still unknown — Vercel logs needed.

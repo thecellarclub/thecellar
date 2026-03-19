@@ -190,6 +190,12 @@ function SectionDivider() {
 
 // ─── Hero form ─────────────────────────────────────────────────────────────────
 
+function buildPhone(raw: string): string {
+  const stripped = raw.replace(/[\s\-]/g, '')
+  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
+  return '+44' + stripped
+}
+
 function HeroSignupForm() {
   const [phone, setPhone] = useState('')
   const router = useRouter()
@@ -197,6 +203,7 @@ function HeroSignupForm() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (phone.trim()) {
+      // Pass the raw local number — join page applies buildPhone before the API call
       router.push(`/join?phone=${encodeURIComponent(phone.trim())}`)
     } else {
       router.push('/join')
@@ -205,13 +212,18 @@ function HeroSignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4">
-      <input
-        type="tel"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        placeholder="Your mobile number"
-        className="flex-1 bg-transparent border border-cream/30 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/60 font-sans text-base"
-      />
+      <div className="flex-1 flex items-stretch border border-cream/30 focus-within:border-cream/60 transition-colors">
+        <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+          +44
+        </span>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="7700 900000"
+          className="flex-1 bg-transparent px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+        />
+      </div>
       <button
         type="submit"
         className="group bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526] whitespace-nowrap"
