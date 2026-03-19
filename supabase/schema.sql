@@ -58,7 +58,8 @@ create table shipments (
   status text default 'pending',        -- 'pending' | 'dispatched' | 'delivered'
   tracking_number text,
   created_at timestamptz default now(),
-  dispatched_at timestamptz
+  dispatched_at timestamptz,
+  delivered_at  timestamptz
 );
 
 -- ORDERS

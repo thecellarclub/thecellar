@@ -26,10 +26,14 @@ export default async function ShipmentsPage() {
 
   const sb = createServiceClient()
 
-  const { data: shipments } = await sb
+  const { data: shipments, error: shipmentsError } = await sb
     .from('shipments')
     .select('id, status, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
     .order('created_at', { ascending: false })
+
+  if (shipmentsError) {
+    console.error('[admin/shipments] query error', shipmentsError)
+  }
 
   const pending = (shipments ?? []).filter((s) => s.status === 'pending').length
   const dispatched = (shipments ?? []).filter((s) => s.status === 'dispatched').length
