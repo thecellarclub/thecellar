@@ -13,6 +13,7 @@ type ConciergeMessage = {
   customers: {
     first_name: string | null
     phone: string | null
+    concierge_status: string | null
   } | null
 }
 
@@ -24,12 +25,12 @@ export default async function ConciergePage() {
 
   const { data: messages } = await sb
     .from('concierge_messages')
-    .select('id, customer_id, message, direction, created_at, customers(first_name, phone)')
+    .select('id, customer_id, message, direction, created_at, customers(first_name, phone, concierge_status)')
     .order('created_at', { ascending: true })
 
   const rows = (messages ?? []) as unknown as ConciergeMessage[]
 
-  // Group by customer, preserving insertion order of first appearance
+  // Group by customer
   const threadMap = new Map<string, ConciergeThread>()
   for (const msg of rows) {
     const cid = msg.customer_id
@@ -38,6 +39,7 @@ export default async function ConciergePage() {
         customerId: cid,
         firstName: msg.customers?.first_name ?? null,
         phone: msg.customers?.phone ?? null,
+        status: (msg.customers?.concierge_status ?? 'open') as 'open' | 'closed',
         messages: [],
       })
     }
@@ -50,15 +52,21 @@ export default async function ConciergePage() {
     })
   }
 
-  // Sort threads newest-first by most recent message
+  // Sort: unreplied open first, then replied open, then closed (newest first within groups)
   const threads = Array.from(threadMap.values()).sort((a, b) => {
-    const aLast = a.messages[a.messages.length - 1]?.created_at ?? ''
-    const bLast = b.messages[b.messages.length - 1]?.created_at ?? ''
-    return bLast.localeCompare(aLast)
+    const aLast = a.messages[a.messages.length - 1]
+    const bLast = b.messages[b.messages.length - 1]
+    const aClosed = a.status === 'closed'
+    const bClosed = b.status === 'closed'
+    const aUnanswered = !aClosed && aLast?.direction === 'inbound'
+    const bUnanswered = !bClosed && bLast?.direction === 'inbound'
+    if (aUnanswered !== bUnanswered) return aUnanswered ? -1 : 1
+    if (aClosed !== bClosed) return aClosed ? 1 : -1
+    return (bLast?.created_at ?? '').localeCompare(aLast?.created_at ?? '')
   })
 
   const unansweredCount = threads.filter(
-    (t) => t.messages[t.messages.length - 1]?.direction === 'inbound'
+    (t) => t.status === 'open' && t.messages[t.messages.length - 1]?.direction === 'inbound'
   ).length
 
   return (

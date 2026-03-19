@@ -20,6 +20,7 @@ interface Customer {
   active: boolean
   texts_snoozed_until: string | null
   tier: string
+  sms_awaiting: string | null
 }
 
 interface Wine {
@@ -847,7 +848,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Customer lookup ──────────────────────────────────────────────────
     const { data: customer } = await sb
       .from('customers')
-      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, active, texts_snoozed_until, tier')
+      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, active, texts_snoozed_until, tier, sms_awaiting')
       .eq('phone', from)
       .maybeSingle() as { data: Customer | null }
 
@@ -859,6 +860,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!customer.active) {
       await sendSms(from, `You're unsubscribed. Visit ${APP_URL}/join to rejoin.`)
       return twimlOk()
+    }
+
+    // ── Pending state — awaiting follow-up to REQUEST or QUESTION ─────────
+    if (customer.sms_awaiting) {
+      if (body === 'exit') {
+        await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
+        await sendSms(from, `No problem. Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles\nSTATUS — your tier and progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`)
+        return twimlOk()
+      }
+
+      const pendingType = customer.sms_awaiting
+      await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
+
+      if (pendingType === 'request') {
+        await sb.from('special_requests').insert({
+          customer_id: customer.id,
+          message: body,
+          status: 'new',
+        })
+        const name = customer.first_name ?? customer.phone
+        await notifyAdmin(
+          `New wine request from ${name}`,
+          `Message: ${body}\nPhone: ${customer.phone}`
+        )
+        await sendSms(from, `Got it — we'll look into it. Daniel will be in touch if we decide to run it as a drop.`)
+        return twimlOk()
+      }
+
+      if (pendingType === 'question') {
+        await sb.from('concierge_messages').insert({
+          customer_id: customer.id,
+          message: body,
+          direction: 'inbound',
+        })
+        const name = customer.first_name ?? customer.phone
+        await notifyAdmin(
+          `New question from ${name}`,
+          `Message: ${body}\nPhone: ${customer.phone}`
+        )
+        await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
+        return twimlOk()
+      }
     }
 
     // ── STOP / UNSUBSCRIBE ───────────────────────────────────────────────
@@ -934,52 +977,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── REQUEST ──────────────────────────────────────────────────────────
-    if (body === 'request') {
-      await sendSms(
-        from,
-        `What would you like us to feature? Tell us a bit about it — e.g. "REQUEST something from Georgia" or "REQUEST Chateau Musar".`
-      )
-      return twimlOk()
+    if (body.startsWith('request ')) {
+      // Inline content — process immediately (backward compat)
+      const message = (params['Body'] ?? '').trim().slice(8).trim()
+      if (message) {
+        await sb.from('special_requests').insert({ customer_id: customer.id, message, status: 'new' })
+        const name = customer.first_name ?? customer.phone
+        await notifyAdmin(`New wine request from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
+        await sendSms(from, `Got it — we'll look into it. Daniel will be in touch if we decide to run it as a drop.`)
+        return twimlOk()
+      }
+      // Empty after 'request ' — fall through to bare-word handler below
     }
 
-    if (body.startsWith('request ')) {
-      const message = (params['Body'] ?? '').trim().slice(8).trim()
-      await sb.from('special_requests').insert({
-        customer_id: customer.id,
-        message,
-        status: 'new',
-      })
-      const name = customer.first_name ?? customer.phone
-      await notifyAdmin(
-        `New request from ${name}`,
-        `Message: ${message}\nPhone: ${customer.phone}`
+    if (body === 'request') {
+      await sb.from('customers').update({ sms_awaiting: 'request' }).eq('id', customer.id)
+      await sendSms(
+        from,
+        `What would you like us to feature? Tell us about it — e.g. 'something from Georgia' or 'Chateau Musar'.\n\nReply EXIT to go back.`
       )
-      await sendSms(from, `Got it — we'll be in touch.`)
       return twimlOk()
     }
 
     // ── QUESTION ─────────────────────────────────────────────────────────
-    if (body === 'question') {
-      await sendSms(
-        from,
-        `What's on your mind? Ask us anything — e.g. "QUESTION can you help me find a special wine gift?" or "QUESTION how long does shipping take?".`
-      )
-      return twimlOk()
+    if (body.startsWith('question ')) {
+      // Inline content — process immediately (backward compat)
+      const message = (params['Body'] ?? '').trim().slice(9).trim()
+      if (message) {
+        await sb.from('concierge_messages').insert({ customer_id: customer.id, direction: 'inbound', message })
+        const name = customer.first_name ?? customer.phone
+        await notifyAdmin(`New question from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
+        await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
+        return twimlOk()
+      }
+      // Empty after 'question ' — fall through to bare-word handler below
     }
 
-    if (body.startsWith('question ')) {
-      const message = (params['Body'] ?? '').trim().slice(9).trim()
-      await sb.from('concierge_messages').insert({
-        customer_id: customer.id,
-        direction: 'inbound',
-        message,
-      })
-      const name = customer.first_name ?? customer.phone
-      await notifyAdmin(
-        `New question from ${name}`,
-        `Message: ${message}\nPhone: ${customer.phone}`
+    if (body === 'question') {
+      await sb.from('customers').update({ sms_awaiting: 'question' }).eq('id', customer.id)
+      await sendSms(
+        from,
+        `What's on your mind? Ask us anything — e.g. 'can you help me find a wine gift?' or 'how long does shipping take?'.\n\nReply EXIT to go back.`
       )
-      await sendSms(from, `On it — we'll get back to you soon.`)
       return twimlOk()
     }
 

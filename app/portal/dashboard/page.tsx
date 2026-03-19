@@ -45,6 +45,20 @@ export default async function PortalDashboardPage() {
 
   const rollingSpendPence = (spendRows ?? []).reduce((s, r) => s + (r.total_pence ?? 0), 0)
 
+  // Past payments
+  const { data: paymentRows } = await sb
+    .from('orders')
+    .select('id, quantity, total_pence, stripe_charge_status, created_at, wines(name, vintage, region)')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false })
+
+  // Past shipments
+  const { data: shipmentRows } = await sb
+    .from('shipments')
+    .select('id, status, tracking_number, tracking_provider, created_at, dispatched_at, delivered_at')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false })
+
   // Cards from Stripe
   let primaryCard: { last4: string; brand: string; exp_month: number; exp_year: number } | null = null
   let backupCard: { last4: string; brand: string; exp_month: number; exp_year: number } | null = null
@@ -69,6 +83,8 @@ export default async function PortalDashboardPage() {
 
   const addr = customer.default_address as Record<string, string> | null
 
+  type PaymentWine = { name: string; vintage: number | null; region: string | null } | null
+
   return (
     <DashboardClient
       firstName={customer.first_name ?? ''}
@@ -90,6 +106,28 @@ export default async function PortalDashboardPage() {
         city: addr.city ?? '',
         postcode: addr.postcode ?? '',
       } : null}
+      payments={(paymentRows ?? []).map((p) => {
+        const wine = p.wines as unknown as PaymentWine
+        return {
+          id: p.id,
+          quantity: p.quantity,
+          totalPence: p.total_pence,
+          status: p.stripe_charge_status,
+          createdAt: p.created_at,
+          wineName: wine?.name ?? '—',
+          wineVintage: wine?.vintage ?? null,
+          wineRegion: wine?.region ?? null,
+        }
+      })}
+      shipments={(shipmentRows ?? []).map((s) => ({
+        id: s.id,
+        status: s.status,
+        trackingNumber: s.tracking_number ?? null,
+        trackingProvider: s.tracking_provider ?? null,
+        createdAt: s.created_at,
+        dispatchedAt: s.dispatched_at ?? null,
+        deliveredAt: s.delivered_at ?? null,
+      }))}
     />
   )
 }

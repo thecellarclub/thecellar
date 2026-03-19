@@ -18,6 +18,25 @@ interface Props {
   primaryCard: Card | null
   backupCard: Card | null
   defaultAddress: Address | null
+  payments: Array<{
+    id: string
+    quantity: number
+    totalPence: number
+    status: string
+    createdAt: string
+    wineName: string
+    wineVintage: number | null
+    wineRegion: string | null
+  }>
+  shipments: Array<{
+    id: string
+    status: string
+    trackingNumber: string | null
+    trackingProvider: string | null
+    createdAt: string
+    dispatchedAt: string | null
+    deliveredAt: string | null
+  }>
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -150,6 +169,24 @@ function TierProgress({
   )
 }
 
+function PaymentStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string }> = {
+    succeeded: { label: 'Paid', color: '#2d6a4f' },
+    failed: { label: 'Failed', color: '#9B1B30' },
+    refunded: { label: 'Refunded', color: '#555' },
+    pending: { label: 'Pending', color: '#7a6000' },
+  }
+  const { label, color } = map[status] ?? { label: status, color: '#555' }
+  return (
+    <span
+      className="font-sans text-xs px-1.5 py-0.5 rounded"
+      style={{ color, background: `${color}22` }}
+    >
+      {label}
+    </span>
+  )
+}
+
 export default function DashboardClient({
   firstName,
   phone,
@@ -161,9 +198,12 @@ export default function DashboardClient({
   primaryCard,
   backupCard,
   defaultAddress,
+  payments,
+  shipments,
 }: Props) {
   const router = useRouter()
   const [section, setSection] = useState<'overview' | 'address' | 'card'>('overview')
+  const [cellarTab, setCellarTab] = useState<'cellar' | 'payments' | 'shipments'>('cellar')
 
   // Address form state
   const [line1, setLine1] = useState(defaultAddress?.line1 ?? '')
@@ -270,18 +310,96 @@ export default function DashboardClient({
 
           <TierProgress tier={tier} spendPence={rollingSpendPence} />
 
-          {/* Cellar list */}
-          {cellar.length > 0 && (
-            <ul className="space-y-1.5 pt-3 border-t border-cream/10">
-              {cellar.map((item, i) => (
-                <li key={i} className="flex items-baseline justify-between gap-2">
-                  <span className="font-sans text-sm text-cream/75">{item.quantity}× {item.name}</span>
-                  <span className="font-sans text-xs text-cream/35 shrink-0">
-                    £{(item.pricePence / 100).toFixed(0)}/bottle
-                  </span>
-                </li>
-              ))}
-            </ul>
+          {/* Inner tab bar */}
+          <div className="flex gap-4 border-b border-cream/10 mb-4 pt-3">
+            {(['cellar', 'payments', 'shipments'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setCellarTab(t)}
+                className={`pb-2 font-sans text-xs uppercase tracking-wide border-b-2 -mb-px transition-colors ${
+                  cellarTab === t
+                    ? 'border-gold text-cream'
+                    : 'border-transparent text-cream/40 hover:text-cream/70'
+                }`}
+              >
+                {t === 'cellar' ? 'Cellar' : t === 'payments' ? 'Payments' : 'Shipments'}
+              </button>
+            ))}
+          </div>
+
+          {cellarTab === 'cellar' && (
+            <>
+              {cellar.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {cellar.map((item, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-2">
+                      <span className="font-sans text-sm text-cream/75">{item.quantity}× {item.name}</span>
+                      <span className="font-sans text-xs text-cream/35 shrink-0">
+                        £{(item.pricePence / 100).toFixed(0)}/bottle
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-sans text-sm text-cream/35">Nothing in your cellar yet.</p>
+              )}
+            </>
+          )}
+
+          {cellarTab === 'payments' && (
+            <div className="space-y-2">
+              {payments.length === 0 ? (
+                <p className="font-sans text-sm text-cream/35">No payments yet.</p>
+              ) : (
+                payments.map((p) => (
+                  <div key={p.id} className="flex items-start justify-between gap-2 py-2 border-b border-cream/10 last:border-0">
+                    <div className="min-w-0">
+                      <p className="font-sans text-sm text-cream/80 truncate">{p.wineName}</p>
+                      {(p.wineVintage || p.wineRegion) && (
+                        <p className="font-sans text-xs text-cream/35">
+                          {[p.wineVintage, p.wineRegion].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      <p className="font-sans text-xs text-cream/35 mt-0.5">
+                        {new Date(p.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-sans text-sm text-cream/80">£{(p.totalPence / 100).toFixed(2)}</p>
+                      <PaymentStatusBadge status={p.status} />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {cellarTab === 'shipments' && (
+            <div className="space-y-2">
+              {shipments.length === 0 ? (
+                <p className="font-sans text-sm text-cream/35">No shipments yet.</p>
+              ) : (
+                shipments.map((s) => (
+                  <div key={s.id} className="py-2 border-b border-cream/10 last:border-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-sans text-sm text-cream/80 capitalize">{s.status}</p>
+                        <p className="font-sans text-xs text-cream/35 mt-0.5">
+                          {new Date(s.dispatchedAt ?? s.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {s.trackingNumber ? (
+                          <p className="font-sans text-xs text-cream/50 font-mono">{s.trackingProvider ? `${s.trackingProvider} ` : ''}{s.trackingNumber}</p>
+                        ) : (
+                          <p className="font-sans text-xs text-cream/30">No tracking</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
         </div>
 
