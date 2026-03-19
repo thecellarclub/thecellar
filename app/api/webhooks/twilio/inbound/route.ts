@@ -127,10 +127,15 @@ async function handleShip(
 
   const total = Number(totals?.total_bottles ?? 0)
 
+  if (total === 0) {
+    await sendSms(from, `Your cellar's empty right now — keep an eye out for our next drop.`)
+    return twimlOk()
+  }
+
   if (total < 12) {
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'}. Shipping now costs £15. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £15. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`
     )
     return twimlOk()
   }
@@ -265,6 +270,40 @@ async function handleShipConfirm(
 
   const SHIPPING_FEE_PENCE = 1500
 
+  // ── Guard: no payment method saved ──────────────────────────────────────
+  if (!customer.stripe_payment_method_id) {
+    const billingToken = crypto.randomUUID()
+    await sb.from('customers').update({
+      billing_token: billingToken,
+      billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    }).eq('id', customer.id)
+    await sendSms(
+      from,
+      `We don't have a payment card on file. Add one at ${APP_URL}/billing?token=${billingToken} and reply SHIP CONFIRM again.`
+    )
+    return twimlOk()
+  }
+
+  // ── Fetch unshipped cellar rows to pre-link ──────────────────────────────
+  const { data: cellarRowsForEarly } = await sb
+    .from('cellar')
+    .select('id, quantity, wine_id')
+    .eq('customer_id', customer.id)
+    .is('shipped_at', null)
+    .is('shipment_id', null)
+    .order('created_at', { ascending: true })
+
+  const availableBottles = (cellarRowsForEarly ?? []).reduce((sum, r) => sum + r.quantity, 0)
+
+  if (availableBottles === 0) {
+    await sendSms(from, `Your cellar's empty — nothing to ship yet!`)
+    return twimlOk()
+  }
+
+  // Use actual available count (guards against view/row mismatch)
+  const bottlesToShipEarly = availableBottles
+  const earlySelectedIds = (cellarRowsForEarly ?? []).map(r => r.id)
+
   // ── Charge £15 shipping via Stripe ───────────────────────────────────────
   let paymentIntent: Stripe.PaymentIntent
 
@@ -285,7 +324,7 @@ async function handleShipConfirm(
         const token = crypto.randomUUID()
         await sb.from('shipments').insert({
           customer_id: customer.id,
-          bottle_count: total,
+          bottle_count: bottlesToShipEarly,
           status: 'pending',
           token,
           shipping_fee_pence: SHIPPING_FEE_PENCE,
@@ -299,6 +338,7 @@ async function handleShipConfirm(
         return twimlOk()
       }
 
+      // Card declined
       const billingToken = crypto.randomUUID()
       await sb.from('customers').update({
         billing_token: billingToken,
@@ -306,54 +346,89 @@ async function handleShipConfirm(
       }).eq('id', customer.id)
       await sendSms(
         from,
-        `Your payment didn't go through. Update your card at ${APP_URL}/billing?token=${billingToken} and try again.`
+        `Your payment didn't go through. Update your card at ${APP_URL}/billing?token=${billingToken} and reply SHIP CONFIRM again.`
       )
       return twimlOk()
     }
 
-    console.error('[twilio/inbound] Stripe error (ship confirm)', err)
-    await sendSms(from, `Something went wrong processing your payment. Please try again.`)
+    // Non-card Stripe error — check for invalid/missing payment method
+    const stripeErr = err as { type?: string; code?: string; message?: string }
+    console.error('[twilio/inbound] Stripe error (ship confirm)', {
+      type: stripeErr?.type,
+      code: stripeErr?.code,
+      message: stripeErr?.message,
+      customerId: customer.stripe_customer_id,
+      paymentMethodId: customer.stripe_payment_method_id,
+    })
+
+    const isInvalidPM =
+      stripeErr?.code === 'payment_method_not_found' ||
+      stripeErr?.code === 'resource_missing' ||
+      stripeErr?.type === 'invalid_request_error'
+
+    if (isInvalidPM) {
+      const billingToken = crypto.randomUUID()
+      await sb.from('customers').update({
+        billing_token: billingToken,
+        billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        stripe_payment_method_id: null,
+      }).eq('id', customer.id)
+      await sendSms(
+        from,
+        `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} and reply SHIP CONFIRM again.`
+      )
+      return twimlOk()
+    }
+
+    await sendSms(from, `Something went wrong processing your payment. Please reply SHIP CONFIRM to try again.`)
     return twimlOk()
   }
 
-  if (
-    paymentIntent.status === 'succeeded' ||
-    paymentIntent.status === 'requires_action'
-  ) {
-    if (paymentIntent.status === 'requires_action') {
-      const token = crypto.randomUUID()
-      await sb.from('shipments').insert({
-        customer_id: customer.id,
-        bottle_count: total,
-        status: 'pending',
-        token,
-        shipping_fee_pence: SHIPPING_FEE_PENCE,
-        stripe_payment_intent_id: paymentIntent.id,
-        stripe_charge_status: 'requires_action',
-      })
-      await sendSms(
-        from,
-        `We need you to verify your payment. Visit ${APP_URL}/authenticate?token=${token} to complete your shipment.`
-      )
-      return twimlOk()
+  if (paymentIntent.status === 'requires_action') {
+    const token = crypto.randomUUID()
+    const { data: newShipmentAuth } = await sb.from('shipments').insert({
+      customer_id: customer.id,
+      bottle_count: bottlesToShipEarly,
+      status: 'pending',
+      token,
+      shipping_fee_pence: SHIPPING_FEE_PENCE,
+      stripe_payment_intent_id: paymentIntent.id,
+      stripe_charge_status: 'requires_action',
+    }).select('id').single()
+
+    if (newShipmentAuth && earlySelectedIds.length > 0) {
+      await sb.from('cellar').update({ shipment_id: newShipmentAuth.id }).in('id', earlySelectedIds)
     }
 
-    // Payment succeeded — create shipment
+    await sendSms(
+      from,
+      `We need you to verify your payment. Visit ${APP_URL}/authenticate?token=${token} to complete your shipment.`
+    )
+    return twimlOk()
+  }
+
+  if (paymentIntent.status === 'succeeded') {
+    // Payment succeeded — create shipment and pre-link cellar rows
     const token = crypto.randomUUID()
-    const { error } = await sb.from('shipments').insert({
+    const { data: newShipment, error } = await sb.from('shipments').insert({
       customer_id: customer.id,
-      bottle_count: total,
+      bottle_count: bottlesToShipEarly,
       status: 'pending',
       token,
       shipping_fee_pence: SHIPPING_FEE_PENCE,
       stripe_payment_intent_id: paymentIntent.id,
       stripe_charge_status: 'succeeded',
-    })
+    }).select('id').single()
 
-    if (error) {
+    if (error || !newShipment) {
       console.error('[twilio/inbound] shipment insert error (ship confirm)', error)
-      await sendSms(from, `Something went wrong. Your payment was taken — please contact us.`)
+      await sendSms(from, `Something went wrong saving your shipment. Your payment was taken — please contact us.`)
       return twimlOk()
+    }
+
+    // Pre-link cellar rows so /api/ship/confirm doesn't need the legacy fallback
+    if (earlySelectedIds.length > 0) {
+      await sb.from('cellar').update({ shipment_id: newShipment.id }).in('id', earlySelectedIds)
     }
 
     await sendSms(
@@ -363,13 +438,14 @@ async function handleShipConfirm(
     return twimlOk()
   }
 
+  // Unexpected PaymentIntent status
   console.error('[twilio/inbound] unexpected PaymentIntent status (ship confirm)', paymentIntent.status)
   const billingToken = crypto.randomUUID()
   await sb.from('customers').update({
     billing_token: billingToken,
     billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   }).eq('id', customer.id)
-  await sendSms(from, `Your payment didn't go through. Update your card at ${APP_URL}/billing?token=${billingToken} and try again.`)
+  await sendSms(from, `Your payment didn't go through. Update your card at ${APP_URL}/billing?token=${billingToken} and reply SHIP CONFIRM again.`)
   return twimlOk()
 }
 
@@ -398,6 +474,13 @@ async function handlePause(
     .from('shipments')
     .update({ status: 'paused' })
     .eq('id', shipment.id)
+
+  // Unlink pre-linked cellar rows so they're available for a future shipment
+  await sb
+    .from('cellar')
+    .update({ shipment_id: null })
+    .eq('shipment_id', shipment.id)
+    .is('shipped_at', null)
 
   await sendSms(from, `Your shipment's on hold. Text SHIP when you're ready.`)
   return twimlOk()
