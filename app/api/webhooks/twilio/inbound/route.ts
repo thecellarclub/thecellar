@@ -152,11 +152,47 @@ async function handleShip(
     return twimlOk()
   }
 
+  // Ship in full cases of 12 only — leave any remainder in the cellar
+  const bottlesToShip = Math.floor(total / 12) * 12
+
+  // Fetch unshipped, unlinked rows oldest-first to determine which get shipped
+  const { data: cellarRows } = await sb
+    .from('cellar')
+    .select('id, quantity, wine_id')
+    .eq('customer_id', customer.id)
+    .is('shipped_at', null)
+    .is('shipment_id', null)
+    .order('created_at', { ascending: true })
+
+  const selectedIds: string[] = []
+  let remaining = bottlesToShip
+
+  for (const row of (cellarRows ?? [])) {
+    if (remaining <= 0) break
+
+    if (row.quantity <= remaining) {
+      // Entire row ships
+      selectedIds.push(row.id)
+      remaining -= row.quantity
+    } else {
+      // Row straddles the boundary — ship `remaining` bottles, leave the rest
+      await sb.from('cellar').update({ quantity: remaining }).eq('id', row.id)
+      selectedIds.push(row.id)
+      // Insert the leftover bottles as a new unshipped row
+      await sb.from('cellar').insert({
+        customer_id: customer.id,
+        wine_id: row.wine_id,
+        quantity: row.quantity - remaining,
+      })
+      remaining = 0
+    }
+  }
+
   // Create new pending shipment with a token
   const token = crypto.randomUUID()
   const { data: newShipment, error } = await sb.from('shipments').insert({
     customer_id: customer.id,
-    bottle_count: total,
+    bottle_count: bottlesToShip,
     status: 'pending',
     token,
     shipping_fee_pence: 0,
@@ -168,12 +204,13 @@ async function handleShip(
     return twimlOk()
   }
 
-  // Pre-link all currently unshipped cellar rows to this shipment
-  await sb
-    .from('cellar')
-    .update({ shipment_id: newShipment.id })
-    .eq('customer_id', customer.id)
-    .is('shipped_at', null)
+  // Pre-link only the selected rows
+  if (selectedIds.length > 0) {
+    await sb
+      .from('cellar')
+      .update({ shipment_id: newShipment.id })
+      .in('id', selectedIds)
+  }
 
   await sendSms(
     from,
