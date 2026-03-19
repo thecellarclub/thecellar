@@ -32,6 +32,19 @@ export default async function PortalDashboardPage() {
 
   const bottles = (cellarRows ?? []).reduce((s, r) => s + r.quantity, 0)
 
+  // Rolling 12-month spend (confirmed charges only)
+  const twelveMonthsAgo = new Date()
+  twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
+
+  const { data: spendRows } = await sb
+    .from('orders')
+    .select('total_pence')
+    .eq('customer_id', customer.id)
+    .eq('stripe_charge_status', 'succeeded')
+    .gte('created_at', twelveMonthsAgo.toISOString())
+
+  const rollingSpendPence = (spendRows ?? []).reduce((s, r) => s + (r.total_pence ?? 0), 0)
+
   // Cards from Stripe
   let primaryCard: { last4: string; brand: string; exp_month: number; exp_year: number } | null = null
   let backupCard: { last4: string; brand: string; exp_month: number; exp_year: number } | null = null
@@ -68,6 +81,7 @@ export default async function PortalDashboardPage() {
         name: r.wines?.name ?? 'Unknown wine',
         pricePence: r.wines?.price_pence ?? 0,
       }))}
+      rollingSpendPence={rollingSpendPence}
       primaryCard={primaryCard}
       backupCard={backupCard}
       defaultAddress={addr ? {

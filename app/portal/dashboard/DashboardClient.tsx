@@ -14,6 +14,7 @@ interface Props {
   tierSince: string | null
   bottles: number
   cellar: CellarItem[]
+  rollingSpendPence: number
   primaryCard: Card | null
   backupCard: Card | null
   defaultAddress: Address | null
@@ -49,6 +50,106 @@ function CardPill({ card, label }: { card: Card; label: string }) {
   )
 }
 
+function TierProgress({
+  tier,
+  spendPence,
+}: {
+  tier: string
+  spendPence: number
+}) {
+  const spend = spendPence / 100
+
+  type TierConfig = {
+    label: string
+    nextLabel: string | null
+    current: number
+    target: number | null
+    color: string
+  }
+
+  const config: TierConfig = (() => {
+    if (tier === 'palatine') {
+      return {
+        label: 'Palatine',
+        nextLabel: null,
+        current: spend,
+        target: null,
+        color: '#C9851D',
+      }
+    }
+    if (tier === 'elvet') {
+      return {
+        label: 'Elvet',
+        nextLabel: 'Palatine',
+        current: Math.max(0, spend - 500),
+        target: 500, // £500 to £1,000
+        color: '#C9851D',
+      }
+    }
+    // Bailey (or none)
+    return {
+      label: 'Bailey',
+      nextLabel: 'Elvet',
+      current: spend,
+      target: 500,
+      color: '#9B1B30',
+    }
+  })()
+
+  const pct = config.target
+    ? Math.min(100, Math.round((config.current / config.target) * 100))
+    : 100
+
+  const formatGBP = (n: number) =>
+    n >= 1000
+      ? `£${(n / 1000).toFixed(1)}k`
+      : `£${Math.round(n)}`
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-baseline justify-between mb-2">
+        <span
+          className="font-sans text-xs uppercase tracking-[0.2em]"
+          style={{ color: config.color }}
+        >
+          {config.label}
+        </span>
+        {config.nextLabel ? (
+          <span className="font-sans text-xs text-cream/40">
+            {formatGBP(config.current + (tier === 'elvet' ? 500 : 0))} /{' '}
+            {tier === 'elvet' ? '£1,000' : '£500'} towards {config.nextLabel}
+          </span>
+        ) : (
+          <span className="font-sans text-xs text-cream/40">
+            {formatGBP(spend)} this year
+          </span>
+        )}
+      </div>
+
+      {/* Track */}
+      <div
+        className="relative h-1.5 rounded-full overflow-hidden"
+        style={{ background: 'rgba(240,230,220,0.1)' }}
+      >
+        <div
+          className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${pct}%`,
+            background: config.color,
+            opacity: 0.85,
+          }}
+        />
+      </div>
+
+      {config.nextLabel && (
+        <p className="font-sans text-xs text-cream/30 mt-1.5">
+          {formatGBP(Math.max(0, (config.target ?? 0) - config.current))} to go
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function DashboardClient({
   firstName,
   phone,
@@ -56,6 +157,7 @@ export default function DashboardClient({
   tierSince,
   bottles,
   cellar,
+  rollingSpendPence,
   primaryCard,
   backupCard,
   defaultAddress,
@@ -165,6 +267,8 @@ export default function DashboardClient({
               </p>
             </div>
           </div>
+
+          <TierProgress tier={tier} spendPence={rollingSpendPence} />
 
           {/* Cellar list */}
           {cellar.length > 0 && (
