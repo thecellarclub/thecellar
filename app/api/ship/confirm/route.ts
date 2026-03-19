@@ -59,16 +59,18 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const addressJson = {
+    line1: line1.trim(),
+    line2: line2?.trim() || null,
+    city: city.trim(),
+    postcode: postcode.trim().toUpperCase(),
+  }
+
   // Update shipment: save address + mark confirmed
   const { error: updateError } = await sb
     .from('shipments')
     .update({
-      shipping_address: {
-        line1: line1.trim(),
-        line2: line2?.trim() || null,
-        city: city.trim(),
-        postcode: postcode.trim().toUpperCase(),
-      },
+      shipping_address: addressJson,
       status: 'confirmed',
     })
     .eq('id', shipment.id)
@@ -77,6 +79,12 @@ export async function POST(req: NextRequest) {
     console.error('shipment update error', updateError)
     return NextResponse.json({ error: 'Failed to save address.' }, { status: 500 })
   }
+
+  // Persist address back to customer profile so portal reflects it and future shipments pre-fill
+  await sb
+    .from('customers')
+    .update({ default_address: addressJson })
+    .eq('id', shipment.customer_id)
 
   // Mark pre-linked cellar rows as shipped (new flow: handleShip pre-links rows)
   const { error: cellarError } = await sb
