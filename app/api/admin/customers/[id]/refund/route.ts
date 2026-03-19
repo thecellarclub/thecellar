@@ -25,7 +25,7 @@ export async function POST(
   // 1. Fetch cellar row, scoped to this customer
   const { data: cellarRow } = await sb
     .from('cellar')
-    .select('id, order_id, customer_id, quantity, wine_id')
+    .select('id, order_id, customer_id, quantity, wine_id, shipped_at')
     .eq('id', cellarId)
     .eq('customer_id', id)
     .maybeSingle()
@@ -89,14 +89,16 @@ export async function POST(
     reason: 'admin_refund',
   })
 
-  // 6. Remove or decrement cellar entry
-  if (quantity === cellarRow.quantity) {
-    await sb.from('cellar').delete().eq('id', cellarId)
-  } else {
-    await sb
-      .from('cellar')
-      .update({ quantity: cellarRow.quantity - quantity })
-      .eq('id', cellarId)
+  // 6. Remove or decrement cellar entry — only if not yet shipped (preserve shipment history)
+  if (!cellarRow.shipped_at) {
+    if (quantity === cellarRow.quantity) {
+      await sb.from('cellar').delete().eq('id', cellarId)
+    } else {
+      await sb
+        .from('cellar')
+        .update({ quantity: cellarRow.quantity - quantity })
+        .eq('id', cellarId)
+    }
   }
 
   // 7. Send SMS to customer if a refund amount was issued

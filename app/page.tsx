@@ -66,57 +66,74 @@ function FadeUp({
 
 // ─── SVG Line Art ──────────────────────────────────────────────────────────────
 
-function CellarArchSvg() {
+function CellarDoorSvg() {
   return (
     <svg
       viewBox="0 0 1000 800"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="absolute inset-0 w-full h-full"
-      style={{ opacity: 0.08 }}
+      style={{ opacity: 0.18 }}
       aria-hidden="true"
     >
-      {/* Outer barrel vault arch */}
+      {/* ── Outer door frame ──────────────────────────────────────────── */}
+      {/* Semicircular arch: centre (500,310), radius 232, crown at y=78 */}
       <path
-        d="M 150 800 L 150 350 Q 150 80 500 80 Q 850 80 850 350 L 850 800"
+        d="M 268 782 L 268 310 A 232 232 0 0 1 732 310 L 732 782 Z"
         stroke="#F0E6DC"
-        strokeWidth="2"
+        strokeWidth="2.5"
       />
-      {/* Middle arch */}
+
+      {/* ── Inner panel border (inset ~18 px, concentric arc) ─────────── */}
       <path
-        d="M 200 800 L 200 360 Q 200 140 500 140 Q 800 140 800 360 L 800 800"
+        d="M 286 770 L 286 310 A 214 214 0 0 1 714 310 L 714 770 Z"
         stroke="#F0E6DC"
         strokeWidth="1"
       />
-      {/* Inner arch */}
+
+      {/* ── Vertical plank lines ──────────────────────────────────────── */}
+      {[350, 410, 470, 530, 590, 650].map((x) => (
+        <line key={x} x1={x} y1="310" x2={x} y2="770" stroke="#F0E6DC" strokeWidth="0.7" />
+      ))}
+
+      {/* ── Horizontal centre rail ────────────────────────────────────── */}
+      <line x1="286" y1="548" x2="714" y2="548" stroke="#F0E6DC" strokeWidth="1.5" />
+
+      {/* ── Top strap hinge (pivot left, strap tapering right) ─────────── */}
+      <circle cx="268" cy="395" r="20" stroke="#F0E6DC" strokeWidth="1.5" />
+      <path d="M 268 382 L 515 384 L 511 406 L 268 408 Z" stroke="#F0E6DC" strokeWidth="1" />
+      <circle cx="350" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+      <circle cx="430" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+      <circle cx="505" cy="395" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+
+      {/* ── Bottom strap hinge ───────────────────────────────────────── */}
+      <circle cx="268" cy="688" r="20" stroke="#F0E6DC" strokeWidth="1.5" />
+      <path d="M 268 675 L 515 677 L 511 699 L 268 701 Z" stroke="#F0E6DC" strokeWidth="1" />
+      <circle cx="350" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+      <circle cx="430" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+      <circle cx="505" cy="688" r="4" stroke="#F0E6DC" strokeWidth="0.8" />
+
+      {/* ── Iron ring handle (right side, mid-height ≈ y=546) ─────────── */}
+      <circle cx="666" cy="546" r="30" stroke="#F0E6DC" strokeWidth="1.5" />
+      <circle cx="666" cy="546" r="16" stroke="#F0E6DC" strokeWidth="1.5" />
+
+      {/* ── Keystone at arch crown (x=500, y=78) ─────────────────────── */}
       <path
-        d="M 260 800 L 260 380 Q 260 200 500 200 Q 740 200 740 380 L 740 800"
+        d="M 488 108 L 492 80 L 500 64 L 508 80 L 512 108 Z"
+        stroke="#F0E6DC"
+        strokeWidth="1.5"
+      />
+
+      {/* ── Hairline inner glow — light from inside the cellar ─────────── */}
+      <path
+        d="M 291 768 L 291 313 A 209 209 0 0 1 709 313 L 709 768"
         stroke="#F0E6DC"
         strokeWidth="0.5"
+        strokeOpacity="0.4"
       />
-      {/* Horizontal rack shelves */}
-      <line x1="150" y1="450" x2="850" y2="450" stroke="#F0E6DC" strokeWidth="1" />
-      <line x1="150" y1="560" x2="850" y2="560" stroke="#F0E6DC" strokeWidth="1" />
-      <line x1="150" y1="670" x2="850" y2="670" stroke="#F0E6DC" strokeWidth="1" />
-      {/* Vertical rack dividers */}
-      <line x1="285" y1="450" x2="285" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="345" y1="450" x2="345" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="405" y1="450" x2="405" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="465" y1="450" x2="465" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="535" y1="450" x2="535" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="595" y1="450" x2="595" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="655" y1="450" x2="655" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      <line x1="715" y1="450" x2="715" y2="800" stroke="#F0E6DC" strokeWidth="0.5" />
-      {/* Bottle circles — row 1 */}
-      {[315, 375, 435, 500, 565, 625, 685].map((x) => (
-        <circle key={`r1-${x}`} cx={x} cy={505} r={22} stroke="#F0E6DC" strokeWidth="0.75" />
-      ))}
-      {/* Bottle circles — row 2 */}
-      {[315, 375, 435, 500, 565, 625, 685].map((x) => (
-        <circle key={`r2-${x}`} cx={x} cy={615} r={22} stroke="#F0E6DC" strokeWidth="0.75" />
-      ))}
-      {/* Keystone */}
-      <path d="M 485 80 L 500 55 L 515 80" stroke="#F0E6DC" strokeWidth="1.5" />
+
+      {/* ── Door threshold ───────────────────────────────────────────── */}
+      <line x1="236" y1="782" x2="764" y2="782" stroke="#F0E6DC" strokeWidth="1.5" />
     </svg>
   )
 }
@@ -245,7 +262,7 @@ export default function HomePage() {
 
       {/* ── Section 1: Hero ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon">
-        <CellarArchSvg />
+        <CellarDoorSvg />
 
         {/* Noise overlay */}
         <div
@@ -275,10 +292,10 @@ export default function HomePage() {
             {/* Four punchy lines — slightly smaller */}
             <div className="space-y-2 text-center">
               {[
-                'Two texts a week.',
-                'Reply how many bottles.',
-                'We store until you fill a case.',
-                'Then ship it for free.',
+                'We text you twice a week.',
+                'Reply how many you want.',
+                'We store it until you fill a case.',
+                'Then ship it to you for free.',
               ].map((line) => (
                 <p key={line} className="font-serif text-cream/55 text-[1.1rem] leading-snug">
                   {line}

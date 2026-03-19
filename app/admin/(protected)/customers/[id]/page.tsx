@@ -137,7 +137,7 @@ export default async function CustomerDetailPage({
   // Map order_id → cellar entry (oldest unshipped first) for refund buttons
   const cellarByOrderId = new Map<string, CellarEntry>()
   for (const c of [...cellar].reverse()) {
-    if (c.order_id && !c.shipped_at) {
+    if (c.order_id) {
       cellarByOrderId.set(c.order_id, c)
     }
   }
