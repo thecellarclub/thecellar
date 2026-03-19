@@ -1,16 +1,27 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Cormorant_Garamond, Spectral } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({
-  variable: '--font-geist',
+const cormorant = Cormorant_Garamond({
+  variable: '--font-cormorant',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+const spectral = Spectral({
+  variable: '--font-spectral',
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'Cellar Text — Fine wine by text message',
+  title: 'The Cellar Club',
   description:
-    'Receive hand-picked wines by text. Reply to order. We store your bottles until you hit a case.',
+    'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
 }
 
 export default function RootLayout({
@@ -20,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geist.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${cormorant.variable} ${spectral.variable} font-sans antialiased bg-maroon text-cream`}>
+        {children}
+      </body>
     </html>
   )
 }

@@ -255,20 +255,20 @@ export default function HomePage() {
 
           {/* Subheading */}
           <div className="mb-10 max-w-[600px] mx-auto">
-            {/* Primary line */}
-            <p className="font-serif text-cream/90 text-[1.45rem] leading-snug text-center mb-5">
+            {/* Primary line — slightly larger */}
+            <p className="font-serif text-cream/85 text-[1.35rem] leading-snug text-center mb-5">
               Sommelier selected wines at insider rates.
             </p>
 
-            {/* Secondary lines */}
-            <div className="space-y-1.5 text-center">
+            {/* Four punchy lines — slightly smaller */}
+            <div className="space-y-2 text-center">
               {[
                 'Two texts a week.',
                 'Reply how many bottles.',
                 'We store until you fill a case.',
                 'Then ship it for free.',
               ].map((line) => (
-                <p key={line} className="font-serif text-cream/60 text-[1.05rem] leading-snug">
+                <p key={line} className="font-serif text-cream/55 text-[1.1rem] leading-snug">
                   {line}
                 </p>
               ))}
@@ -463,42 +463,48 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Divider ── */}
+      <div className="bg-maroon-dark py-10">
+        <SectionDivider />
+      </div>
+
       {/* ── Pull quote ── */}
-      <section className="bg-maroon px-6 py-24 overflow-hidden">
+      <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
         <FadeUp>
           <div className="max-w-3xl mx-auto text-center relative">
 
-            {/* Decorative opening quotation mark */}
+            {/* Giant decorative opening quote mark — behind everything */}
             <span
-              className="font-serif absolute select-none pointer-events-none"
+              className="font-serif select-none pointer-events-none absolute"
               aria-hidden="true"
               style={{
-                fontSize: '22rem',
-                lineHeight: 1,
-                color: '#C9851D',
+                fontSize: '28rem',
+                lineHeight: 0.8,
+                color: '#F0E6DC',
                 opacity: 0.045,
-                top: '-4rem',
+                top: '-3rem',
                 left: '50%',
-                transform: 'translateX(-50%)',
+                transform: 'translateX(-52%)',
                 fontStyle: 'normal',
+                zIndex: 0,
               }}
             >
               &ldquo;
             </span>
 
-            <blockquote className="relative z-10">
+            <blockquote className="relative" style={{ zIndex: 1 }}>
               <p
-                className="font-serif text-cream/90 leading-tight"
-                style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.6rem)' }}
+                className="font-serif text-cream/90 leading-[1.25]"
+                style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)' }}
               >
                 Wines you won&apos;t find on any shelf, at prices that feel like a secret.
               </p>
-              <footer className="mt-8 space-y-1">
-                <p className="font-sans text-cream/35 text-xs tracking-[0.2em] uppercase">
+              <footer className="mt-10 space-y-1.5">
+                <p className="font-sans text-cream/35 text-[0.7rem] tracking-[0.25em] uppercase">
                   The Cellar Club
                 </p>
                 <p className="font-serif text-cream/30 text-sm italic">
-                  (Not recommended for anyone happy with their current wine spend.)
+                  Not recommended for anyone who was happy with their wine spend.
                 </p>
               </footer>
             </blockquote>
@@ -662,7 +668,7 @@ export default function HomePage() {
                   <li>Free delivery at 6 bottles</li>
                   <li>10% discount on all orders</li>
                   <li>4 × tickets to wine tastings (Durham or London)</li>
-                  <li>First look: 2 hours before everyone else</li>
+                  <li>First look — 2 hours before everyone else</li>
                 </ul>
                 <p className="font-sans text-xs text-gold/50 mt-6">Unlocks at £1,000. Free shipping drops to 6 bottles.</p>
               </div>

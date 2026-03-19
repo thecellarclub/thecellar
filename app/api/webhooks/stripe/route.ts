@@ -3,6 +3,8 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase'
 import { twilioClient } from '@/lib/twilio'
+import { handlePostCharge } from '@/lib/post-charge'
+import { checkAndApplyTierUpgrade } from '@/lib/tiers'
 
 /**
  * POST /api/webhooks/stripe
@@ -10,13 +12,13 @@ import { twilioClient } from '@/lib/twilio'
  * Handles async Stripe events. Raw body is read via req.text() — Next.js App Router
  * does not auto-parse bodies, so signature verification works without any config.
  *
- * payment_intent.succeeded     → update order, insert cellar, decrement stock.
- *                                 If the order was previously requires_action (3DS just
- *                                 completed), send a payment confirmation SMS. If this
- *                                 pushed the customer's cellar to ≥12 for the first time,
- *                                 send the 12-bottle notification as a second message.
+ * payment_intent.succeeded     → guard on order_status, update order to 'confirmed',
+ *                                 call handlePostCharge (inserts cellar + sends SMS).
+ *                                 Stock was already decremented when the pending order
+ *                                 was created — do NOT decrement again here.
  *
- * payment_intent.payment_failed → update order to failed, SMS customer with /billing link.
+ * payment_intent.payment_failed → guard on order_status, update to 'cancelled',
+ *                                  release reserved stock, SMS customer with /billing link.
  *
  * Both handlers are idempotent.
  * Unhandled event types → 200 (never error on events we don't care about).
@@ -45,112 +47,54 @@ export async function POST(req: NextRequest) {
 
     const { data: order } = await sb
       .from('orders')
-      .select('id, customer_id, wine_id, quantity, stripe_charge_status')
+      .select('id, customer_id, wine_id, quantity, stripe_charge_status, order_status')
       .eq('stripe_payment_intent_id', pi.id)
       .maybeSingle()
 
     if (!order) return NextResponse.json({ received: true })
 
-    // Idempotent — inbound webhook may have already processed this synchronously
-    if (order.stripe_charge_status === 'succeeded') {
+    // Guard: skip if already processed or cancelled
+    if (order.order_status === 'confirmed' || order.order_status === 'cancelled') {
       return NextResponse.json({ received: true })
     }
 
-    const previousStatus = order.stripe_charge_status
-
-    // 1. Update order
+    // Update order
     await sb
       .from('orders')
-      .update({ stripe_charge_status: 'succeeded' })
+      .update({ stripe_charge_status: 'succeeded', order_status: 'confirmed' })
       .eq('id', order.id)
 
-    // 2. Insert cellar entry
-    await sb.from('cellar').insert({
-      customer_id: order.customer_id,
-      wine_id: order.wine_id,
-      order_id: order.id,
-      quantity: order.quantity,
-    })
-
-    // 3. Decrement stock
-    const { data: wine } = await sb
-      .from('wines')
-      .select('name, price_pence, stock_bottles')
-      .eq('id', order.wine_id)
-      .maybeSingle()
-
-    if (wine && wine.stock_bottles >= order.quantity) {
-      await sb
-        .from('wines')
-        .update({ stock_bottles: wine.stock_bottles - order.quantity })
-        .eq('id', order.wine_id)
-    }
-
-    // 4. Only SMS if this was a 3DS completion (requires_action → succeeded).
-    //    If it was inline (pending → succeeded), the inbound webhook already messaged them.
-    if (previousStatus === 'requires_action') {
+    // Only SMS via handlePostCharge if this was a 3DS completion (requires_action → succeeded).
+    // If the charge was inline (pending → succeeded via the YES handler), handlePostCharge
+    // was already called in the webhook. We only reach here for async Stripe events.
+    if (order.stripe_charge_status === 'requires_action') {
       const { data: customer } = await sb
         .from('customers')
         .select('phone')
         .eq('id', order.customer_id)
         .maybeSingle()
 
-      if (customer) {
-        // Current cellar total (view reflects the row we just inserted)
-        const { data: cellarTotal } = await sb
-          .from('customer_cellar_totals')
-          .select('total_bottles')
-          .eq('customer_id', order.customer_id)
-          .maybeSingle()
+      const { data: wine } = await sb
+        .from('wines')
+        .select('name')
+        .eq('id', order.wine_id)
+        .maybeSingle()
 
-        const newTotal = Number(cellarTotal?.total_bottles ?? 0)
-        const oldTotal = newTotal - order.quantity
-
-        // Payment confirmation
-        await twilioClient.messages.create({
-          body:
-            `Sorted — your card's been verified and ${order.quantity} bottle${order.quantity !== 1 ? 's' : ''} ` +
-            `of ${wine?.name ?? 'your wine'} ${order.quantity !== 1 ? 'are' : 'is'} in your cellar. ` +
-            `You've got ${newTotal} stored now.`,
-          from: process.env.TWILIO_PHONE_NUMBER!,
-          to: customer.phone,
+      if (customer?.phone) {
+        await handlePostCharge({
+          orderId: order.id,
+          customerId: order.customer_id,
+          wineId: order.wine_id,
+          wineName: wine?.name ?? 'your wine',
+          quantityJustBought: order.quantity,
+          customerPhone: customer.phone,
+          sb,
         })
 
-        // 5. 12-bottle auto-notification (separate message, only fires once — first time ≥12)
-        if (oldTotal < 12 && newTotal >= 12) {
-          // Fetch full cellar contents to build the wine list
-          const { data: cellarRows } = await sb
-            .from('cellar')
-            .select('quantity, wines(name, price_pence)')
-            .eq('customer_id', order.customer_id)
-            .is('shipped_at', null)
-
-          // Aggregate by wine name
-          const wineMap = new Map<string, { qty: number; pricePence: number }>()
-          for (const row of cellarRows ?? []) {
-            const w = row.wines as unknown as { name: string; price_pence: number } | null
-            if (!w) continue
-            const existing = wineMap.get(w.name)
-            if (existing) {
-              existing.qty += row.quantity
-            } else {
-              wineMap.set(w.name, { qty: row.quantity, pricePence: w.price_pence })
-            }
-          }
-
-          const wineList = Array.from(wineMap.entries())
-            .map(([name, { qty, pricePence }]) => `- ${qty}x ${name} (£${(pricePence / 100).toFixed(0)}/bottle)`)
-            .join('\n')
-
-          await twilioClient.messages.create({
-            body:
-              `Your cellar just hit 12 bottles — nice work. Here's what you've got:\n` +
-              `${wineList}\n` +
-              `We'll ship your case tomorrow, free of charge. Reply PAUSE if you'd like to hold it.`,
-            from: process.env.TWILIO_PHONE_NUMBER!,
-            to: customer.phone,
-          })
-        }
+        // Tier upgrade check for 3DS completions
+        await checkAndApplyTierUpgrade(order.customer_id, sb).catch((e) =>
+          console.error('[stripe-webhook] tier upgrade check failed:', e)
+        )
       }
     }
 
@@ -160,21 +104,36 @@ export async function POST(req: NextRequest) {
 
     const { data: order } = await sb
       .from('orders')
-      .select('id, customer_id, stripe_charge_status')
+      .select('id, customer_id, wine_id, quantity, stripe_charge_status, order_status')
       .eq('stripe_payment_intent_id', pi.id)
       .maybeSingle()
 
     if (!order) return NextResponse.json({ received: true })
 
-    // Idempotent
-    if (order.stripe_charge_status === 'failed') {
+    // Guard: only process awaiting_confirmation orders
+    if (order.order_status !== 'awaiting_confirmation') {
       return NextResponse.json({ received: true })
     }
 
+    // Update order to cancelled
     await sb
       .from('orders')
-      .update({ stripe_charge_status: 'failed' })
+      .update({ stripe_charge_status: 'failed', order_status: 'cancelled' })
       .eq('id', order.id)
+
+    // Release reserved stock
+    const { data: wine } = await sb
+      .from('wines')
+      .select('stock_bottles')
+      .eq('id', order.wine_id)
+      .maybeSingle()
+
+    if (wine) {
+      await sb
+        .from('wines')
+        .update({ stock_bottles: wine.stock_bottles + order.quantity })
+        .eq('id', order.wine_id)
+    }
 
     const { data: customer } = await sb
       .from('customers')
@@ -182,9 +141,18 @@ export async function POST(req: NextRequest) {
       .eq('id', order.customer_id)
       .maybeSingle()
 
-    if (customer) {
+    if (customer?.phone) {
+      const billingToken = crypto.randomUUID()
+      await sb
+        .from('customers')
+        .update({
+          billing_token: billingToken,
+          billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        })
+        .eq('id', order.customer_id)
+
       await twilioClient.messages.create({
-        body: `Card didn't go through on that one. Update your details at ${appUrl}/billing and we'll get it sorted.`,
+        body: `Card didn't go through on that one. Update your details at ${appUrl}/billing?token=${billingToken} and we'll get it sorted.`,
         from: process.env.TWILIO_PHONE_NUMBER!,
         to: customer.phone,
       })

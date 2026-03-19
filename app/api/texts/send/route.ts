@@ -8,6 +8,12 @@ import { createServiceClient } from '@/lib/supabase'
 // This route lives under /api/texts/ (not /api/admin/) so admin UI calls it
 // directly; the admin session check will be added when the admin UI is wired up.
 
+interface Customer {
+  id: string
+  phone: string
+  texts_snoozed_until: string | null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { wineId, body: messageBody } = await req.json()
@@ -35,10 +41,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Wine is not active' }, { status: 400 })
     }
 
-    // Fetch all active subscribers
+    // Fetch all active subscribers (including snooze field)
     const { data: customers, error: custErr } = await sb
       .from('customers')
-      .select('id, phone')
+      .select('id, phone, texts_snoozed_until')
       .eq('active', true)
 
     if (custErr) throw custErr
@@ -53,13 +59,13 @@ export async function POST(req: NextRequest) {
     // 1. Deactivate all existing texts
     await sb.from('texts').update({ is_active: false }).neq('is_active', false)
 
-    // 2. Insert new text row as the active offer
+    // 2. Insert new text row as the active offer (recipient_count updated after send)
     const { data: text, error: textErr } = await sb
       .from('texts')
       .insert({
         wine_id: wineId,
         body: trimmedBody,
-        recipient_count: customers.length,
+        recipient_count: 0,
         is_active: true,
       })
       .select('id')
@@ -70,11 +76,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create text record' }, { status: 500 })
     }
 
-    // ── Send to each customer — log failures but don't abort the blast ───
+    // ── Send to each customer — skip snoozed, log failures but don't abort ──
     let sent = 0
     const failures: string[] = []
 
-    for (const customer of customers) {
+    for (const customer of customers as Customer[]) {
+      // Skip snoozed customers
+      if (customer.texts_snoozed_until && new Date(customer.texts_snoozed_until) > new Date()) {
+        continue
+      }
+
       try {
         await twilioClient.messages.create({
           to: customer.phone,
@@ -88,6 +99,12 @@ export async function POST(req: NextRequest) {
         failures.push(customer.phone)
       }
     }
+
+    // Update recipient_count with the actual number sent
+    await sb
+      .from('texts')
+      .update({ recipient_count: sent })
+      .eq('id', text.id)
 
     console.log(`[texts/send] textId=${text.id} sent=${sent} failures=${failures.length}`)
 

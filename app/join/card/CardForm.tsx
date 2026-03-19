@@ -15,16 +15,14 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
-      color: '#e7e5e4', // stone-200
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      color: '#F0E6DC',
+      fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
       fontSize: '16px',
-      '::placeholder': {
-        color: '#57534e', // stone-600
-      },
-      iconColor: '#a8a29e', // stone-400
+      '::placeholder': { color: 'rgba(240,230,220,0.3)' },
+      iconColor: '#F0E6DC',
     },
     invalid: {
-      color: '#f87171', // red-400
+      color: '#f87171',
       iconColor: '#f87171',
     },
   },
@@ -120,13 +118,13 @@ function CardFormInner() {
   }
 
   return (
-    <div className="bg-stone-900 rounded-2xl border border-stone-700 p-8">
+    <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
-        <p className="text-xs font-medium tracking-widest text-stone-500 uppercase mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
           Step 2 of 4
         </p>
-        <h2 className="text-xl font-light text-stone-100">Email &amp; card details</h2>
-        <p className="mt-1 text-sm text-stone-400">
+        <h2 className="font-serif text-2xl text-cream">Email &amp; card details</h2>
+        <p className="font-sans text-sm text-cream/55 mt-1">
           Your card is saved securely. You&apos;ll only be charged when you order a wine.
         </p>
       </div>
@@ -134,7 +132,7 @@ function CardFormInner() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm text-stone-400 mb-1.5">
+          <label htmlFor="email" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             Email address
           </label>
           <input
@@ -146,25 +144,25 @@ function CardFormInner() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
-            className="w-full bg-stone-800 border border-stone-600 rounded-lg px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-stone-400 transition-colors disabled:opacity-60"
+            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base disabled:opacity-60"
           />
         </div>
 
         {/* Card element */}
         <div>
-          <label className="block text-sm text-stone-400 mb-1.5">
+          <label className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             Card details
           </label>
-          <div className="bg-stone-800 border border-stone-600 rounded-lg px-4 py-3.5 focus-within:border-stone-400 transition-colors">
+          <div className="bg-maroon border border-cream/20 px-4 py-3.5 focus-within:border-cream/50 transition-colors">
             <CardElement options={CARD_ELEMENT_OPTIONS} />
           </div>
-          <p className="mt-1.5 text-xs text-stone-600">
+          <p className="mt-1.5 font-sans text-xs text-cream/30">
             Secured by Stripe. We never see your full card number.
           </p>
         </div>
 
         {error && (
-          <p className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-4 py-3">
+          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
             {error}
           </p>
         )}
@@ -172,7 +170,7 @@ function CardFormInner() {
         <button
           type="submit"
           disabled={loading || !stripe || !email.trim()}
-          className="w-full bg-stone-100 hover:bg-white text-stone-900 font-medium rounded-lg px-4 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {step === 'processing' ? 'Setting up your account…' : 'Save card & continue'}
         </button>

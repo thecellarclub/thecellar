@@ -7,9 +7,9 @@ import { isShipTokenExpired } from '@/lib/tokens'
  *
  * Called by the /ship page when the customer submits their delivery address.
  *
- * Validates the token, updates the shipment with the address and status 'confirmed',
- * then marks all unshipped cellar rows for this customer with the shipment_id
- * and shipped_at = now() — resetting their cellar count to 0.
+ * Uses a pre-link approach: handleShip pre-links unshipped cellar rows to the
+ * shipment when it's created. This route then marks those pre-linked rows as
+ * shipped. A legacy fallback handles old shipments without pre-linking.
  */
 export async function POST(req: NextRequest) {
   let body: {
@@ -78,19 +78,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save address.' }, { status: 500 })
   }
 
-  // Mark all unshipped cellar rows for this customer as shipped
+  // Mark pre-linked cellar rows as shipped (new flow: handleShip pre-links rows)
   const { error: cellarError } = await sb
     .from('cellar')
-    .update({
-      shipment_id: shipment.id,
-      shipped_at: new Date().toISOString(),
-    })
-    .eq('customer_id', shipment.customer_id)
+    .update({ shipped_at: new Date().toISOString() })
+    .eq('shipment_id', shipment.id)
     .is('shipped_at', null)
 
   if (cellarError) {
-    console.error('cellar update error', cellarError)
-    // Shipment is already confirmed — don't surface this error to the customer
+    console.error('cellar pre-link update error', cellarError)
+  }
+
+  // Legacy fallback: if no rows were pre-linked, link all unshipped rows now
+  const { count } = await sb
+    .from('cellar')
+    .select('*', { count: 'exact', head: true })
+    .eq('shipment_id', shipment.id)
+
+  if ((count ?? 0) === 0) {
+    const { error: legacyError } = await sb
+      .from('cellar')
+      .update({
+        shipment_id: shipment.id,
+        shipped_at: new Date().toISOString(),
+      })
+      .eq('customer_id', shipment.customer_id)
+      .is('shipped_at', null)
+
+    if (legacyError) {
+      console.error('cellar legacy update error', legacyError)
+    }
   }
 
   return NextResponse.json({ ok: true })

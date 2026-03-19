@@ -69,13 +69,13 @@ export default function DetailsPage() {
   }
 
   return (
-    <div className="bg-stone-900 rounded-2xl border border-stone-700 p-8">
+    <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
-        <p className="text-xs font-medium tracking-widest text-stone-500 uppercase mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
           Step 3 of 4
         </p>
-        <h2 className="text-xl font-light text-stone-100">A few more details</h2>
-        <p className="mt-1 text-sm text-stone-400">
+        <h2 className="font-serif text-2xl text-cream">A few more details</h2>
+        <p className="font-sans text-sm text-cream/55 mt-1">
           Required for age verification and UK compliance.
         </p>
       </div>
@@ -83,7 +83,7 @@ export default function DetailsPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* First name */}
         <div>
-          <label htmlFor="firstName" className="block text-sm text-stone-400 mb-1.5">
+          <label htmlFor="firstName" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             First name
           </label>
           <input
@@ -94,13 +94,13 @@ export default function DetailsPage() {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
-            className="w-full bg-stone-800 border border-stone-600 rounded-lg px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-stone-400 transition-colors"
+            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
           />
         </div>
 
         {/* Date of birth */}
         <div>
-          <label className="block text-sm text-stone-400 mb-1.5">
+          <label className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
             Date of birth
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -111,7 +111,7 @@ export default function DetailsPage() {
                 value={dobDay}
                 onChange={(e) => setDobDay(e.target.value)}
                 required
-                className="w-full bg-stone-800 border border-stone-600 rounded-lg px-3 py-3 text-stone-100 focus:outline-none focus:border-stone-400 transition-colors appearance-none"
+                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
               >
                 <option value="">Day</option>
                 {DAYS.map((d) => (
@@ -126,7 +126,7 @@ export default function DetailsPage() {
                 value={dobMonth}
                 onChange={(e) => setDobMonth(e.target.value)}
                 required
-                className="w-full bg-stone-800 border border-stone-600 rounded-lg px-3 py-3 text-stone-100 focus:outline-none focus:border-stone-400 transition-colors appearance-none"
+                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
               >
                 <option value="">Month</option>
                 {MONTHS.map((m, i) => (
@@ -141,7 +141,7 @@ export default function DetailsPage() {
                 value={dobYear}
                 onChange={(e) => setDobYear(e.target.value)}
                 required
-                className="w-full bg-stone-800 border border-stone-600 rounded-lg px-3 py-3 text-stone-100 focus:outline-none focus:border-stone-400 transition-colors appearance-none"
+                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
               >
                 <option value="">Year</option>
                 {YEARS.map((y) => (
@@ -159,9 +159,9 @@ export default function DetailsPage() {
               type="checkbox"
               checked={ageConsent}
               onChange={(e) => setAgeConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-stone-100 cursor-pointer"
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
             />
-            <span className="text-sm text-stone-400 leading-relaxed">
+            <span className="text-sm text-cream/60 leading-relaxed font-sans">
               I confirm I am 18 or over and a UK resident.{' '}
               <span className="text-red-400">*</span>
             </span>
@@ -172,18 +172,18 @@ export default function DetailsPage() {
               type="checkbox"
               checked={marketingConsent}
               onChange={(e) => setMarketingConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-stone-100 cursor-pointer"
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
             />
-            <span className="text-sm text-stone-400 leading-relaxed">
-              I agree to receive promotional SMS messages from Cellar Text. Reply{' '}
-              <strong className="text-stone-300">STOP</strong> at any time to unsubscribe.{' '}
+            <span className="text-sm text-cream/60 leading-relaxed font-sans">
+              I agree to receive promotional SMS messages from The Cellar Club. Reply{' '}
+              <strong className="text-cream/80 font-medium">STOP</strong> at any time to unsubscribe.{' '}
               <span className="text-red-400">*</span>
             </span>
           </label>
         </div>
 
         {error && (
-          <p className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-4 py-3">
+          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
             {error}
           </p>
         )}
@@ -191,7 +191,7 @@ export default function DetailsPage() {
         <button
           type="submit"
           disabled={loading || !firstName.trim() || !dobDay || !dobMonth || !dobYear}
-          className="w-full bg-stone-100 hover:bg-white text-stone-900 font-medium rounded-lg px-4 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Completing sign-up…' : 'Complete sign-up'}
         </button>

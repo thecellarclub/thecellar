@@ -9,6 +9,7 @@ import ShipmentActions from '@/app/admin/_components/ShipmentActions'
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700',
+    confirmed: 'bg-purple-100 text-purple-700',
     dispatched: 'bg-blue-100 text-blue-700',
     delivered: 'bg-green-100 text-green-700',
   }
@@ -27,7 +28,7 @@ export default async function ShipmentsPage() {
 
   const { data: shipments } = await sb
     .from('shipments')
-    .select('id, status, tracking_number, created_at, dispatched_at, delivered_at, customers(id, first_name, last_name, phone, address_line1, address_line2, city, postcode)')
+    .select('id, status, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
     .order('created_at', { ascending: false })
 
   const pending = (shipments ?? []).filter((s) => s.status === 'pending').length
@@ -75,19 +76,21 @@ export default async function ShipmentsPage() {
                   const c = s.customers as unknown as {
                     id: string
                     first_name: string
-                    last_name: string
                     phone: string
-                    address_line1: string | null
-                    address_line2: string | null
-                    city: string | null
-                    postcode: string | null
+                  } | null
+
+                  const addr = s.shipping_address as {
+                    line1?: string
+                    line2?: string | null
+                    city?: string
+                    postcode?: string
                   } | null
 
                   const addressParts = [
-                    c?.address_line1,
-                    c?.address_line2,
-                    c?.city,
-                    c?.postcode,
+                    addr?.line1,
+                    addr?.line2,
+                    addr?.city,
+                    addr?.postcode,
                   ].filter(Boolean)
 
                   return (
@@ -95,7 +98,7 @@ export default async function ShipmentsPage() {
                       <td className="px-4 py-3 border-b border-gray-100">
                         {c ? (
                           <Link href={`/admin/customers/${c.id}`} className="hover:underline font-medium">
-                            {c.first_name} {c.last_name}
+                            {c.first_name}
                           </Link>
                         ) : (
                           '—'

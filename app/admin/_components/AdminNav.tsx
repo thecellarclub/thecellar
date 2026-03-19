@@ -11,24 +11,24 @@ const links = [
   { href: '/admin/texts', label: 'Text history', exact: false },
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
+  { href: '/admin/requests', label: 'Requests', exact: false },
+  { href: '/admin/concierge', label: 'Concierge', exact: false },
 ]
 
 export default function AdminNav() {
   const pathname = usePathname()
-
   return (
-    <nav className="flex-1 px-2 py-3 space-y-0.5">
+    <nav className='flex-1 px-2 py-3 space-y-0.5'>
       {links.map(({ href, label, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(href)
+        const cls = active
+          ? 'bg-gray-700 text-white'
+          : 'text-gray-400 hover:text-white hover:bg-gray-800'
         return (
           <Link
             key={href}
             href={href}
-            className={`flex items-center px-3 py-2 rounded text-sm font-medium transition-colors ${
-              active
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
+            className={'flex items-center px-3 py-2 rounded text-sm font-medium transition-colors ' + cls}
           >
             {label}
           </Link>

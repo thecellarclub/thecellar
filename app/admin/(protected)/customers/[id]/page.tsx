@@ -4,6 +4,8 @@ import { redirect, notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
 import DeactivateButton from '../../../_components/DeactivateButton'
+import RefundButton from '../../../_components/RefundButton'
+import AddBottlesForm from '../../../_components/AddBottlesForm'
 import Link from 'next/link'
 
 function StatusBadge({ status }: { status: string }) {
@@ -31,7 +33,7 @@ export default async function CustomerDetailPage({
   const { id } = await params
   const sb = createServiceClient()
 
-  const [{ data: customer }, { data: orders }, { data: cellar }] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: cellar }, { data: activeWines }] = await Promise.all([
     sb.from('customers').select('*').eq('id', id).maybeSingle(),
     sb
       .from('orders')
@@ -43,6 +45,7 @@ export default async function CustomerDetailPage({
       .select('id, quantity, added_at, shipped_at, wines(name)')
       .eq('customer_id', id)
       .order('added_at', { ascending: false }),
+    sb.from('wines').select('id, name').eq('active', true).order('name'),
   ])
 
   if (!customer) notFound()
@@ -129,14 +132,14 @@ export default async function CustomerDetailPage({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                {['Wine', 'Qty', 'Added', 'Shipped'].map((h) => (
-                  <th key={h} className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200 px-4 py-2 bg-gray-50">{h}</th>
+                {['Wine', 'Qty', 'Added', 'Shipped', ''].map((h, i) => (
+                  <th key={i} className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200 px-4 py-2 bg-gray-50">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {(cellar ?? []).length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Cellar empty</td></tr>
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">Cellar empty</td></tr>
               ) : (
                 (cellar ?? []).map((c) => {
                   const wine = c.wines as unknown as { name: string } | null
@@ -150,12 +153,30 @@ export default async function CustomerDetailPage({
                           ? <span className="text-green-600">{formatDate(c.shipped_at)}</span>
                           : <span className="text-gray-400">In cellar</span>}
                       </td>
+                      <td className="px-4 py-2.5 border-b border-gray-100">
+                        {!c.shipped_at && (
+                          <RefundButton
+                            cellarId={c.id}
+                            customerId={id}
+                            maxQuantity={c.quantity}
+                            wineName={wine?.name ?? 'Unknown wine'}
+                          />
+                        )}
+                      </td>
                     </tr>
                   )
                 })
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Manually add bottles */}
+        <div className="border-t border-gray-200">
+          <div className="px-4 pt-3 pb-1">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Manually add bottles</h3>
+          </div>
+          <AddBottlesForm customerId={id} wines={activeWines ?? []} />
         </div>
       </div>
     </div>
