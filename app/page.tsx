@@ -166,37 +166,6 @@ function WineBottleSvg() {
   )
 }
 
-// ─── Marquee ticker ────────────────────────────────────────────────────────────
-
-function MarqueeTicker() {
-  const text = '\u00a0\u00a0\u00a0\u00a0◆\u00a0\u00a0\u00a0\u00a0THE CELLAR CLUB\u00a0\u00a0\u00a0\u00a0◆\u00a0\u00a0\u00a0\u00a0DURHAM\u00a0\u00a0\u00a0\u00a0◆\u00a0\u00a0\u00a0\u00a0SOMMELIER SELECTED\u00a0\u00a0\u00a0\u00a0◆\u00a0\u00a0\u00a0\u00a0FINE WINE BY SMS\u00a0\u00a0\u00a0\u00a0◆\u00a0\u00a0\u00a0\u00a0DIRECT IMPORT'
-  return (
-    <div
-      className="overflow-hidden border-t border-b py-3"
-      style={{ borderColor: 'rgba(201,133,29,0.2)' }}
-      aria-hidden="true"
-    >
-      <div
-        style={{
-          display: 'flex',
-          whiteSpace: 'nowrap',
-          animation: 'marquee 28s linear infinite',
-        }}
-      >
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="font-serif uppercase tracking-[0.25em] pr-8"
-            style={{ fontSize: '0.7rem', color: 'rgba(201,133,29,0.65)', flexShrink: 0 }}
-          >
-            {text}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── Section divider ───────────────────────────────────────────────────────────
 
 function SectionDivider() {
@@ -284,17 +253,26 @@ export default function HomePage() {
           {/* Divider */}
           <div className="w-16 h-px bg-gold mx-auto mb-10 opacity-60" />
 
-          {/* Subheading — three lines, staggered fade-in */}
-          <div className="mb-10 max-w-[600px] mx-auto space-y-3">
-            <p className="hero-line hero-line-1 font-serif text-cream/85 text-[1.5rem] leading-snug text-center">
-              Two texts a week. Reply how many bottles you want.
+          {/* Subheading */}
+          <div className="mb-10 max-w-[600px] mx-auto">
+            {/* Primary line */}
+            <p className="font-serif text-cream/90 text-[1.45rem] leading-snug text-center mb-5">
+              Sommelier selected wines at insider rates.
             </p>
-            <p className="hero-line hero-line-2 font-serif text-cream/85 text-[1.5rem] leading-snug text-center">
-              Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-            </p>
-            <p className="hero-line hero-line-3 font-serif text-cream/85 text-[1.5rem] leading-snug text-center">
-              We store and ship for free once you fill a case.
-            </p>
+
+            {/* Secondary lines */}
+            <div className="space-y-1.5 text-center">
+              {[
+                'Two texts a week.',
+                'Reply how many bottles.',
+                'We store until you fill a case.',
+                'Then ship it for free.',
+              ].map((line) => (
+                <p key={line} className="font-serif text-cream/60 text-[1.05rem] leading-snug">
+                  {line}
+                </p>
+              ))}
+            </div>
           </div>
 
           {/* Sign-up form */}
@@ -313,16 +291,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Marquee ── */}
-      <MarqueeTicker />
-
       {/* ── Divider ── */}
-      <div className="bg-maroon py-10">
+      <div className="bg-maroon-dark py-10">
         <SectionDivider />
       </div>
 
       {/* ── Section 2: How It Works ── */}
-      <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
+      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
@@ -358,27 +333,16 @@ export default function HomePage() {
               },
             ].map(({ num, heading, body }, i) => (
               <FadeUp key={num} delay={i * 80}>
-                <div className="text-center md:text-left relative">
-                  {/* Large background number */}
+                <div className="text-center md:text-left">
                   <span
-                    className="font-serif absolute -top-2 left-0 select-none pointer-events-none"
-                    style={{
-                      fontSize: '7rem',
-                      lineHeight: 1,
-                      color: '#C9851D',
-                      opacity: 0.07,
-                    }}
-                    aria-hidden="true"
+                    className="font-serif text-gold text-xl tracking-[0.2em] transition-opacity duration-200 hover:opacity-100"
+                    style={{ opacity: 0.7 }}
                   >
                     {num}
                   </span>
-                  {/* Step label */}
-                  <span className="font-serif text-gold text-sm tracking-[0.2em] uppercase relative z-10">
-                    Step {num}
-                  </span>
-                  <h3 className="font-serif text-cream text-2xl mt-2 mb-3 relative z-10">{heading}</h3>
+                  <h3 className="font-serif text-cream text-2xl mt-2 mb-3">{heading}</h3>
                   <p
-                    className="font-sans text-cream/75 text-base leading-relaxed relative z-10"
+                    className="font-sans text-cream/60 text-sm leading-relaxed"
                     style={{ borderLeft: '3px solid #9B1B30', paddingLeft: '1rem' }}
                   >
                     {body}
@@ -389,9 +353,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ── Marquee ── */}
-      <MarqueeTicker />
 
       {/* ── Divider ── */}
       <div className="bg-maroon py-10">
@@ -425,8 +386,8 @@ export default function HomePage() {
                     <line x1="3" y1="12" x2="21" y2="12"/>
                   </svg>
                 ),
-                heading: 'Wines you won\'t find anywhere else',
-                body: 'We import directly and have relationships most retailers don\'t. Taiwan, Georgia, Texas, India — if it\'s interesting, Daniel will find it.',
+                heading: 'Off the beaten path',
+                body: 'We import directly and have relationships most retailers don\'t. Taiwan, Georgia, Texas, India: if it\'s interesting, Daniel will find it.',
               },
               {
                 icon: (
@@ -437,7 +398,7 @@ export default function HomePage() {
                   </svg>
                 ),
                 heading: 'Sommelier selected',
-                body: 'Every bottle is chosen by Daniel Jonberger — 20 years in wine, including time at the 2-star Raby Hunt. He doesn\'t pick anything he wouldn\'t open himself.',
+                body: 'Every bottle is chosen by Daniel Jonberger, 20 years in wine, including time at the 2-star Raby Hunt. You\'re basically getting what he\'s drinking himself (or wishing he was).',
               },
               {
                 icon: (
@@ -480,7 +441,7 @@ export default function HomePage() {
                   </svg>
                 ),
                 heading: 'Request a wine',
-                body: 'Want something we haven\'t featured? Request it. If enough members are in, we\'ll run it as a drop — at bulk prices.',
+                body: 'Want something we haven\'t featured? Request it. If enough members are in, we\'ll run it as a drop, at bulk prices.',
               },
             ].map(({ icon, heading, body }, i) => (
               <FadeUp key={heading} delay={i * 80}>
@@ -494,7 +455,7 @@ export default function HomePage() {
                 >
                   {icon}
                   <h3 className="font-serif text-cream text-xl mb-2">{heading}</h3>
-                  <p className="font-sans text-cream/75 text-base leading-relaxed">{body}</p>
+                  <p className="font-sans text-cream/55 text-sm leading-relaxed">{body}</p>
                 </div>
               </FadeUp>
             ))}
@@ -503,29 +464,56 @@ export default function HomePage() {
       </section>
 
       {/* ── Pull quote ── */}
-      <section className="bg-maroon px-6 py-20 overflow-hidden">
+      <section className="bg-maroon px-6 py-24 overflow-hidden">
         <FadeUp>
-          <blockquote className="max-w-3xl mx-auto text-center">
-            <p
-              className="font-serif text-cream/90 leading-tight"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)' }}
+          <div className="max-w-3xl mx-auto text-center relative">
+
+            {/* Decorative opening quotation mark */}
+            <span
+              className="font-serif absolute select-none pointer-events-none"
+              aria-hidden="true"
+              style={{
+                fontSize: '22rem',
+                lineHeight: 1,
+                color: '#C9851D',
+                opacity: 0.045,
+                top: '-4rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontStyle: 'normal',
+              }}
             >
-              &ldquo;We don&apos;t send you wine. We send you a chance to say yes or no. You&apos;re always in control.&rdquo;
-            </p>
-            <footer className="mt-6 font-sans text-cream/40 text-sm tracking-[0.2em] uppercase">
-              Daniel Jonberger &mdash; Sommelier
-            </footer>
-          </blockquote>
+              &ldquo;
+            </span>
+
+            <blockquote className="relative z-10">
+              <p
+                className="font-serif text-cream/90 leading-tight"
+                style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.6rem)' }}
+              >
+                Wines you won&apos;t find on any shelf, at prices that feel like a secret.
+              </p>
+              <footer className="mt-8 space-y-1">
+                <p className="font-sans text-cream/35 text-xs tracking-[0.2em] uppercase">
+                  The Cellar Club
+                </p>
+                <p className="font-serif text-cream/30 text-sm italic">
+                  (Not recommended for anyone happy with their current wine spend.)
+                </p>
+              </footer>
+            </blockquote>
+
+          </div>
         </FadeUp>
       </section>
 
       {/* ── Divider ── */}
-      <div className="bg-maroon py-10">
+      <div className="bg-maroon-dark py-10">
         <SectionDivider />
       </div>
 
       {/* ── Section 4: The Story ── */}
-      <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
+      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
@@ -543,7 +531,7 @@ export default function HomePage() {
                 </p>
               </FadeUp>
 
-              <div className="space-y-5 font-serif text-cream/80 text-xl leading-relaxed">
+              <div className="space-y-5 font-serif text-cream/75 text-lg leading-relaxed">
                 <FadeUp delay={60}>
                   <p>
                     We&apos;re Craig and Daniel. We run Crush and Norse — two wine bars and shops in Durham. Our cellar is big enough to warrant its own membership.
@@ -588,7 +576,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="bg-maroon py-10">
+      <div className="bg-maroon-dark py-10">
         <SectionDivider />
       </div>
 
@@ -606,7 +594,7 @@ export default function HomePage() {
             <p className="font-serif text-base uppercase tracking-[0.2em] text-gold mb-4 text-center pt-20">
               The Levels
             </p>
-            <p className="font-sans text-cream/75 text-base text-center max-w-md mx-auto mb-14">
+            <p className="font-sans text-cream/55 text-sm text-center max-w-md mx-auto mb-14">
               The more you spend, the more you unlock. Tiers are assessed annually on your rolling 12-month spend.
             </p>
           </FadeUp>
@@ -624,13 +612,13 @@ export default function HomePage() {
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-cream/50 mb-1">Entry · Free to join</p>
                 <h3 className="font-serif text-2xl text-cream mb-5">Bailey</h3>
-                <ul className="space-y-3 font-sans text-base text-cream/80 leading-relaxed">
+                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
                   <li>Two weekly drops via SMS</li>
                   <li>Free delivery at 12 bottles</li>
                   <li>Unlimited wine request service</li>
                   <li>Wine concierge (up to 2 requests/month)</li>
                 </ul>
-                <p className="font-sans text-sm text-cream/60 mt-6">Free to join.</p>
+                <p className="font-sans text-xs text-cream/30 mt-6">Free to join.</p>
               </div>
             </FadeUp>
 
@@ -646,13 +634,13 @@ export default function HomePage() {
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £500</p>
                 <h3 className="font-serif text-2xl text-cream mb-5">Elvet</h3>
-                <ul className="space-y-3 font-sans text-base text-cream/80 leading-relaxed">
+                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
                   <li>Everything in Bailey</li>
                   <li>Up to 5 wine concierge requests/month</li>
                   <li>2 × tickets to wine tastings (Durham or London)</li>
                   <li>5% discount on all orders</li>
                 </ul>
-                <p className="font-sans text-sm text-gold/80 mt-6">Unlocks automatically when you hit £500 in a rolling 12 months.</p>
+                <p className="font-sans text-xs text-gold/50 mt-6">Unlocks automatically when you hit £500 in a rolling 12 months.</p>
               </div>
             </FadeUp>
 
@@ -669,14 +657,14 @@ export default function HomePage() {
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £1,000</p>
                 <h3 className="font-serif text-2xl text-cream mb-5">Palatine</h3>
-                <ul className="space-y-3 font-sans text-base text-cream/80 leading-relaxed">
+                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
                   <li>Everything in Elvet</li>
                   <li>Free delivery at 6 bottles</li>
                   <li>10% discount on all orders</li>
                   <li>4 × tickets to wine tastings (Durham or London)</li>
-                  <li>First look — 2 hours before everyone else</li>
+                  <li>First look: 2 hours before everyone else</li>
                 </ul>
-                <p className="font-sans text-sm text-gold/80 mt-6">Unlocks at £1,000. Free shipping halves to 6 bottles.</p>
+                <p className="font-sans text-xs text-gold/50 mt-6">Unlocks at £1,000. Free shipping drops to 6 bottles.</p>
               </div>
             </FadeUp>
           </div>
