@@ -684,7 +684,67 @@ async function handleYes(
   customer: Customer,
   sb: ReturnType<typeof createServiceClient>
 ): Promise<NextResponse> {
-  // Find the most recent pending order for this customer
+  // ── Check for pending shipment confirmation first ─────────────────────────
+  // This fires when the customer replies YES after the "case complete" SMS
+  // which offers to ship to their saved address.
+  const { data: pendingShipment } = await sb
+    .from('shipments')
+    .select('id, bottle_count, token')
+    .eq('customer_id', customer.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (pendingShipment) {
+    // Fetch the saved address
+    const { data: cust } = await sb
+      .from('customers')
+      .select('default_address')
+      .eq('id', customer.id)
+      .maybeSingle()
+
+    const addr = cust?.default_address as Record<string, string> | null
+
+    if (addr?.line1) {
+      // Confirm the shipment using the saved address
+      await sb
+        .from('shipments')
+        .update({ shipping_address: addr, status: 'confirmed' })
+        .eq('id', pendingShipment.id)
+
+      // Mark pre-linked cellar rows as shipped
+      await sb
+        .from('cellar')
+        .update({ shipped_at: new Date().toISOString() })
+        .eq('shipment_id', pendingShipment.id)
+        .is('shipped_at', null)
+
+      // Legacy fallback: if no rows were pre-linked, link all unshipped rows now
+      const { count } = await sb
+        .from('cellar')
+        .select('*', { count: 'exact', head: true })
+        .eq('shipment_id', pendingShipment.id)
+
+      if ((count ?? 0) === 0) {
+        await sb
+          .from('cellar')
+          .update({ shipment_id: pendingShipment.id, shipped_at: new Date().toISOString() })
+          .eq('customer_id', customer.id)
+          .is('shipped_at', null)
+      }
+
+      const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
+      await sendSms(from, `Confirmed! We'll get your ${pendingShipment.bottle_count} bottles on their way to ${addrLine}. We'll text you a tracking number when they're dispatched.`)
+      return twimlOk()
+    }
+
+    // No saved address — send the link instead
+    await sendSms(from, `Please confirm your delivery address here: ${APP_URL}/ship?token=${pendingShipment.token}`)
+    return twimlOk()
+  }
+
+  // ── Find the most recent pending order for this customer ──────────────────
   const { data: order } = await sb
     .from('orders')
     .select('id, wine_id, quantity, price_pence, total_pence, confirmation_expires_at, auth_token')
@@ -1148,6 +1208,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         from,
         `What's on your mind? Ask us anything — e.g. 'can you help me find a wine gift?' or 'how long does shipping take?'.\n\nReply EXIT to go back.`
       )
+      return twimlOk()
+    }
+
+    // ── CHANGE (update delivery address on pending shipment) ──────────────
+    if (body === 'change') {
+      const { data: pending } = await sb
+        .from('shipments')
+        .select('token')
+        .eq('customer_id', customer.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (pending?.token) {
+        await sendSms(from, `Update your delivery address here: ${APP_URL}/ship?token=${pending.token}`)
+      } else {
+        await sendSms(from, `You don't have a pending shipment to update.`)
+      }
       return twimlOk()
     }
 

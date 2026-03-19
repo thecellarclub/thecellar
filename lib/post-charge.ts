@@ -150,7 +150,7 @@ export async function handlePostCharge({
       const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
       await sendSms(
         customerPhone,
-        `Your case is complete!\n\n${wineLines}\n\nWe'll ship to: ${addrLine}\n\nReply YES to confirm or SHIP to change your address.`
+        `Your case is complete!\n\n${wineLines}\n\nWe'll ship to: ${addrLine}\n\nReply YES to confirm, or CHANGE to update your address.`
       )
     } else {
       // No saved address — send the link now
