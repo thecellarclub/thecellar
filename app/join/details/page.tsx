@@ -20,7 +20,6 @@ export default function DetailsPage() {
   const [dobMonth, setDobMonth] = useState('')
   const [dobYear, setDobYear] = useState('')
   const [ageConsent, setAgeConsent] = useState(false)
-  const [ukConsent, setUkConsent] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
   const [emailExists, setEmailExists] = useState(false)
@@ -31,8 +30,8 @@ export default function DetailsPage() {
     setError('')
     setEmailExists(false)
 
-    if (!ageConsent || !ukConsent || !marketingConsent) {
-      setError('Please tick all boxes to continue.')
+    if (!ageConsent || !marketingConsent) {
+      setError('Please tick both boxes to continue.')
       return
     }
 
@@ -179,33 +178,24 @@ export default function DetailsPage() {
 
         {/* Consent checkboxes */}
         <div className="space-y-3 pt-1">
-          {/* Age confirmation */}
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={ageConsent}
-              onChange={(e) => setAgeConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
-            />
-            <span className="text-sm text-cream/60 leading-relaxed font-sans">
-              I confirm I am 18 or over. We are required to verify this as we sell alcohol.{' '}
-              <span className="text-red-400">*</span>
-            </span>
-          </label>
-
-          {/* UK delivery address */}
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={ukConsent}
-              onChange={(e) => setUkConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
-            />
-            <span className="text-sm text-cream/60 leading-relaxed font-sans">
-              I have a UK delivery address.{' '}
-              <span className="text-red-400">*</span>
-            </span>
-          </label>
+          {/* Age + UK delivery address */}
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={ageConsent}
+                onChange={(e) => setAgeConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
+              />
+              <span className="text-sm text-cream/60 leading-relaxed font-sans">
+                I confirm I am 18 or over and have a UK delivery address.{' '}
+                <span className="text-red-400">*</span>
+              </span>
+            </label>
+            <p className="font-sans text-xs text-cream/35 mt-1 ml-7">
+              Required — we sell alcohol and are legally required to verify your age.
+            </p>
+          </div>
 
           {/* Marketing consent */}
           <label className="flex items-start gap-3 cursor-pointer group">
@@ -224,15 +214,21 @@ export default function DetailsPage() {
         </div>
 
         {emailExists && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
-            An account with this email already exists.{' '}
-            <Link
-              href="/join/card"
-              className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors"
-            >
-              Go back and use a different email →
-            </Link>
-          </p>
+          <div className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3 space-y-1">
+            <p>An account with this email already exists.</p>
+            <p>
+              Already a member?{' '}
+              <Link href="/portal" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
+                Log in to your portal →
+              </Link>
+            </p>
+            <p>
+              Or{' '}
+              <Link href="/join/card" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
+                go back to use a different email →
+              </Link>
+            </p>
+          </div>
         )}
 
         {error && (
