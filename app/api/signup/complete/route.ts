@@ -135,9 +135,10 @@ export async function POST(req: NextRequest) {
     })
 
     // Send welcome SMS — non-blocking, don't fail signup if this errors
+    // Note: avoid em-dash and non-GSM-7 characters or Twilio forces Unicode encoding (70 chars/segment)
     sendSms(
       normalisedPhone,
-      `Welcome to The Cellar Club, ${firstName.trim()}. Save this number as "The Cellar Club" — it's how we reach you.\n\nHere's the deal: Daniel texts you a wine 1–2 times a week. Reply with how many bottles you want. We'll confirm the total — text YES to confirm and we charge your card. Your bottles go into your cellar. Fill 12 and we ship the whole case to you free.\n\nYou're starting on Bailey membership. Hit £500 in a year and you unlock Elvet. £1,000 gets you to Palatine. Better tiers, better perks.\n\nFirst drop coming soon.`
+      `A hearty welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 - then deliver it to you for free.`
     ).catch((err) => console.error('[complete] welcome SMS failed', err))
 
     // Clear session

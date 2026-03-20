@@ -962,6 +962,7 @@ async function handleYes(
 
 async function handleOffer(
   from: string,
+  customer: Customer,
   sb: ReturnType<typeof createServiceClient>
 ): Promise<NextResponse> {
   const { data: activeText } = await sb
@@ -991,6 +992,7 @@ async function handleOffer(
     from,
     `This week's offer: ${vintage}${w.name}${origin ? ` (${origin})` : ''} — ${price} per bottle.${desc}\n\nReply with how many bottles you'd like.`
   )
+  await sb.from('customers').update({ sms_awaiting: 'offer' }).eq('id', customer.id)
   return twimlOk()
 }
 
@@ -1060,6 +1062,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return twimlOk()
       }
 
+      // If awaiting offer and customer replies with a number, pass through to order flow
+      if (customer.sms_awaiting === 'offer') {
+        const qty = parseInt(body, 10)
+        if (!isNaN(qty) && qty > 0 && /^\d+$/.test(body)) {
+          await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
+          return await handlePendingOrder(from, customer, qty, sb)
+        }
+      }
+
       const pendingType = customer.sms_awaiting
       await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
 
@@ -1099,6 +1110,42 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           )
         }
         await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
+        return twimlOk()
+      }
+
+      if (pendingType === 'offer') {
+        const { data: activeOffer } = await sb
+          .from('texts')
+          .select('wines(name, price_pence)')
+          .eq('is_active', true)
+          .maybeSingle() as { data: { wines: { name: string; price_pence: number } } | null }
+
+        const wineName = activeOffer?.wines?.name ?? 'the current offer'
+        const winePrice = activeOffer?.wines?.price_pence
+        const priceStr = winePrice ? `£${(winePrice / 100).toFixed(0)}/bottle` : null
+        const context = `Re: ${wineName}${priceStr ? ` (${priceStr})` : ''}`
+
+        const rawMessage = (params['Body'] ?? '').trim()
+        const name = customer.first_name ?? customer.phone
+
+        await sb.from('concierge_messages').insert({
+          customer_id: customer.id,
+          direction: 'inbound',
+          message: rawMessage,
+          category: 'purchase_query',
+          context,
+        })
+
+        if (customer.concierge_status === 'closed') {
+          await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+        }
+
+        await notifyAdmin(
+          `Purchase query from ${name} — re: ${wineName}`,
+          `${name} replied to the offer but didn't reply with a number.\n\nMessage: ${rawMessage}\nWine: ${wineName}${priceStr ? ` (${priceStr})` : ''}\nPhone: ${customer.phone}\n\nThis is a potential missed order — please follow up.`
+        )
+
+        await sendSms(from, `To order, just reply with a number — e.g. 2 for 2 bottles. We've passed your message to Daniel and he'll be in touch.`)
         return twimlOk()
       }
     }
@@ -1251,7 +1298,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // ── OFFER ─────────────────────────────────────────────────────────────
     if (body === 'offer') {
-      return await handleOffer(from, sb)
+      return await handleOffer(from, customer, sb)
     }
 
     // ── YES → charge pending order ────────────────────────────────────────

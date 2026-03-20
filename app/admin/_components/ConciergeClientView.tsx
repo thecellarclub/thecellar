@@ -12,6 +12,8 @@ export type ConciergeMsg = {
   message: string
   direction: 'inbound' | 'outbound'
   created_at: string
+  category?: string
+  context?: string
 }
 
 export type ConciergeThread = {
@@ -176,13 +178,18 @@ function MobileThreadDetail({
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
         {thread.messages.map((msg) => {
           const isOut = msg.direction === 'outbound'
+          const isPurchaseQuery = msg.category === 'purchase_query'
           return (
             <div key={msg.id} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[80%] px-4 py-3 ${isOut ? 'rounded-2xl rounded-br-sm text-white' : 'bg-white rounded-2xl rounded-bl-sm text-gray-900 border border-gray-200'}`}
                 style={isOut ? { background: '#9B1B30' } : {}}
               >
+                {isPurchaseQuery && (
+                  <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mb-1.5">Purchase query</span>
+                )}
                 <p className="text-sm leading-relaxed">{msg.message}</p>
+                {msg.context && <p className="text-xs text-gray-400 mt-1 italic">{msg.context}</p>}
                 <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-400'}`}>{timeAgo(msg.created_at)}</p>
               </div>
             </div>
@@ -221,6 +228,7 @@ function MobileThreadList({
         const unanswered = isUnanswered(thread)
         const closed = thread.status === 'closed'
 
+        const hasPurchaseQuery = thread.messages.some((m) => m.category === 'purchase_query')
         return (
           <button
             key={thread.customerId}
@@ -249,6 +257,9 @@ function MobileThreadList({
                 <p className="text-xs text-gray-500 truncate leading-relaxed">
                   {lastMsg.direction === 'outbound' ? 'You: ' : ''}{lastMsg.message}
                 </p>
+              )}
+              {hasPurchaseQuery && (
+                <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mt-1">Purchase query</span>
               )}
             </div>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-gray-400" aria-hidden="true">
@@ -398,6 +409,7 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
                   const isSelected = selectedId === thread.customerId
                   const closed = thread.status === 'closed'
 
+                  const hasPurchaseQuery = thread.messages.some((m) => m.category === 'purchase_query')
                   return (
                     <button
                       key={thread.customerId}
@@ -425,9 +437,10 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
                             {lastMsg.direction === 'outbound' ? 'You: ' : ''}{lastMsg.message}
                           </p>
                         )}
-                        <div className="flex gap-1 mt-1">
+                        <div className="flex flex-wrap gap-1 mt-1">
                           {closed && <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">closed</span>}
                           {unanswered && <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600">needs reply</span>}
+                          {hasPurchaseQuery && <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium">Purchase query</span>}
                         </div>
                       </div>
                     </button>
@@ -462,10 +475,15 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {selectedThread.messages.map((msg) => {
                   const isOutbound = msg.direction === 'outbound'
+                  const isPurchaseQuery = msg.category === 'purchase_query'
                   return (
                     <div key={msg.id} className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-prose rounded-lg px-3 py-2 text-sm ${isOutbound ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                        {isPurchaseQuery && (
+                          <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mb-1.5">Purchase query</span>
+                        )}
                         <p>{msg.message}</p>
+                        {msg.context && <p className="text-xs text-gray-500 mt-1 italic">{msg.context}</p>}
                         <p className={`text-xs mt-1 ${isOutbound ? 'text-gray-400' : 'text-gray-500'}`}>
                           {formatDateTime(msg.created_at)}
                         </p>

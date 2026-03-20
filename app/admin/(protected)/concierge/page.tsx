@@ -10,6 +10,8 @@ type ConciergeMessage = {
   message: string
   direction: 'inbound' | 'outbound'
   created_at: string
+  category: string | null
+  context: string | null
   customers: {
     first_name: string | null
     phone: string | null
@@ -25,7 +27,7 @@ export default async function ConciergePage() {
 
   const { data: messages } = await sb
     .from('concierge_messages')
-    .select('id, customer_id, message, direction, created_at, customers(first_name, phone, concierge_status)')
+    .select('id, customer_id, message, direction, created_at, category, context, customers(first_name, phone, concierge_status)')
     .order('created_at', { ascending: true })
 
   const rows = (messages ?? []) as unknown as ConciergeMessage[]
@@ -49,6 +51,8 @@ export default async function ConciergePage() {
       message: msg.message,
       direction: msg.direction,
       created_at: msg.created_at,
+      category: msg.category ?? undefined,
+      context: msg.context ?? undefined,
     })
   }
 

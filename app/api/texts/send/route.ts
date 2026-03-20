@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     // ── Send to each customer — skip snoozed, log failures but don't abort ──
     let sent = 0
     const failures: string[] = []
+    const recipientIds: string[] = []
 
     for (const customer of customers as Customer[]) {
       // Skip snoozed customers
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
           body: trimmedBody,
         })
         sent++
+        recipientIds.push(customer.id)
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error(`[texts/send] failed for ${customer.phone}:`, msg)
@@ -105,6 +107,14 @@ export async function POST(req: NextRequest) {
       .from('texts')
       .update({ recipient_count: sent })
       .eq('id', text.id)
+
+    // Set sms_awaiting = 'offer' on all successfully-reached customers
+    if (recipientIds.length > 0) {
+      await sb
+        .from('customers')
+        .update({ sms_awaiting: 'offer' })
+        .in('id', recipientIds)
+    }
 
     console.log(`[texts/send] textId=${text.id} sent=${sent} failures=${failures.length}`)
 
