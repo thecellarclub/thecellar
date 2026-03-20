@@ -72,7 +72,7 @@ function CellarDoorSvg() {
       viewBox="0 0 1000 800"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="absolute inset-0 w-full h-full hidden sm:block"
+      className="absolute inset-0 w-full h-full hidden md:block"
       style={{ opacity: 0.18 }}
       aria-hidden="true"
     >
@@ -94,51 +94,6 @@ function CellarDoorSvg() {
       {/* ── Iron ring handle (right side, mid-height ≈ y=546) ─────────── */}
       <circle cx="666" cy="546" r="30" stroke="#F0E6DC" strokeWidth="1.5" />
       <circle cx="666" cy="546" r="16" stroke="#F0E6DC" strokeWidth="1.5" />
-    </svg>
-  )
-}
-
-function WineBottleSvg() {
-  return (
-    <svg
-      viewBox="0 0 100 290"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ height: '400px', width: 'auto', opacity: 0.75 }}
-      className="mx-auto"
-      aria-hidden="true"
-    >
-      {/* Bottle outline — clean Bordeaux profile */}
-      <path
-        d="
-          M 44 20
-          Q 44 14 50 14
-          Q 56 14 56 20
-          L 56 36
-          Q 58 40 58 48
-          L 57 82
-          Q 68 96 72 118
-          Q 80 138 80 162
-          L 80 268
-          Q 80 274 50 274
-          Q 20 274 20 268
-          L 20 162
-          Q 20 138 28 118
-          Q 32 96 43 82
-          L 42 48
-          Q 42 40 44 36
-          Z
-        "
-        stroke="#F0E6DC"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      {/* Capsule line */}
-      <line x1="42" y1="44" x2="58" y2="44" stroke="#F0E6DC" strokeWidth="1" opacity="0.6" />
-      {/* Label area top */}
-      <line x1="23" y1="168" x2="77" y2="168" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
-      {/* Label area bottom */}
-      <line x1="23" y1="232" x2="77" y2="232" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
     </svg>
   )
 }
@@ -180,7 +135,6 @@ function HeroSignupForm() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (phone.trim()) {
-      // Pass the raw local number — join page applies buildPhone before the API call
       router.push(`/join?phone=${encodeURIComponent(phone.trim())}`)
     } else {
       router.push('/join')
@@ -188,8 +142,8 @@ function HeroSignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4">
-      <div className="flex-1 flex items-stretch border border-cream/30 focus-within:border-cream/60 transition-colors">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-4">
+      <div className="flex items-stretch border border-cream/30 focus-within:border-cream/60 transition-colors">
         <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
           +44
         </span>
@@ -203,10 +157,10 @@ function HeroSignupForm() {
       </div>
       <button
         type="submit"
-        className="group bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526] whitespace-nowrap"
+        className="group w-full flex items-center justify-center bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526]"
       >
         Join the Club{' '}
-        <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">
+        <span className="inline-block ml-1 transition-transform duration-150 group-hover:translate-x-[3px]">
           →
         </span>
       </button>
@@ -221,58 +175,77 @@ export default function HomePage() {
     <div className="bg-maroon text-cream">
 
       {/* ── Section 1: Hero ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon">
+      <section
+        className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon"
+        style={{
+          backgroundImage: 'url(/images/hero.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <CellarDoorSvg />
+
+        {/* Dark scrim — keeps text legible over photo */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'rgba(10,3,6,0.58)' }}
+          aria-hidden="true"
+        />
 
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
+          style={{ opacity: 0.05, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
-        <div className="relative z-10 text-center max-w-2xl mx-auto">
-          {/* Brand mark */}
-          <div className="mb-10">
-            <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80">the</span>
-            <span className="block font-serif text-7xl md:text-8xl uppercase tracking-[0.08em] leading-none text-cream">CELLAR</span>
-            <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80">club</span>
-          </div>
+        <div className="relative z-10 max-w-6xl mx-auto w-full">
+          <div className="flex flex-col md:flex-row md:items-center gap-10 md:gap-20">
 
-          {/* Divider */}
-          <div className="w-16 h-px bg-gold mx-auto mb-10 opacity-60" />
+            {/* Left column — brand mark + subtext */}
+            <div className="flex-1 text-center md:text-left">
+              {/* Brand mark */}
+              <div className="mb-10">
+                <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80 md:text-left">the</span>
+                <span className="block font-serif text-8xl md:text-[9rem] lg:text-[11rem] uppercase tracking-[0.08em] leading-none text-cream">CELLAR</span>
+                <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80 md:text-left">club</span>
+              </div>
 
-          {/* Subheading */}
-          <div className="mb-10 max-w-[600px] mx-auto">
-            {/* Primary line — slightly larger */}
-            <p className="font-serif text-cream/85 text-[1.35rem] leading-snug text-center mb-5">
-              Sommelier selected wines at insider rates.
-            </p>
+              {/* Divider */}
+              <div className="w-16 h-px bg-gold mx-auto md:mx-0 mb-10 opacity-60" />
 
-            {/* Four punchy lines — slightly smaller */}
-            <div className="space-y-2 text-center">
-              {[
-                'We text you twice a week.',
-                'Reply how many you want.',
-                'We store it until you fill a case.',
-                'Then ship it to you for free.',
-              ].map((line) => (
-                <p key={line} className="font-serif text-cream/55 text-[1.1rem] leading-snug">
-                  {line}
+              {/* Subheading */}
+              <div className="max-w-[600px] mx-auto md:mx-0">
+                <p className="font-serif text-cream/85 text-[1.35rem] leading-snug text-center md:text-left mb-5">
+                  Sommelier selected wines at insider rates.
                 </p>
-              ))}
+                <div className="space-y-2 text-center md:text-left">
+                  {[
+                    'We text you twice a week.',
+                    'Reply how many you want.',
+                    'We store it until you fill a case.',
+                    'Then ship it to you for free.',
+                  ].map((line) => (
+                    <p key={line} className="font-serif text-cream/68 leading-snug" style={{ fontSize: '1.15rem' }}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* Right column — form */}
+            <div className="md:w-[400px] shrink-0">
+              <HeroSignupForm />
+              <p className="font-sans text-cream/35 text-xs mt-2 text-center md:text-left">
+                Already a member?{' '}
+                <Link href="/portal" className="underline underline-offset-2 text-cream/45 hover:text-cream/70 transition-colors">
+                  Log in here
+                </Link>
+              </p>
+            </div>
+
           </div>
-
-          {/* Sign-up form */}
-          <HeroSignupForm />
-
-          <p className="font-sans text-cream/35 text-xs mt-2">
-            Already a member?{' '}
-            <Link href="/portal" className="underline underline-offset-2 text-cream/45 hover:text-cream/70 transition-colors">
-              Log in here
-            </Link>
-          </p>
         </div>
       </section>
 
@@ -282,11 +255,11 @@ export default function HomePage() {
       </div>
 
       {/* ── Section 2: How It Works ── */}
-      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
+      <section className="relative bg-maroon-dark px-6 pb-32 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
+          style={{ opacity: 0.05, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
@@ -298,8 +271,8 @@ export default function HomePage() {
             </p>
           </FadeUp>
 
-          {/* Three steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+          {/* Editorial stacked steps */}
+          <div>
             {[
               {
                 num: '01',
@@ -317,21 +290,22 @@ export default function HomePage() {
                 body: 'Your bottles go straight to your cellar. When you\'ve got 12, we ship the whole case to your door. Free.',
               },
             ].map(({ num, heading, body }, i) => (
-              <FadeUp key={num} delay={i * 80}>
-                <div className="text-center md:text-left">
-                  <span
-                    className="font-serif text-gold text-xl tracking-[0.2em] transition-opacity duration-200 hover:opacity-100"
-                    style={{ opacity: 0.7 }}
-                  >
-                    {num}
-                  </span>
-                  <h3 className="font-serif text-cream text-2xl mt-2 mb-3">{heading}</h3>
-                  <p
-                    className="font-sans text-cream/60 text-sm leading-relaxed"
-                    style={{ borderLeft: '3px solid #9B1B30', paddingLeft: '1rem' }}
-                  >
-                    {body}
-                  </p>
+              <FadeUp key={num} delay={i * 100}>
+                <div className="flex gap-8 md:gap-16 items-start py-10 border-b border-gold/10 last:border-0">
+                  {/* Step number */}
+                  <div className="shrink-0 w-16 md:w-24 text-right">
+                    <span
+                      className="font-serif text-gold leading-none select-none"
+                      style={{ fontSize: 'clamp(3rem, 8vw, 5rem)', opacity: 0.35 }}
+                    >
+                      {num}
+                    </span>
+                  </div>
+                  {/* Content */}
+                  <div className="flex-1 pt-1 md:pt-3">
+                    <h3 className="font-serif text-cream text-2xl md:text-3xl mb-4">{heading}</h3>
+                    <p className="font-sans text-cream/60 text-base leading-relaxed">{body}</p>
+                  </div>
                 </div>
               </FadeUp>
             ))}
@@ -345,11 +319,11 @@ export default function HomePage() {
       </div>
 
       {/* ── Section 3: The Benefits ── */}
-      <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
+      <section className="relative bg-maroon px-6 pb-28 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
+          style={{ opacity: 0.05, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
@@ -454,33 +428,13 @@ export default function HomePage() {
       </div>
 
       {/* ── Pull quote ── */}
-      <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
+      <section className="bg-maroon-dark px-6 py-36 overflow-hidden">
         <FadeUp>
           <div className="max-w-3xl mx-auto text-center relative">
-
-            {/* Giant decorative opening quote mark — behind everything */}
-            <span
-              className="font-serif select-none pointer-events-none absolute"
-              aria-hidden="true"
-              style={{
-                fontSize: '28rem',
-                lineHeight: 0.8,
-                color: '#F0E6DC',
-                opacity: 0.045,
-                top: '-3rem',
-                left: '50%',
-                transform: 'translateX(-52%)',
-                fontStyle: 'normal',
-                zIndex: 0,
-              }}
-            >
-              &ldquo;
-            </span>
-
-            <blockquote className="relative" style={{ zIndex: 1 }}>
+            <blockquote>
               <p
                 className="font-serif text-cream/90 leading-[1.25]"
-                style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)' }}
+                style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}
               >
                 Wines you won&apos;t find on any shelf, at prices that feel like a secret.
               </p>
@@ -493,7 +447,6 @@ export default function HomePage() {
                 </p>
               </footer>
             </blockquote>
-
           </div>
         </FadeUp>
       </section>
@@ -504,11 +457,11 @@ export default function HomePage() {
       </div>
 
       {/* ── Section 4: The Story ── */}
-      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
+      <section className="relative bg-maroon-dark px-6 pb-32 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
+          style={{ opacity: 0.05, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
@@ -558,9 +511,23 @@ export default function HomePage() {
               </FadeUp>
             </div>
 
-            {/* Bottle illustration */}
-            <FadeUp className="flex items-center justify-center">
-              <WineBottleSvg />
+            {/* Photo panel */}
+            <FadeUp className="relative h-[420px] md:h-[560px] overflow-hidden">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: 'url(/images/story.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  backgroundColor: '#1E0B10',
+                }}
+              />
+              {/* Bottom fade — blends into section background */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, transparent, #1E0B10)' }}
+                aria-hidden="true"
+              />
             </FadeUp>
           </div>
         </div>
@@ -576,7 +543,7 @@ export default function HomePage() {
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
+          style={{ opacity: 0.05, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
