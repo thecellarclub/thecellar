@@ -143,25 +143,36 @@ function WineBottleSvg() {
   )
 }
 
-// ─── Section divider ───────────────────────────────────────────────────────────
+// ─── Wave divider ──────────────────────────────────────────────────────────────
 
-function SectionDivider() {
+function WaveDivider({
+  from,
+  to,
+  flip = false,
+}: {
+  from: string
+  to: string
+  flip?: boolean
+}) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      <span
-        aria-hidden="true"
-        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
-      >
-        ◆
-      </span>
-      <div style={{ width: '120px', height: '1px', background: 'rgba(201,133,29,0.4)' }} />
-      <span
-        aria-hidden="true"
-        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
-      >
-        ◆
-      </span>
-    </div>
+    <svg
+      viewBox="0 0 1440 56"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '56px',
+        background: from,
+        transform: flip ? 'scaleX(-1)' : undefined,
+      }}
+      aria-hidden="true"
+    >
+      <path
+        d="M0,28 C240,56 480,0 720,28 C960,56 1200,0 1440,28 L1440,56 L0,56 Z"
+        fill={to}
+      />
+    </svg>
   )
 }
 
@@ -214,6 +225,130 @@ function HeroSignupForm() {
   )
 }
 
+// ─── Interactive How It Works ──────────────────────────────────────────────────
+
+function HowItWorks() {
+  const [active, setActive] = useState(0)
+
+  const steps = [
+    {
+      num: '01',
+      heading: 'We text you',
+      body: 'Twice a week, Daniel picks something remarkable and texts it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn\'t be this affordable.',
+      messages: [
+        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
+      ],
+    },
+    {
+      num: '02',
+      heading: 'You reply',
+      body: 'Text back how many bottles you want. We confirm, charge your card, and that\'s it. No login, no basket, no faff.',
+      messages: [
+        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
+        { from: 'you', text: '3 please' },
+        { from: 'daniel', text: 'Sorted — 3 × Primitivo at £14 = £42. Card charged. Added to your cellar.' },
+      ],
+    },
+    {
+      num: '03',
+      heading: 'We store it, you collect',
+      body: 'Your bottles go straight into your cellar account. When you\'ve got 12, we ship the whole case to your door for free.',
+      messages: [
+        { from: 'you', text: 'How many bottles do I have?' },
+        { from: 'daniel', text: 'You\'ve got 9 bottles stored. 3 more until we ship your case for free.' },
+        { from: 'you', text: 'What have I got so far?' },
+        { from: 'daniel', text: '2 × Primitivo · 3 × Grüner Veltliner · 2 × Mencia · 2 × Xinomavro. A very good case.' },
+      ],
+    },
+  ]
+
+  return (
+    <div className="relative z-10 max-w-5xl mx-auto">
+      {/* Section label */}
+      <p className="font-serif text-base uppercase tracking-[0.2em] text-gold text-center mb-14">
+        How It Works
+      </p>
+
+      <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-start">
+        {/* Left: step tabs */}
+        <div className="flex flex-col gap-2 md:w-[300px] shrink-0">
+          {steps.map((step, i) => (
+            <button
+              key={step.num}
+              onClick={() => setActive(i)}
+              className="text-left px-5 py-4 transition-all duration-200 rounded-sm"
+              style={{
+                background: active === i ? 'rgba(201,133,29,0.1)' : 'transparent',
+                borderLeft: `3px solid ${active === i ? '#C9851D' : 'rgba(240,230,220,0.1)'}`,
+              }}
+            >
+              <span
+                className="block font-serif text-xs tracking-[0.2em] mb-1 transition-colors"
+                style={{ color: active === i ? '#C9851D' : 'rgba(240,230,220,0.4)' }}
+              >
+                {step.num}
+              </span>
+              <span
+                className="block font-serif text-xl transition-colors"
+                style={{ color: active === i ? '#F0E6DC' : 'rgba(240,230,220,0.55)' }}
+              >
+                {step.heading}
+              </span>
+              {active === i && (
+                <p className="font-sans text-sm leading-relaxed mt-2" style={{ color: 'rgba(240,230,220,0.6)' }}>
+                  {step.body}
+                </p>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Right: SMS mock */}
+        <div className="flex-1 min-w-0">
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ background: '#0D0407', border: '1px solid rgba(240,230,220,0.1)' }}
+          >
+            {/* Phone status bar */}
+            <div
+              className="flex items-center justify-between px-5 py-3 border-b"
+              style={{ borderColor: 'rgba(240,230,220,0.08)' }}
+            >
+              <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.4)' }}>
+                The Cellar Club
+              </span>
+              <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.3)' }}>
+                SMS
+              </span>
+            </div>
+
+            {/* Messages */}
+            <div className="px-5 py-6 space-y-3 min-h-[200px]">
+              {steps[active].messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex ${msg.from === 'you' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className="max-w-[75%] px-4 py-2.5 rounded-2xl font-sans text-sm leading-relaxed"
+                    style={
+                      msg.from === 'you'
+                        ? { background: '#9B1B30', color: '#F0E6DC', borderBottomRightRadius: '4px' }
+                        : { background: '#2A1118', color: 'rgba(240,230,220,0.85)', borderBottomLeftRadius: '4px' }
+                    }
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Landing page ──────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -221,7 +356,21 @@ export default function HomePage() {
     <div className="bg-maroon text-cream">
 
       {/* ── Section 1: Hero ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon">
+      <section
+        className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon"
+        style={{
+          backgroundImage: 'url(/images/hero.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark scrim — keeps text legible over photo */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'rgba(10,3,6,0.6)' }}
+          aria-hidden="true"
+        />
+
         <CellarDoorSvg />
 
         {/* Noise overlay */}
@@ -276,10 +425,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="bg-maroon-dark py-10">
-        <SectionDivider />
-      </div>
+      {/* Hero → How It Works */}
+      <WaveDivider from="#120608" to="#1E0B10" />
 
       {/* ── Section 2: How It Works ── */}
       <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
@@ -290,59 +437,11 @@ export default function HomePage() {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Section label */}
-          <FadeUp>
-            <p className="font-serif text-base uppercase tracking-[0.2em] text-gold text-center mb-14">
-              How It Works
-            </p>
-          </FadeUp>
-
-          {/* Three steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-            {[
-              {
-                num: '01',
-                heading: 'We text you',
-                body: 'Twice a week, Daniel picks something remarkable. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn\'t be this affordable. It lands in your phone.',
-              },
-              {
-                num: '02',
-                heading: 'You reply',
-                body: 'Text back how many bottles you want. We\'ll confirm the total and take payment straight away. That\'s it.',
-              },
-              {
-                num: '03',
-                heading: 'We store it, you collect',
-                body: 'Your bottles go straight to your cellar. When you\'ve got 12, we ship the whole case to your door. Free.',
-              },
-            ].map(({ num, heading, body }, i) => (
-              <FadeUp key={num} delay={i * 80}>
-                <div className="text-center md:text-left">
-                  <span
-                    className="font-serif text-gold text-xl tracking-[0.2em] transition-opacity duration-200 hover:opacity-100"
-                    style={{ opacity: 0.7 }}
-                  >
-                    {num}
-                  </span>
-                  <h3 className="font-serif text-cream text-2xl mt-2 mb-3">{heading}</h3>
-                  <p
-                    className="font-sans text-cream/60 text-sm leading-relaxed"
-                    style={{ borderLeft: '3px solid #9B1B30', paddingLeft: '1rem' }}
-                  >
-                    {body}
-                  </p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
+        <HowItWorks />
       </section>
 
-      {/* ── Divider ── */}
-      <div className="bg-maroon py-10">
-        <SectionDivider />
-      </div>
+      {/* How It Works → Membership */}
+      <WaveDivider from="#1E0B10" to="#120608" flip />
 
       {/* ── Section 3: The Benefits ── */}
       <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
@@ -360,9 +459,11 @@ export default function HomePage() {
             </p>
           </FadeUp>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
+                colSpan: 'md:col-span-2',
+                largeType: true,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <circle cx="12" cy="12" r="9"/>
@@ -375,6 +476,8 @@ export default function HomePage() {
                 body: 'We import directly and have relationships most retailers don\'t. Taiwan, Georgia, Texas, India: if it\'s interesting, Daniel will find it.',
               },
               {
+                colSpan: '',
+                largeType: false,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <path d="M8 3 h8 L14.5 12 C14 14.5 12 16 12 16 C12 16 10 14.5 9.5 12 Z"/>
@@ -386,6 +489,8 @@ export default function HomePage() {
                 body: 'Every bottle is chosen by Daniel Jonberger, 20 years in wine, including time at the 2-star Raby Hunt. You\'re basically getting what he\'s drinking himself (or wishing he was).',
               },
               {
+                colSpan: '',
+                largeType: false,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <path d="M4 7 h11 l5 5 -5 5 H4 z"/>
@@ -396,6 +501,8 @@ export default function HomePage() {
                 body: 'We buy in volume across our two wine bars. You get the benefit of that.',
               },
               {
+                colSpan: 'md:col-span-2',
+                largeType: true,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <path d="M4 21 L4 12 Q4 4 12 4 Q20 4 20 12 L20 21"/>
@@ -406,6 +513,8 @@ export default function HomePage() {
                 body: 'We hold your bottles until you\'ve got 12, then ship the whole case to your door for free. No faff, no trips to the post office.',
               },
               {
+                colSpan: '',
+                largeType: false,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <path d="M5 4 h14 a1 1 0 0 1 1 1 v10 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 V5 a1 1 0 0 1 1 -1 z"/>
@@ -418,6 +527,8 @@ export default function HomePage() {
                 body: 'Got a question? Looking for a gift? Text Daniel directly. He\'ll sort it.',
               },
               {
+                colSpan: 'md:col-span-2',
+                largeType: false,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
                     <circle cx="12" cy="12" r="9"/>
@@ -428,10 +539,10 @@ export default function HomePage() {
                 heading: 'Request a wine',
                 body: 'Want something we haven\'t featured? Request it. If enough members are in, we\'ll run it as a drop, at bulk prices.',
               },
-            ].map(({ icon, heading, body }, i) => (
+            ].map(({ colSpan, largeType, icon, heading, body }, i) => (
               <FadeUp key={heading} delay={i * 80}>
                 <div
-                  className="relative overflow-hidden p-6 transition-all duration-200 hover:scale-[1.015] hover:bg-[#261015] h-full"
+                  className={`relative overflow-hidden p-6 transition-all duration-200 hover:scale-[1.015] hover:bg-[#261015] h-full${colSpan ? ` ${colSpan}` : ''}`}
                   style={{
                     background: '#1E0B10',
                     border: '1px solid rgba(240,230,220,0.12)',
@@ -439,8 +550,8 @@ export default function HomePage() {
                   }}
                 >
                   {icon}
-                  <h3 className="font-serif text-cream text-xl mb-2">{heading}</h3>
-                  <p className="font-sans text-cream/55 text-sm leading-relaxed">{body}</p>
+                  <h3 className={`font-serif text-cream mb-2 ${largeType ? 'text-2xl' : 'text-xl'}`}>{heading}</h3>
+                  <p className={`font-sans text-cream/55 leading-relaxed ${largeType ? 'text-base' : 'text-sm'}`}>{body}</p>
                 </div>
               </FadeUp>
             ))}
@@ -448,10 +559,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="bg-maroon-dark py-10">
-        <SectionDivider />
-      </div>
+      {/* Membership → Pull quote */}
+      <WaveDivider from="#120608" to="#1E0B10" />
 
       {/* ── Pull quote ── */}
       <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
@@ -498,10 +607,7 @@ export default function HomePage() {
         </FadeUp>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="bg-maroon-dark py-10">
-        <SectionDivider />
-      </div>
+      {/* Pull quote and Story share maroon-dark — no divider needed */}
 
       {/* ── Section 4: The Story ── */}
       <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
@@ -566,10 +672,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="bg-maroon-dark py-10">
-        <SectionDivider />
-      </div>
+      {/* Story → Levels */}
+      <WaveDivider from="#1E0B10" to="#120608" flip />
 
       {/* ── Section 5: The Levels ── */}
       <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
