@@ -199,9 +199,12 @@ function HeroSignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4">
-      <div className="flex-1 flex items-stretch border border-cream/30 focus-within:border-cream/60 transition-colors">
-        <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md mx-auto mb-4">
+      <div
+        className="flex items-stretch transition-colors"
+        style={{ border: '1px solid rgba(201,133,29,0.5)', boxShadow: '0 0 0 1px rgba(201,133,29,0.08)' }}
+      >
+        <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r select-none bg-transparent whitespace-nowrap" style={{ borderColor: 'rgba(201,133,29,0.3)' }}>
           +44
         </span>
         <input
@@ -209,12 +212,12 @@ function HeroSignupForm() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="7700 900000"
-          className="flex-1 bg-transparent px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+          className="flex-1 bg-transparent px-4 py-3 text-cream placeholder-cream/40 focus:outline-none font-sans text-base"
         />
       </div>
       <button
         type="submit"
-        className="group bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526] whitespace-nowrap"
+        className="group w-full bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526]"
       >
         Join the Club{' '}
         <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">
@@ -263,7 +266,7 @@ function HowItWorks() {
   ]
 
   return (
-    <div className="relative z-10 max-w-5xl mx-auto">
+    <div className="relative z-10 max-w-5xl mx-auto pt-16">
       {/* Section label */}
       <p className="font-serif text-base uppercase tracking-[0.2em] text-gold text-center mb-14">
         How It Works
@@ -623,7 +626,7 @@ export default function HomePage() {
             {/* Text column */}
             <div>
               <FadeUp>
-                <p className="font-serif text-base uppercase tracking-[0.2em] text-gold mb-8">
+                <p className="font-serif text-base uppercase tracking-[0.2em] text-gold mb-8 pt-20">
                   Our Story
                 </p>
               </FadeUp>
