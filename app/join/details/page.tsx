@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const MONTHS = [
@@ -19,16 +20,19 @@ export default function DetailsPage() {
   const [dobMonth, setDobMonth] = useState('')
   const [dobYear, setDobYear] = useState('')
   const [ageConsent, setAgeConsent] = useState(false)
+  const [ukConsent, setUkConsent] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
+  const [emailExists, setEmailExists] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+    setEmailExists(false)
 
-    if (!ageConsent || !marketingConsent) {
-      setError('Please tick both boxes to continue.')
+    if (!ageConsent || !ukConsent || !marketingConsent) {
+      setError('Please tick all boxes to continue.')
       return
     }
 
@@ -56,6 +60,8 @@ export default function DetailsPage() {
           setError('Sorry — you must be 18 or over to sign up.')
         } else if (data.error === 'looks_like_already_signed_up') {
           setError("Looks like you're already signed up!")
+        } else if (data.error === 'An account with this email already exists.') {
+          setEmailExists(true)
         } else {
           setError(data.error || 'Something went wrong. Please try again.')
         }
@@ -173,6 +179,7 @@ export default function DetailsPage() {
 
         {/* Consent checkboxes */}
         <div className="space-y-3 pt-1">
+          {/* Age confirmation */}
           <label className="flex items-start gap-3 cursor-pointer group">
             <input
               type="checkbox"
@@ -181,11 +188,26 @@ export default function DetailsPage() {
               className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
             />
             <span className="text-sm text-cream/60 leading-relaxed font-sans">
-              I confirm I am 18 or over and a UK resident.{' '}
+              I confirm I am 18 or over. We are required to verify this as we sell alcohol.{' '}
               <span className="text-red-400">*</span>
             </span>
           </label>
 
+          {/* UK delivery address */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={ukConsent}
+              onChange={(e) => setUkConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
+            />
+            <span className="text-sm text-cream/60 leading-relaxed font-sans">
+              I have a UK delivery address.{' '}
+              <span className="text-red-400">*</span>
+            </span>
+          </label>
+
+          {/* Marketing consent */}
           <label className="flex items-start gap-3 cursor-pointer group">
             <input
               type="checkbox"
@@ -200,6 +222,18 @@ export default function DetailsPage() {
             </span>
           </label>
         </div>
+
+        {emailExists && (
+          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+            An account with this email already exists.{' '}
+            <Link
+              href="/join/card"
+              className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors"
+            >
+              Go back and use a different email →
+            </Link>
+          </p>
+        )}
 
         {error && (
           <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">

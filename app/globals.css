@@ -30,3 +30,15 @@ a:active,
   transition: opacity 50ms ease-out;
 }
 
+/* ── Browser autofill — prevent yellow background on dark theme ── */
+/* Chrome/Safari use box-shadow inset trick to override the autofill colour */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #120608 inset !important;
+  box-shadow: 0 0 0 1000px #120608 inset !important;
+  -webkit-text-fill-color: #F0E6DC !important;
+  caret-color: #F0E6DC;
+}
+
