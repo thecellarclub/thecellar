@@ -134,12 +134,17 @@ export async function POST(req: NextRequest) {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
 
-    // Send welcome SMS — non-blocking, don't fail signup if this errors
+    // Send welcome SMS — awaited so it completes before the serverless function exits.
+    // Wrapped in try/catch so a Twilio failure never blocks the signup success response.
     // Note: avoid em-dash and non-GSM-7 characters or Twilio forces Unicode encoding (70 chars/segment)
-    sendSms(
-      normalisedPhone,
-      `A hearty welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 - then deliver it to you for free.`
-    ).catch((err) => console.error('[complete] welcome SMS failed', err))
+    try {
+      await sendSms(
+        normalisedPhone,
+        `A hearty welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 - then deliver it to you for free.`
+      )
+    } catch (err) {
+      console.error('[complete] welcome SMS failed', err)
+    }
 
     // Clear session
     session.destroy()
