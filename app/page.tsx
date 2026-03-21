@@ -257,7 +257,7 @@ export default function HomePage() {
           <div className="text-center px-8 pt-6 pb-8">
             <p
               className="font-serif italic"
-              style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
+              style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
             >
               A private cellar. Two offers a week. Yours by text.
             </p>
@@ -265,7 +265,7 @@ export default function HomePage() {
               className="font-sans text-xs uppercase tracking-[0.28em] mt-2"
               style={{ color: 'rgba(42,24,16,0.38)' }}
             >
-              Sommelier &middot; Daniel Jonberger
+              Daniel Jonberger &middot; Sommelier
             </p>
           </div>
 
@@ -337,8 +337,8 @@ export default function HomePage() {
             {/* ── Welcome to the Club (tiers) ── */}
             <MenuSection title="The Club">
               <p
-                className="font-serif italic text-base leading-relaxed mb-7"
-                style={{ color: 'rgba(42,24,16,0.55)' }}
+                className="font-serif italic leading-relaxed mb-7"
+                style={{ fontSize: 'clamp(1.05rem, 2.5vw, 1.1rem)', color: 'rgba(42,24,16,0.55)' }}
               >
                 Your tier is awarded on your rolling twelve-month spend.
               </p>
