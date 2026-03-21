@@ -24,14 +24,10 @@ function FadeUp({
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Respect reduced motion preference — skip animation entirely
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
     setAnimated(true)
-
     const el = ref.current
     if (!el) return
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -76,99 +72,192 @@ function CellarDoorSvg() {
       style={{ opacity: 0.18 }}
       aria-hidden="true"
     >
-      {/* ── Outer door frame ──────────────────────────────────────────── */}
       <path
         d="M 268 782 L 268 310 A 232 232 0 0 1 732 310 L 732 782 Z"
         stroke="#F0E6DC"
         strokeWidth="2.5"
       />
-      {/* ── Inner panel border ─────────────────────────────────────────── */}
       <path
         d="M 286 770 L 286 310 A 214 214 0 0 1 714 310 L 714 770 Z"
         stroke="#F0E6DC"
         strokeWidth="1"
       />
-      {/* ── Iron ring handle ───────────────────────────────────────────── */}
       <circle cx="666" cy="546" r="30" stroke="#F0E6DC" strokeWidth="1.5" />
       <circle cx="666" cy="546" r="16" stroke="#F0E6DC" strokeWidth="1.5" />
     </svg>
   )
 }
 
-function WineBottleSvg() {
-  return (
-    <svg
-      viewBox="0 0 100 290"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ height: '400px', width: 'auto', opacity: 0.75 }}
-      className="mx-auto"
-      aria-hidden="true"
-    >
-      <path
-        d="M 44 20 Q 44 14 50 14 Q 56 14 56 20 L 56 36 Q 58 40 58 48 L 57 82 Q 68 96 72 118 Q 80 138 80 162 L 80 268 Q 80 274 50 274 Q 20 274 20 268 L 20 162 Q 20 138 28 118 Q 32 96 43 82 L 42 48 Q 42 40 44 36 Z"
-        stroke="#F0E6DC"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <line x1="42" y1="44" x2="58" y2="44" stroke="#F0E6DC" strokeWidth="1" opacity="0.6" />
-      <line x1="23" y1="168" x2="77" y2="168" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
-      <line x1="23" y1="232" x2="77" y2="232" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
-    </svg>
-  )
-}
+// ─── Menu components ───────────────────────────────────────────────────────────
 
-// ─── Wave divider ──────────────────────────────────────────────────────────────
-
-function WaveDivider({
-  from,
-  to,
-  flip = false,
+function MenuEntry({
+  name,
+  price,
+  description,
+  onClick,
+  active,
 }: {
-  from: string
-  to: string
-  flip?: boolean
+  name: string
+  price: string
+  description?: string
+  onClick?: () => void
+  active?: boolean
 }) {
+  const clickable = !!onClick
   return (
-    <svg
-      viewBox="0 0 1440 56"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="none"
-      style={{
-        display: 'block',
-        width: '100%',
-        height: '56px',
-        background: from,
-        transform: flip ? 'scaleX(-1)' : undefined,
-      }}
-      aria-hidden="true"
+    <div
+      className={`mb-5 ${clickable ? 'cursor-pointer select-none' : ''}`}
+      onClick={onClick}
     >
-      <path
-        d="M0,28 C240,56 480,0 720,28 C960,56 1200,0 1440,28 L1440,56 L0,56 Z"
-        fill={to}
-      />
-    </svg>
+      <div className="flex items-baseline gap-3">
+        <span
+          className="font-serif text-lg shrink-0 transition-colors duration-150"
+          style={{ color: active === false ? 'rgba(240,230,220,0.55)' : '#F0E6DC' }}
+        >
+          {name}
+        </span>
+        <span
+          className="flex-1 min-w-0"
+          style={{
+            borderBottom: '1px dotted rgba(240,230,220,0.18)',
+            marginBottom: '0.3em',
+          }}
+        />
+        <span
+          className="font-serif text-base shrink-0 text-right transition-colors duration-150"
+          style={{ color: active === false ? 'rgba(201,133,29,0.45)' : 'rgba(201,133,29,0.85)' }}
+        >
+          {price}
+        </span>
+      </div>
+      {description && (
+        <p
+          className="font-serif italic text-sm leading-relaxed mt-1.5"
+          style={{ color: 'rgba(240,230,220,0.42)' }}
+        >
+          {description}
+        </p>
+      )}
+    </div>
   )
 }
 
-// ─── Section divider ───────────────────────────────────────────────────────────
-
-function SectionDivider() {
+function MenuSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      <span
-        aria-hidden="true"
-        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
+    <div className="mb-14">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="flex-1 h-px" style={{ background: 'rgba(201,133,29,0.28)' }} />
+        <p
+          className="font-serif text-xs uppercase tracking-[0.32em] shrink-0"
+          style={{ color: 'rgba(201,133,29,0.65)' }}
+        >
+          {title}
+        </p>
+        <div className="flex-1 h-px" style={{ background: 'rgba(201,133,29,0.28)' }} />
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// ─── How It Works menu ─────────────────────────────────────────────────────────
+
+function HowItWorksMenu() {
+  const [active, setActive] = useState(0)
+
+  const steps = [
+    {
+      name: 'We text you',
+      price: 'twice weekly',
+      description: 'Daniel picks something remarkable and texts it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn\'t be this affordable.',
+      messages: [
+        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
+      ],
+    },
+    {
+      name: 'You reply',
+      price: 'how many you want',
+      description: 'Text back the quantity. We confirm, charge your card, and add the bottles to your cellar. No login, no basket, no faff.',
+      messages: [
+        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
+        { from: 'you', text: '3 please' },
+        { from: 'daniel', text: 'Sorted — 3 × Primitivo at £14 = £42. Card charged. Added to your cellar.' },
+      ],
+    },
+    {
+      name: 'We store it',
+      price: 'until you have twelve',
+      description: 'Your bottles go into your cellar account. Mix and match across drops — build your case your way.',
+      messages: [
+        { from: 'you', text: 'How many bottles do I have?' },
+        { from: 'daniel', text: 'You\'ve got 9 bottles stored. 3 more until we ship your case for free.' },
+        { from: 'you', text: 'What have I got so far?' },
+        { from: 'daniel', text: '2 × Primitivo · 3 × Grüner Veltliner · 2 × Mencía · 2 × Xinomavro. A very good case.' },
+      ],
+    },
+    {
+      name: 'We ship it',
+      price: '£0',
+      description: null,
+      messages: [
+        { from: 'daniel', text: 'Your case is full — 12 bottles ready to go. We\'ll ship to your saved address. Expect it Thursday.' },
+        { from: 'you', text: 'Perfect, thanks.' },
+      ],
+    },
+  ]
+
+  return (
+    <div>
+      {/* Clickable menu entries */}
+      <div className="mb-8">
+        {steps.map((step, i) => (
+          <MenuEntry
+            key={step.name}
+            name={step.name}
+            price={step.price}
+            description={step.description ?? undefined}
+            onClick={() => setActive(i)}
+            active={i === active}
+          />
+        ))}
+      </div>
+
+      {/* SMS mock — updates on entry click */}
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ background: '#0D0407', border: '1px solid rgba(240,230,220,0.07)' }}
       >
-        ◆
-      </span>
-      <div style={{ width: '120px', height: '1px', background: 'rgba(201,133,29,0.4)' }} />
-      <span
-        aria-hidden="true"
-        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
-      >
-        ◆
-      </span>
+        {/* Header bar */}
+        <div
+          className="flex items-center justify-between px-5 py-3 border-b"
+          style={{ borderColor: 'rgba(240,230,220,0.06)' }}
+        >
+          <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.35)' }}>
+            The Cellar Club
+          </span>
+          <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.22)' }}>
+            SMS
+          </span>
+        </div>
+
+        {/* Messages */}
+        <div className="px-5 py-5 space-y-3 min-h-[140px]">
+          {steps[active].messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.from === 'you' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className="max-w-[78%] px-4 py-2.5 font-sans text-sm leading-relaxed"
+                style={
+                  msg.from === 'you'
+                    ? { background: '#9B1B30', color: '#F0E6DC', borderRadius: '18px 18px 4px 18px' }
+                    : { background: '#2A1118', color: 'rgba(240,230,220,0.82)', borderRadius: '18px 18px 18px 4px' }
+                }
+              >
+                {msg.text}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -195,10 +284,10 @@ function HeroSignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 mx-auto mb-4" style={{ maxWidth: '300px' }}>
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-0">
       <div
         className="flex items-stretch transition-colors"
-        style={{ border: '1px solid rgba(201,133,29,0.55)', boxShadow: '0 0 0 3px rgba(201,133,29,0.07)' }}
+        style={{ border: '1px solid rgba(201,133,29,0.5)', boxShadow: '0 0 0 3px rgba(201,133,29,0.06)' }}
       >
         <span
           className="flex items-center px-3 font-sans text-base text-cream/60 border-r select-none bg-transparent whitespace-nowrap"
@@ -216,7 +305,7 @@ function HeroSignupForm() {
       </div>
       <button
         type="submit"
-        className="group w-full bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526]"
+        className="group bg-rio text-cream px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526] whitespace-nowrap"
       >
         Join the Club{' '}
         <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">
@@ -227,362 +316,190 @@ function HeroSignupForm() {
   )
 }
 
-// ─── Interactive How It Works ──────────────────────────────────────────────────
-
-function HowItWorks() {
-  const [active, setActive] = useState(0)
-
-  const steps = [
-    {
-      num: '01',
-      heading: 'We text you',
-      body: 'Twice a week, Daniel picks something remarkable and texts it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn\'t be this affordable.',
-      messages: [
-        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
-      ],
-    },
-    {
-      num: '02',
-      heading: 'You reply',
-      body: 'Text back how many bottles you want. We confirm, charge your card, and that\'s it. No login, no basket, no faff.',
-      messages: [
-        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
-        { from: 'you', text: '3 please' },
-        { from: 'daniel', text: 'Sorted — 3 × Primitivo at £14 = £42. Card charged. Added to your cellar.' },
-      ],
-    },
-    {
-      num: '03',
-      heading: 'We store it, you collect',
-      body: 'Your bottles go straight into your cellar account. When you\'ve got 12, we ship the whole case to your door for free.',
-      messages: [
-        { from: 'you', text: 'How many bottles do I have?' },
-        { from: 'daniel', text: 'You\'ve got 9 bottles stored. 3 more until we ship your case for free.' },
-        { from: 'you', text: 'What have I got so far?' },
-        { from: 'daniel', text: '2 × Primitivo · 3 × Grüner Veltliner · 2 × Mencia · 2 × Xinomavro. A very good case.' },
-      ],
-    },
-  ]
-
-  return (
-    <div className="relative z-10 max-w-5xl mx-auto pt-16">
-      {/* Section label */}
-      <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold text-center mb-14">
-        How It Works
-      </p>
-
-      <div className="flex flex-col md:flex-row gap-10 md:gap-12 items-start">
-
-        {/* Left: step tabs — 50% */}
-        <div className="flex-1 flex flex-col gap-2">
-          {steps.map((step, i) => (
-            <button
-              key={step.num}
-              onClick={() => setActive(i)}
-              className="text-left px-5 py-4 transition-all duration-200 rounded-sm"
-              style={{
-                background: active === i ? 'rgba(201,133,29,0.1)' : 'transparent',
-                borderLeft: `3px solid ${active === i ? '#C9851D' : 'rgba(240,230,220,0.1)'}`,
-              }}
-            >
-              <span
-                className="block font-serif text-xs tracking-[0.2em] mb-1 transition-colors"
-                style={{ color: active === i ? '#C9851D' : 'rgba(240,230,220,0.4)' }}
-              >
-                {step.num}
-              </span>
-              <span
-                className="block font-serif text-xl transition-colors"
-                style={{ color: active === i ? '#F0E6DC' : 'rgba(240,230,220,0.55)' }}
-              >
-                {step.heading}
-              </span>
-              {active === i && (
-                <p className="font-sans text-sm leading-relaxed mt-2" style={{ color: 'rgba(240,230,220,0.6)' }}>
-                  {step.body}
-                </p>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: phone mockup — 50% */}
-        <div className="flex-1 flex justify-center">
-          {/* Phone shell */}
-          <div
-            className="w-full max-w-[300px]"
-            style={{
-              background: '#1C1C1E',
-              borderRadius: '2.5rem',
-              border: '2px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Status bar */}
-            <div className="flex items-center justify-between px-6 pt-4 pb-1">
-              <span className="font-sans text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>9:41</span>
-              <div className="flex items-center gap-1.5">
-                {/* Signal bars */}
-                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
-                  <rect x="0" y="7" width="3" height="5" rx="0.5" fill="rgba(255,255,255,0.9)"/>
-                  <rect x="4.5" y="4.5" width="3" height="7.5" rx="0.5" fill="rgba(255,255,255,0.9)"/>
-                  <rect x="9" y="2" width="3" height="10" rx="0.5" fill="rgba(255,255,255,0.9)"/>
-                  <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="rgba(255,255,255,0.35)"/>
-                </svg>
-                {/* Battery */}
-                <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
-                  <rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
-                  <rect x="2" y="2" width="15" height="8" rx="1.5" fill="rgba(255,255,255,0.9)"/>
-                  <path d="M22.5 4v4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-              </div>
-            </div>
-
-            {/* iMessage header */}
-            <div
-              className="flex flex-col items-center px-4 py-3 border-b"
-              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-            >
-              {/* Avatar */}
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
-                style={{ background: 'rgba(201,133,29,0.25)', border: '1px solid rgba(201,133,29,0.4)' }}
-              >
-                <span className="font-serif text-sm" style={{ color: '#C9851D' }}>C</span>
-              </div>
-              <span className="font-sans text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                The Cellar Club
-              </span>
-              <span className="font-sans text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                +44 7888 871161
-              </span>
-            </div>
-
-            {/* Messages */}
-            <div className="px-3 py-4 space-y-2 min-h-[220px]">
-              {steps[active].messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.from === 'you' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className="max-w-[78%] px-3.5 py-2 font-sans text-[13px] leading-relaxed"
-                    style={
-                      msg.from === 'you'
-                        ? {
-                            background: '#0A84FF',
-                            color: '#FFFFFF',
-                            borderRadius: '18px 18px 4px 18px',
-                          }
-                        : {
-                            background: '#2C2C2E',
-                            color: 'rgba(255,255,255,0.88)',
-                            borderRadius: '18px 18px 18px 4px',
-                          }
-                    }
-                  >
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* iMessage input bar */}
-            <div
-              className="flex items-center gap-2 px-3 pb-5 pt-2 border-t"
-              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-            >
-              <div
-                className="flex-1 flex items-center px-3 py-2"
-                style={{
-                  background: 'rgba(255,255,255,0.07)',
-                  borderRadius: '18px',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                }}
-              >
-                <span className="font-sans text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>iMessage</span>
-              </div>
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: '#0A84FF' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M6 10V2M6 2L2 6M6 2L10 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  )
-}
-
 // ─── Landing page ──────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   return (
     <div className="bg-maroon text-cream">
 
-      {/* ── Section 1: Hero ── */}
-      <section
-        className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 overflow-hidden bg-maroon"
-        style={{
-          backgroundImage: 'url(/images/hero.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        {/* Dark scrim — keeps text legible over photo */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'rgba(10,3,6,0.62)' }}
-          aria-hidden="true"
-        />
-
+      {/* ── Header: brand mark ── */}
+      <section className="relative flex flex-col items-center justify-center px-6 pt-20 pb-14 overflow-hidden">
         <CellarDoorSvg />
-
-        {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
           style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
           aria-hidden="true"
         />
 
-        <div className="relative z-10 text-center max-w-2xl mx-auto">
-          {/* Brand mark */}
-          <div className="mb-10">
-            <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80">the</span>
-            <span className="block font-serif text-7xl md:text-8xl uppercase tracking-[0.08em] leading-none text-cream">CELLAR</span>
-            <span className="block font-serif text-sm uppercase tracking-[0.3em] text-cream/80">club</span>
+        <div className="relative z-10 text-center">
+          <div className="mb-6">
+            <span className="block font-serif text-xs uppercase tracking-[0.35em] text-cream/70">the</span>
+            <span className="block font-serif text-6xl md:text-7xl uppercase tracking-[0.08em] leading-none text-cream">CELLAR</span>
+            <span className="block font-serif text-xs uppercase tracking-[0.35em] text-cream/70">club</span>
           </div>
 
-          {/* Divider */}
-          <div className="w-16 h-px bg-gold mx-auto mb-10 opacity-60" />
+          <div className="w-12 h-px bg-gold mx-auto mb-5 opacity-60" />
 
-          {/* Subheading */}
-          <div className="mb-10 max-w-[600px] mx-auto">
-            <p className="font-serif text-cream/85 text-[1.35rem] leading-snug text-center mb-5">
-              Sommelier selected wines at insider rates.
-            </p>
-            <div className="space-y-2 text-center">
-              {[
-                'We text you twice a week.',
-                'Reply how many you want.',
-                'We store it until you fill a case.',
-                'Then ship it to you for free.',
-              ].map((line) => (
-                <p key={line} className="font-serif text-cream/55 text-[1.1rem] leading-snug">
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-
-          {/* Sign-up form */}
-          <HeroSignupForm />
-
-          <p className="font-sans text-cream/35 text-xs mt-2">
-            Already a member?{' '}
-            <Link href="/portal" className="underline underline-offset-2 text-cream/45 hover:text-cream/70 transition-colors">
-              Log in here
-            </Link>
+          <p className="font-serif italic text-cream/50 text-sm">
+            A private cellar. Two offers a week. Yours by text.
+          </p>
+          <p className="font-sans text-cream/28 text-xs tracking-[0.22em] uppercase mt-3">
+            Sommelier &middot; Daniel Jonberger
           </p>
         </div>
       </section>
 
-      {/* Hero → How It Works */}
-      <WaveDivider from="#120608" to="#1E0B10" />
+      {/* ── Menu body ── */}
+      <div className="max-w-2xl mx-auto px-8 pb-20">
 
-      {/* ── Section 2: How It Works ── */}
-      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
-        {/* Noise overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
-          aria-hidden="true"
-        />
+        {/* ── Reservations (join) ── */}
+        <MenuSection title="Reservations">
+          <MenuEntry name="Membership" price="free to join" />
+          <div className="mt-6 max-w-sm mx-auto">
+            <HeroSignupForm />
+          </div>
+          <p className="font-serif italic text-cream/32 text-xs text-center mt-4">
+            Already a member?{' '}
+            <Link href="/portal" className="underline underline-offset-2 text-cream/42 hover:text-cream/65 transition-colors">
+              Log in here
+            </Link>
+          </p>
+        </MenuSection>
 
-        <HowItWorks />
-      </section>
+        {/* ── How It Works ── */}
+        <MenuSection title="How It Works">
+          <HowItWorksMenu />
+        </MenuSection>
 
-      {/* How It Works → Membership */}
-      <WaveDivider from="#1E0B10" to="#120608" flip />
+        {/* ── Membership ── */}
+        <MenuSection title="Membership">
+          <MenuEntry
+            name="Off the beaten path"
+            price="12+ countries"
+            description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
+          />
+          <MenuEntry
+            name="Sommelier selected"
+            price="20 years"
+            description="Every bottle is chosen by Daniel Jonberger. Time at the 2-star Raby Hunt. A genuine obsession with finding bottles that make people feel something."
+          />
+          <MenuEntry
+            name="Better prices"
+            price="direct import rates"
+            description="We buy in volume across our two wine bars. You get the benefit of that."
+          />
+          <MenuEntry
+            name="Free storage"
+            price="until your case is full"
+            description="Your bottles wait for you. No storage charge, no pressure to buy more."
+          />
+          <MenuEntry
+            name="Wine concierge"
+            price="unlimited questions"
+            description="Got a question? Looking for a gift? Text Daniel directly. He'll sort it."
+          />
+          <MenuEntry
+            name="Request a wine"
+            price="group buy, bulk price"
+            description="Want something we haven't featured? Request it. If enough members are in, we'll run it as a drop."
+          />
+        </MenuSection>
 
-      {/* ── Section 3: Membership ── */}
-      <section className="relative bg-maroon px-6 pb-28 overflow-hidden">
-        {/* Noise overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
-          aria-hidden="true"
-        />
+        {/* ── The Levels ── */}
+        <MenuSection title="The Levels">
+          <p
+            className="font-serif italic text-sm leading-relaxed mb-8"
+            style={{ color: 'rgba(240,230,220,0.38)' }}
+          >
+            Tiers are assessed annually on your rolling twelve-month spend.
+          </p>
 
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <FadeUp>
-            <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold text-center mb-4 pt-16">
-              Membership
-            </p>
-            <p className="font-sans text-cream/45 text-sm text-center mb-14 tracking-wide">
-              Everything you get, just for joining.
-            </p>
-          </FadeUp>
-
-          {/* Wine-list style — no boxes */}
-          <div>
+          <MenuEntry name="Bailey" price="free to join" />
+          <div className="pl-5 mb-8 space-y-1.5">
             {[
-              {
-                heading: 'Two drops a week',
-                body: 'Monday and Thursday. Hand-picked by Daniel — a skin-contact Slovenian, a Texan Tempranillo, whatever\'s worth drinking right now.',
-              },
-              {
-                heading: 'Free storage',
-                body: 'We hold your bottles at Crush until you\'ve got 12. No extra cost, no decisions, no trips to the post office.',
-              },
-              {
-                heading: 'Free shipping at 12',
-                body: 'Once your case is full we ship the whole thing to your door. Palatine members get free delivery at 6.',
-              },
-              {
-                heading: 'Better prices',
-                body: 'We buy in volume across both wine bars. You get the benefit — usually 15–25% below high street.',
-              },
-              {
-                heading: 'Wine concierge',
-                body: 'Got a question, need a gift, want something we haven\'t featured? Text Daniel. He\'ll sort it.',
-              },
-              {
-                heading: 'Request a drop',
-                body: 'Name a wine or region and we\'ll try to run it. If enough members are in, it goes out as a members-only drop.',
-              },
-            ].map(({ heading, body }, i) => (
-              <FadeUp key={heading} delay={i * 60}>
-                <div
-                  className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-8 py-6"
-                  style={{ borderBottom: '1px solid rgba(240,230,220,0.08)' }}
-                >
-                  <h3 className="font-serif text-cream text-lg sm:text-xl shrink-0 sm:w-52">
-                    {heading}
-                  </h3>
-                  <p className="font-sans text-cream/55 text-sm leading-relaxed">
-                    {body}
-                  </p>
-                </div>
-              </FadeUp>
+              'Two weekly drops via SMS',
+              'Free delivery at 12 bottles',
+              'Unlimited wine request service',
+              'Wine concierge (up to 2 requests/month)',
+            ].map((perk) => (
+              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
+                &mdash; {perk}
+              </p>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Membership → Pull quote */}
-      <WaveDivider from="#120608" to="#1E0B10" />
+          <MenuEntry name="Elvet" price="unlocks at £500" />
+          <div className="pl-5 mb-8 space-y-1.5">
+            {[
+              'Everything in Bailey',
+              'Up to 5 wine concierge requests/month',
+              '2 × tickets to wine tastings (Durham or London)',
+              '5% discount on all orders',
+            ].map((perk) => (
+              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
+                &mdash; {perk}
+              </p>
+            ))}
+          </div>
 
-      {/* ── Pull quote ── */}
+          <MenuEntry name="Palatine" price="unlocks at £1,000" />
+          <div className="pl-5 mb-2 space-y-1.5">
+            {[
+              'Everything in Elvet',
+              'Free delivery at 6 bottles',
+              '10% discount on all orders',
+              '4 × tickets to wine tastings (Durham or London)',
+              'First look — 2 hours before everyone else',
+            ].map((perk) => (
+              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
+                &mdash; {perk}
+              </p>
+            ))}
+          </div>
+        </MenuSection>
+
+        {/* ── Our Story ── */}
+        <MenuSection title="Our Story">
+          <div className="space-y-5 font-serif text-cream/70 text-base leading-relaxed">
+            <FadeUp>
+              <p>
+                We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
+              </p>
+            </FadeUp>
+            <FadeUp delay={60}>
+              <p>
+                Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
+              </p>
+            </FadeUp>
+            <FadeUp delay={120}>
+              <p>
+                The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
+              </p>
+            </FadeUp>
+          </div>
+
+          <FadeUp delay={180}>
+            <div className="mt-10 text-center">
+              <Link
+                href="/join"
+                className="group inline-block bg-rio text-cream font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:bg-[#7d1526]"
+              >
+                Join the Club{' '}
+                <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">
+                  →
+                </span>
+              </Link>
+            </div>
+          </FadeUp>
+        </MenuSection>
+
+      </div>
+
+      {/* ── Pull quote — full width, exactly as original ── */}
       <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
         <FadeUp>
           <div className="max-w-3xl mx-auto text-center relative">
+
             <span
               className="font-serif select-none pointer-events-none absolute"
               aria-hidden="true"
@@ -617,184 +534,9 @@ export default function HomePage() {
                 </p>
               </footer>
             </blockquote>
+
           </div>
         </FadeUp>
-      </section>
-
-      {/* Pull quote and Story share maroon-dark — no divider needed */}
-
-      {/* ── Section 4: The Story ── */}
-      <section className="relative bg-maroon-dark px-6 pb-24 overflow-hidden">
-        {/* Noise overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            {/* Text column */}
-            <div>
-              <FadeUp>
-                <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold mb-8 pt-20">
-                  Our Story
-                </p>
-              </FadeUp>
-
-              <div className="space-y-5 font-serif text-cream/75 text-lg leading-relaxed">
-                <FadeUp delay={60}>
-                  <p>
-                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
-                  </p>
-                </FadeUp>
-                <FadeUp delay={120}>
-                  <p>
-                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
-                  </p>
-                </FadeUp>
-                <FadeUp delay={180}>
-                  <p>
-                    The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
-                  </p>
-                </FadeUp>
-              </div>
-
-              <FadeUp delay={240}>
-                <div className="mt-12 text-center md:text-left">
-                  <p className="font-serif text-cream/60 text-lg mb-5">
-                    Ready to fill your cellar?
-                  </p>
-                  <Link
-                    href="/join"
-                    className="group inline-block bg-rio text-cream font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:bg-[#7d1526]"
-                  >
-                    Join the Club{' '}
-                    <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">
-                      →
-                    </span>
-                  </Link>
-                </div>
-              </FadeUp>
-            </div>
-
-            {/* Bottle illustration */}
-            <FadeUp className="flex items-center justify-center">
-              <WineBottleSvg />
-            </FadeUp>
-          </div>
-        </div>
-      </section>
-
-      {/* Story → Levels */}
-      <WaveDivider from="#1E0B10" to="#120608" flip />
-
-      {/* ── Section 5: The Levels ── */}
-      <section
-        className="relative px-6 pb-24 overflow-hidden"
-        style={{
-          backgroundImage: 'url(/images/levels.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundColor: '#120608',
-        }}
-      >
-        {/* Dark scrim */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'rgba(8,2,4,0.78)' }}
-          aria-hidden="true"
-        />
-        {/* Noise overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto">
-          <FadeUp>
-            <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold mb-4 text-center pt-20">
-              The Levels
-            </p>
-            <p className="font-sans text-cream/55 text-sm text-center max-w-md mx-auto mb-14">
-              The more you spend, the more you unlock. Tiers are assessed annually on your rolling 12-month spend.
-            </p>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Bailey */}
-            <FadeUp delay={0}>
-              <div
-                className="relative overflow-hidden p-8 h-full"
-                style={{
-                  background: 'rgba(30,11,16,0.85)',
-                  border: '1px solid rgba(240,230,220,0.12)',
-                  borderTop: '3px solid #9B1B30',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <p className="font-serif text-xs uppercase tracking-[0.25em] text-cream/50 mb-1">Entry · Free to join</p>
-                <h3 className="font-serif text-2xl text-cream mb-5">Bailey</h3>
-                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
-                  <li>Two weekly drops via SMS</li>
-                  <li>Free delivery at 12 bottles</li>
-                  <li>Unlimited wine request service</li>
-                  <li>Wine concierge (up to 2 requests/month)</li>
-                </ul>
-                <p className="font-sans text-xs text-cream/30 mt-6">Free to join.</p>
-              </div>
-            </FadeUp>
-
-            {/* Elvet */}
-            <FadeUp delay={80}>
-              <div
-                className="relative overflow-hidden p-8 h-full"
-                style={{
-                  background: 'rgba(30,11,16,0.85)',
-                  border: '1px solid rgba(201,133,29,0.25)',
-                  borderTop: '3px solid #C9851D',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £500</p>
-                <h3 className="font-serif text-2xl text-cream mb-5">Elvet</h3>
-                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
-                  <li>Everything in Bailey</li>
-                  <li>Up to 5 wine concierge requests/month</li>
-                  <li>2 × tickets to wine tastings (Durham or London)</li>
-                  <li>5% discount on all orders</li>
-                </ul>
-                <p className="font-sans text-xs text-gold/50 mt-6">Unlocks automatically when you hit £500 in a rolling 12 months.</p>
-              </div>
-            </FadeUp>
-
-            {/* Palatine */}
-            <FadeUp delay={160}>
-              <div
-                className="relative overflow-hidden p-8 h-full md:-translate-y-2"
-                style={{
-                  background: 'rgba(30,11,16,0.85)',
-                  border: '1px solid rgba(201,133,29,0.4)',
-                  borderTop: '3px solid #C9851D',
-                  boxShadow: '0 0 40px rgba(201,133,29,0.1)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £1,000</p>
-                <h3 className="font-serif text-2xl text-cream mb-5">Palatine</h3>
-                <ul className="space-y-3 font-sans text-sm text-cream/65 leading-relaxed">
-                  <li>Everything in Elvet</li>
-                  <li>Free delivery at 6 bottles</li>
-                  <li>10% discount on all orders</li>
-                  <li>4 × tickets to wine tastings (Durham or London)</li>
-                  <li>First look — 2 hours before everyone else</li>
-                </ul>
-                <p className="font-sans text-xs text-gold/50 mt-6">Unlocks at £1,000. Free shipping drops to 6 bottles.</p>
-              </div>
-            </FadeUp>
-          </div>
-        </div>
       </section>
 
       {/* ── Footer ── */}
