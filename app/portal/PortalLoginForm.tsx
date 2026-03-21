@@ -4,9 +4,12 @@ import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 
 function buildPhone(raw: string): string {
-  const stripped = raw.replace(/[\s\-]/g, '')
-  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
-  return '+44' + stripped
+  let s = raw.replace(/[\s\-]/g, '')
+  if (s.startsWith('+44')) s = s.slice(3)
+  else if (s.startsWith('44')) s = s.slice(2)
+  else if (s.startsWith('0')) s = s.slice(1)
+  s = s.replace(/^\+/, '')
+  return '+44' + s
 }
 
 export default function PortalLoginForm() {
