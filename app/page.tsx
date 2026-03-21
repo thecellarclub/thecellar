@@ -77,21 +77,18 @@ function CellarDoorSvg() {
       aria-hidden="true"
     >
       {/* ── Outer door frame ──────────────────────────────────────────── */}
-      {/* Semicircular arch: centre (500,310), radius 232, crown at y=78 */}
       <path
         d="M 268 782 L 268 310 A 232 232 0 0 1 732 310 L 732 782 Z"
         stroke="#F0E6DC"
         strokeWidth="2.5"
       />
-
-      {/* ── Inner panel border (inset ~18 px, concentric arc) ─────────── */}
+      {/* ── Inner panel border ─────────────────────────────────────────── */}
       <path
         d="M 286 770 L 286 310 A 214 214 0 0 1 714 310 L 714 770 Z"
         stroke="#F0E6DC"
         strokeWidth="1"
       />
-
-      {/* ── Iron ring handle (right side, mid-height ≈ y=546) ─────────── */}
+      {/* ── Iron ring handle ───────────────────────────────────────────── */}
       <circle cx="666" cy="546" r="30" stroke="#F0E6DC" strokeWidth="1.5" />
       <circle cx="666" cy="546" r="16" stroke="#F0E6DC" strokeWidth="1.5" />
     </svg>
@@ -108,36 +105,14 @@ function WineBottleSvg() {
       className="mx-auto"
       aria-hidden="true"
     >
-      {/* Bottle outline — clean Bordeaux profile */}
       <path
-        d="
-          M 44 20
-          Q 44 14 50 14
-          Q 56 14 56 20
-          L 56 36
-          Q 58 40 58 48
-          L 57 82
-          Q 68 96 72 118
-          Q 80 138 80 162
-          L 80 268
-          Q 80 274 50 274
-          Q 20 274 20 268
-          L 20 162
-          Q 20 138 28 118
-          Q 32 96 43 82
-          L 42 48
-          Q 42 40 44 36
-          Z
-        "
+        d="M 44 20 Q 44 14 50 14 Q 56 14 56 20 L 56 36 Q 58 40 58 48 L 57 82 Q 68 96 72 118 Q 80 138 80 162 L 80 268 Q 80 274 50 274 Q 20 274 20 268 L 20 162 Q 20 138 28 118 Q 32 96 43 82 L 42 48 Q 42 40 44 36 Z"
         stroke="#F0E6DC"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
-      {/* Capsule line */}
       <line x1="42" y1="44" x2="58" y2="44" stroke="#F0E6DC" strokeWidth="1" opacity="0.6" />
-      {/* Label area top */}
       <line x1="23" y1="168" x2="77" y2="168" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
-      {/* Label area bottom */}
       <line x1="23" y1="232" x2="77" y2="232" stroke="#F0E6DC" strokeWidth="0.5" opacity="0.35" />
     </svg>
   )
@@ -176,6 +151,28 @@ function WaveDivider({
   )
 }
 
+// ─── Section divider ───────────────────────────────────────────────────────────
+
+function SectionDivider() {
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <span
+        aria-hidden="true"
+        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
+      >
+        ◆
+      </span>
+      <div style={{ width: '120px', height: '1px', background: 'rgba(201,133,29,0.4)' }} />
+      <span
+        aria-hidden="true"
+        style={{ color: 'rgba(201,133,29,0.5)', fontSize: '7px', lineHeight: 1 }}
+      >
+        ◆
+      </span>
+    </div>
+  )
+}
+
 // ─── Hero form ─────────────────────────────────────────────────────────────────
 
 function buildPhone(raw: string): string {
@@ -191,7 +188,6 @@ function HeroSignupForm() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (phone.trim()) {
-      // Pass the raw local number — join page applies buildPhone before the API call
       router.push(`/join?phone=${encodeURIComponent(phone.trim())}`)
     } else {
       router.push('/join')
@@ -199,12 +195,15 @@ function HeroSignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md mx-auto mb-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 mx-auto mb-4" style={{ maxWidth: '300px' }}>
       <div
         className="flex items-stretch transition-colors"
-        style={{ border: '1px solid rgba(201,133,29,0.5)', boxShadow: '0 0 0 1px rgba(201,133,29,0.08)' }}
+        style={{ border: '1px solid rgba(201,133,29,0.55)', boxShadow: '0 0 0 3px rgba(201,133,29,0.07)' }}
       >
-        <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r select-none bg-transparent whitespace-nowrap" style={{ borderColor: 'rgba(201,133,29,0.3)' }}>
+        <span
+          className="flex items-center px-3 font-sans text-base text-cream/60 border-r select-none bg-transparent whitespace-nowrap"
+          style={{ borderColor: 'rgba(201,133,29,0.3)' }}
+        >
           +44
         </span>
         <input
@@ -268,13 +267,14 @@ function HowItWorks() {
   return (
     <div className="relative z-10 max-w-5xl mx-auto pt-16">
       {/* Section label */}
-      <p className="font-serif text-base uppercase tracking-[0.2em] text-gold text-center mb-14">
+      <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold text-center mb-14">
         How It Works
       </p>
 
-      <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-start">
-        {/* Left: step tabs */}
-        <div className="flex flex-col gap-2 md:w-[300px] shrink-0">
+      <div className="flex flex-col md:flex-row gap-10 md:gap-12 items-start">
+
+        {/* Left: step tabs — 50% */}
+        <div className="flex-1 flex flex-col gap-2">
           {steps.map((step, i) => (
             <button
               key={step.num}
@@ -306,38 +306,80 @@ function HowItWorks() {
           ))}
         </div>
 
-        {/* Right: SMS mock */}
-        <div className="flex-1 min-w-0">
+        {/* Right: phone mockup — 50% */}
+        <div className="flex-1 flex justify-center">
+          {/* Phone shell */}
           <div
-            className="rounded-2xl overflow-hidden"
-            style={{ background: '#0D0407', border: '1px solid rgba(240,230,220,0.1)' }}
+            className="w-full max-w-[300px]"
+            style={{
+              background: '#1C1C1E',
+              borderRadius: '2.5rem',
+              border: '2px solid rgba(255,255,255,0.12)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+              overflow: 'hidden',
+            }}
           >
-            {/* Phone status bar */}
+            {/* Status bar */}
+            <div className="flex items-center justify-between px-6 pt-4 pb-1">
+              <span className="font-sans text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>9:41</span>
+              <div className="flex items-center gap-1.5">
+                {/* Signal bars */}
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0" y="7" width="3" height="5" rx="0.5" fill="rgba(255,255,255,0.9)"/>
+                  <rect x="4.5" y="4.5" width="3" height="7.5" rx="0.5" fill="rgba(255,255,255,0.9)"/>
+                  <rect x="9" y="2" width="3" height="10" rx="0.5" fill="rgba(255,255,255,0.9)"/>
+                  <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="rgba(255,255,255,0.35)"/>
+                </svg>
+                {/* Battery */}
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
+                  <rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
+                  <rect x="2" y="2" width="15" height="8" rx="1.5" fill="rgba(255,255,255,0.9)"/>
+                  <path d="M22.5 4v4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* iMessage header */}
             <div
-              className="flex items-center justify-between px-5 py-3 border-b"
-              style={{ borderColor: 'rgba(240,230,220,0.08)' }}
+              className="flex flex-col items-center px-4 py-3 border-b"
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
             >
-              <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.4)' }}>
+              {/* Avatar */}
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                style={{ background: 'rgba(201,133,29,0.25)', border: '1px solid rgba(201,133,29,0.4)' }}
+              >
+                <span className="font-serif text-sm" style={{ color: '#C9851D' }}>C</span>
+              </div>
+              <span className="font-sans text-[13px] font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 The Cellar Club
               </span>
-              <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.3)' }}>
-                SMS
+              <span className="font-sans text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                +44 7888 871161
               </span>
             </div>
 
             {/* Messages */}
-            <div className="px-5 py-6 space-y-3 min-h-[200px]">
+            <div className="px-3 py-4 space-y-2 min-h-[220px]">
               {steps[active].messages.map((msg, i) => (
                 <div
                   key={i}
                   className={`flex ${msg.from === 'you' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className="max-w-[75%] px-4 py-2.5 rounded-2xl font-sans text-sm leading-relaxed"
+                    className="max-w-[78%] px-3.5 py-2 font-sans text-[13px] leading-relaxed"
                     style={
                       msg.from === 'you'
-                        ? { background: '#9B1B30', color: '#F0E6DC', borderBottomRightRadius: '4px' }
-                        : { background: '#2A1118', color: 'rgba(240,230,220,0.85)', borderBottomLeftRadius: '4px' }
+                        ? {
+                            background: '#0A84FF',
+                            color: '#FFFFFF',
+                            borderRadius: '18px 18px 4px 18px',
+                          }
+                        : {
+                            background: '#2C2C2E',
+                            color: 'rgba(255,255,255,0.88)',
+                            borderRadius: '18px 18px 18px 4px',
+                          }
                     }
                   >
                     {msg.text}
@@ -345,8 +387,34 @@ function HowItWorks() {
                 </div>
               ))}
             </div>
+
+            {/* iMessage input bar */}
+            <div
+              className="flex items-center gap-2 px-3 pb-5 pt-2 border-t"
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+            >
+              <div
+                className="flex-1 flex items-center px-3 py-2"
+                style={{
+                  background: 'rgba(255,255,255,0.07)',
+                  borderRadius: '18px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}
+              >
+                <span className="font-sans text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>iMessage</span>
+              </div>
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: '#0A84FF' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M6 10V2M6 2L2 6M6 2L10 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   )
@@ -370,7 +438,7 @@ export default function HomePage() {
         {/* Dark scrim — keeps text legible over photo */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'rgba(10,3,6,0.6)' }}
+          style={{ background: 'rgba(10,3,6,0.62)' }}
           aria-hidden="true"
         />
 
@@ -396,12 +464,9 @@ export default function HomePage() {
 
           {/* Subheading */}
           <div className="mb-10 max-w-[600px] mx-auto">
-            {/* Primary line — slightly larger */}
             <p className="font-serif text-cream/85 text-[1.35rem] leading-snug text-center mb-5">
               Sommelier selected wines at insider rates.
             </p>
-
-            {/* Four punchy lines — slightly smaller */}
             <div className="space-y-2 text-center">
               {[
                 'We text you twice a week.',
@@ -446,8 +511,8 @@ export default function HomePage() {
       {/* How It Works → Membership */}
       <WaveDivider from="#1E0B10" to="#120608" flip />
 
-      {/* ── Section 3: The Benefits ── */}
-      <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
+      {/* ── Section 3: Membership ── */}
+      <section className="relative bg-maroon px-6 pb-28 overflow-hidden">
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
@@ -455,106 +520,55 @@ export default function HomePage() {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="relative z-10 max-w-3xl mx-auto">
           <FadeUp>
-            <p className="font-serif text-base uppercase tracking-[0.2em] text-gold text-center mb-14">
+            <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold text-center mb-4 pt-16">
               Membership
+            </p>
+            <p className="font-sans text-cream/45 text-sm text-center mb-14 tracking-wide">
+              Everything you get, just for joining.
             </p>
           </FadeUp>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Wine-list style — no boxes */}
+          <div>
             {[
               {
-                colSpan: 'md:col-span-2',
-                largeType: true,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 3 Q9 7.5 9 12 Q9 16.5 12 21"/>
-                    <path d="M12 3 Q15 7.5 15 12 Q15 16.5 12 21"/>
-                    <line x1="3" y1="12" x2="21" y2="12"/>
-                  </svg>
-                ),
-                heading: 'Off the beaten path',
-                body: 'We import directly and have relationships most retailers don\'t. Taiwan, Georgia, Texas, India: if it\'s interesting, Daniel will find it.',
+                heading: 'Two drops a week',
+                body: 'Monday and Thursday. Hand-picked by Daniel — a skin-contact Slovenian, a Texan Tempranillo, whatever\'s worth drinking right now.',
               },
               {
-                colSpan: '',
-                largeType: false,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <path d="M8 3 h8 L14.5 12 C14 14.5 12 16 12 16 C12 16 10 14.5 9.5 12 Z"/>
-                    <line x1="12" y1="16" x2="12" y2="21"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                  </svg>
-                ),
-                heading: 'Sommelier selected',
-                body: 'Every bottle is chosen by Daniel Jonberger, 20 years in wine, including time at the 2-star Raby Hunt. You\'re basically getting what he\'s drinking himself (or wishing he was).',
+                heading: 'Free storage',
+                body: 'We hold your bottles at Crush until you\'ve got 12. No extra cost, no decisions, no trips to the post office.',
               },
               {
-                colSpan: '',
-                largeType: false,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <path d="M4 7 h11 l5 5 -5 5 H4 z"/>
-                    <circle cx="17" cy="12" r="1.5" fill="#C9851D"/>
-                  </svg>
-                ),
+                heading: 'Free shipping at 12',
+                body: 'Once your case is full we ship the whole thing to your door. Palatine members get free delivery at 6.',
+              },
+              {
                 heading: 'Better prices',
-                body: 'We buy in volume across our two wine bars. You get the benefit of that.',
+                body: 'We buy in volume across both wine bars. You get the benefit — usually 15–25% below high street.',
               },
               {
-                colSpan: 'md:col-span-2',
-                largeType: true,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <path d="M4 21 L4 12 Q4 4 12 4 Q20 4 20 12 L20 21"/>
-                    <path d="M7 21 L7 13 Q7 8 12 8 Q17 8 17 13 L17 21"/>
-                  </svg>
-                ),
-                heading: 'Free storage & shipping',
-                body: 'We hold your bottles until you\'ve got 12, then ship the whole case to your door for free. No faff, no trips to the post office.',
-              },
-              {
-                colSpan: '',
-                largeType: false,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <path d="M5 4 h14 a1 1 0 0 1 1 1 v10 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 V5 a1 1 0 0 1 1 -1 z"/>
-                    <path d="M4 5 L12 12 L20 5"/>
-                    <line x1="12" y1="16" x2="12" y2="21"/>
-                    <path d="M8 21 h8"/>
-                  </svg>
-                ),
                 heading: 'Wine concierge',
-                body: 'Got a question? Looking for a gift? Text Daniel directly. He\'ll sort it.',
+                body: 'Got a question, need a gift, want something we haven\'t featured? Text Daniel. He\'ll sort it.',
               },
               {
-                colSpan: 'md:col-span-2',
-                largeType: false,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#C9851D" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 mb-4" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <line x1="12" y1="8" x2="12" y2="16"/>
-                    <line x1="8" y1="12" x2="16" y2="12"/>
-                  </svg>
-                ),
-                heading: 'Request a wine',
-                body: 'Want something we haven\'t featured? Request it. If enough members are in, we\'ll run it as a drop, at bulk prices.',
+                heading: 'Request a drop',
+                body: 'Name a wine or region and we\'ll try to run it. If enough members are in, it goes out as a members-only drop.',
               },
-            ].map(({ colSpan, largeType, icon, heading, body }, i) => (
-              <FadeUp key={heading} delay={i * 80}>
+            ].map(({ heading, body }, i) => (
+              <FadeUp key={heading} delay={i * 60}>
                 <div
-                  className={`relative overflow-hidden p-6 transition-all duration-200 hover:scale-[1.015] hover:bg-[#261015] h-full${colSpan ? ` ${colSpan}` : ''}`}
-                  style={{
-                    background: '#1E0B10',
-                    border: '1px solid rgba(240,230,220,0.12)',
-                    borderTop: '3px solid #9B1B30',
-                  }}
+                  className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-8 py-6"
+                  style={{ borderBottom: '1px solid rgba(240,230,220,0.08)' }}
                 >
-                  {icon}
-                  <h3 className={`font-serif text-cream mb-2 ${largeType ? 'text-2xl' : 'text-xl'}`}>{heading}</h3>
-                  <p className={`font-sans text-cream/55 leading-relaxed ${largeType ? 'text-base' : 'text-sm'}`}>{body}</p>
+                  <h3 className="font-serif text-cream text-lg sm:text-xl shrink-0 sm:w-52">
+                    {heading}
+                  </h3>
+                  <p className="font-sans text-cream/55 text-sm leading-relaxed">
+                    {body}
+                  </p>
                 </div>
               </FadeUp>
             ))}
@@ -569,8 +583,6 @@ export default function HomePage() {
       <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
         <FadeUp>
           <div className="max-w-3xl mx-auto text-center relative">
-
-            {/* Giant decorative opening quote mark — behind everything */}
             <span
               className="font-serif select-none pointer-events-none absolute"
               aria-hidden="true"
@@ -605,7 +617,6 @@ export default function HomePage() {
                 </p>
               </footer>
             </blockquote>
-
           </div>
         </FadeUp>
       </section>
@@ -626,7 +637,7 @@ export default function HomePage() {
             {/* Text column */}
             <div>
               <FadeUp>
-                <p className="font-serif text-base uppercase tracking-[0.2em] text-gold mb-8 pt-20">
+                <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold mb-8 pt-20">
                   Our Story
                 </p>
               </FadeUp>
@@ -634,17 +645,17 @@ export default function HomePage() {
               <div className="space-y-5 font-serif text-cream/75 text-lg leading-relaxed">
                 <FadeUp delay={60}>
                   <p>
-                    We&apos;re Craig and Daniel. We run Crush and Norse — two wine bars and shops in Durham. Our cellar is big enough to warrant its own membership.
+                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
                   </p>
                 </FadeUp>
                 <FadeUp delay={120}>
                   <p>
-                    Daniel is fab with wine. Somehow so knowledgeable yet totally unpretentious. Twenty years in the industry, time at the 2-star Raby Hunt, and a genuine obsession with finding bottles that make people feel something.
+                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
                   </p>
                 </FadeUp>
                 <FadeUp delay={180}>
                   <p>
-                    The Cellar Club is what happens when a great sommelier has a big cellar, direct import relationships, and a group of people who trust him to find something worth drinking.
+                    The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
                   </p>
                 </FadeUp>
               </div>
@@ -679,7 +690,21 @@ export default function HomePage() {
       <WaveDivider from="#1E0B10" to="#120608" flip />
 
       {/* ── Section 5: The Levels ── */}
-      <section className="relative bg-maroon px-6 pb-24 overflow-hidden">
+      <section
+        className="relative px-6 pb-24 overflow-hidden"
+        style={{
+          backgroundImage: 'url(/images/levels.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundColor: '#120608',
+        }}
+      >
+        {/* Dark scrim */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'rgba(8,2,4,0.78)' }}
+          aria-hidden="true"
+        />
         {/* Noise overlay */}
         <div
           className="absolute inset-0 pointer-events-none select-none"
@@ -689,7 +714,7 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-5xl mx-auto">
           <FadeUp>
-            <p className="font-serif text-base uppercase tracking-[0.2em] text-gold mb-4 text-center pt-20">
+            <p className="font-serif text-xl md:text-2xl uppercase tracking-[0.2em] text-gold mb-4 text-center pt-20">
               The Levels
             </p>
             <p className="font-sans text-cream/55 text-sm text-center max-w-md mx-auto mb-14">
@@ -703,9 +728,10 @@ export default function HomePage() {
               <div
                 className="relative overflow-hidden p-8 h-full"
                 style={{
-                  background: '#1E0B10',
+                  background: 'rgba(30,11,16,0.85)',
                   border: '1px solid rgba(240,230,220,0.12)',
                   borderTop: '3px solid #9B1B30',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-cream/50 mb-1">Entry · Free to join</p>
@@ -725,9 +751,10 @@ export default function HomePage() {
               <div
                 className="relative overflow-hidden p-8 h-full"
                 style={{
-                  background: '#1E0B10',
+                  background: 'rgba(30,11,16,0.85)',
                   border: '1px solid rgba(201,133,29,0.25)',
                   borderTop: '3px solid #C9851D',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £500</p>
@@ -747,10 +774,11 @@ export default function HomePage() {
               <div
                 className="relative overflow-hidden p-8 h-full md:-translate-y-2"
                 style={{
-                  background: '#1E0B10',
+                  background: 'rgba(30,11,16,0.85)',
                   border: '1px solid rgba(201,133,29,0.4)',
                   borderTop: '3px solid #C9851D',
-                  boxShadow: '0 0 40px rgba(201,133,29,0.08)',
+                  boxShadow: '0 0 40px rgba(201,133,29,0.1)',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <p className="font-serif text-xs uppercase tracking-[0.25em] text-gold/70 mb-1">Unlocks at £1,000</p>
