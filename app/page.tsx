@@ -215,7 +215,7 @@ export default function HomePage() {
     <div style={{ background: PAGE_BG, color: TEXT_DARK, minHeight: '100vh' }}>
 
       {/* ── Centered menu card with border all the way around ── */}
-      <div className="max-w-2xl mx-auto sm:py-10 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto py-6 sm:py-10 px-4 sm:px-6">
         <div
           style={{
             background: CARD_BG,
@@ -257,18 +257,12 @@ export default function HomePage() {
 
           {/* ── Tagline + sommelier — below the door ── */}
           <div
-            className="text-center px-8 py-10"
+            className="text-center px-8 py-8"
             style={{ borderBottom: `1px solid ${BORDER}` }}
           >
             <p
-              className="font-serif leading-snug"
-              style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', color: '#1C0E09' }}
-            >
-              Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-            </p>
-            <p
-              className="font-serif italic text-sm mt-3"
-              style={{ color: 'rgba(42,24,16,0.45)', letterSpacing: '0.04em' }}
+              className="font-serif italic"
+              style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
             >
               A private cellar. Two offers a week. Yours by text.
             </p>
@@ -277,6 +271,16 @@ export default function HomePage() {
               style={{ color: 'rgba(42,24,16,0.38)' }}
             >
               Sommelier &middot; Daniel Jonberger
+            </p>
+          </div>
+
+          {/* ── Pull quote ── */}
+          <div className="px-8 pt-10 pb-2">
+            <p
+              className="font-serif leading-snug"
+              style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', color: '#1C0E09' }}
+            >
+              Wines you won&apos;t find on any shelf, at prices that feel like a secret.
             </p>
           </div>
 
