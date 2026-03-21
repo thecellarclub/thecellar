@@ -255,7 +255,7 @@ export default function HomePage() {
           </div>
 
           {/* ── Tagline + sommelier — below the door ── */}
-          <div className="text-center px-8 pb-8">
+          <div className="text-center px-8 pt-6 pb-8">
             <p
               className="font-serif italic"
               style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
@@ -272,7 +272,7 @@ export default function HomePage() {
 
           {/* ── Sign-up form ── */}
           <FadeUp>
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-6">
               <SignupForm />
               <p
                 className="font-serif italic text-xs text-center mt-4"
@@ -291,7 +291,7 @@ export default function HomePage() {
           </FadeUp>
 
           {/* ── Menu sections ── */}
-          <div className="px-8 pt-10 pb-12">
+          <div className="px-8 pt-6 pb-4">
 
             {/* ── How It Works ── */}
             <MenuSection title="How It Works">
@@ -398,7 +398,7 @@ export default function HomePage() {
               </div>
 
               <FadeUp delay={180}>
-                <div className="mt-10">
+                <div className="mt-10 text-center">
                   <Link
                     href="/join"
                     className="group inline-block font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:opacity-90"
