@@ -179,7 +179,7 @@ async function handleShip(
     .eq('customer_id', customer.id)
     .is('shipped_at', null)
     .is('shipment_id', null)
-    .order('created_at', { ascending: true })
+    .order('added_at', { ascending: true })
 
   const selectedIds: string[] = []
   let remaining = bottlesToShip
@@ -302,7 +302,7 @@ async function handleShipConfirm(
     .eq('customer_id', customer.id)
     .is('shipped_at', null)
     .is('shipment_id', null)
-    .order('created_at', { ascending: true })
+    .order('added_at', { ascending: true })
 
   const availableBottles = (cellarRowsForEarly ?? []).reduce((sum, r) => sum + r.quantity, 0)
 
