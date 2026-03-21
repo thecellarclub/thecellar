@@ -220,58 +220,15 @@ export default function HomePage() {
   return (
     <div className="bg-maroon text-cream">
 
-      {/* ── Header: brand mark ── */}
-      <section className="relative flex flex-col items-center justify-center px-6 pt-20 pb-14 overflow-hidden">
-        <CellarDoorSvg />
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          style={{ opacity: 0.03, backgroundImage: NOISE_BG, backgroundRepeat: 'repeat' }}
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 text-center">
+      {/* ── Header: brand mark only ── */}
+      <section className="flex flex-col items-center justify-center px-6 pt-10 pb-6">
+        <div className="text-center">
           <div className="mb-6">
             <span className="block font-serif text-xs uppercase tracking-[0.35em] text-cream/70">the</span>
             <span className="block font-serif text-6xl md:text-7xl uppercase tracking-[0.08em] leading-none text-cream">CELLAR</span>
             <span className="block font-serif text-xs uppercase tracking-[0.35em] text-cream/70">club</span>
           </div>
-
-          <div className="w-12 h-px bg-gold mx-auto mb-5 opacity-60" />
-
-          {/* Quote headline */}
-          <p
-            className="font-serif text-cream/88 leading-snug mb-8 max-w-lg mx-auto"
-            style={{ fontSize: 'clamp(1.15rem, 3vw, 1.7rem)' }}
-          >
-            Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-          </p>
-
-          {/* Mini wine menu summary */}
-          <div className="max-w-xs mx-auto text-left mb-6">
-            {[
-              ['We text you each week', 'twice'],
-              ['Reply how many you want', '3 bottles'],
-              ['We store it until you fill a case of', '12'],
-              ['Then ship it to you for', '£0'],
-            ].map(([name, price]) => (
-              <div key={name} className="flex items-baseline gap-2 mb-2.5">
-                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(240,230,220,0.68)' }}>
-                  {name}
-                </span>
-                <span
-                  className="flex-1 min-w-0"
-                  style={{ borderBottom: '1px dotted rgba(240,230,220,0.16)', marginBottom: '0.3em' }}
-                />
-                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(201,133,29,0.82)' }}>
-                  {price}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <p className="font-sans text-cream/28 text-xs tracking-[0.22em] uppercase">
-            Sommelier &middot; Daniel Jonberger
-          </p>
+          <div className="w-12 h-px bg-gold mx-auto opacity-60" />
         </div>
       </section>
 
@@ -280,7 +237,10 @@ export default function HomePage() {
 
         {/* ── Reservations (join) ── */}
         <MenuSection title="Reservations">
-          <MenuEntry name="Membership" price="free to join" />
+          <MenuEntry name="We text you each week" price="twice" />
+          <MenuEntry name="Reply how many you want" price="3 bottles" />
+          <MenuEntry name="We store it until you fill a case of" price="12" />
+          <MenuEntry name="Then ship it to you for" price="£0" />
           <div className="mt-6 max-w-sm mx-auto">
             <HeroSignupForm />
           </div>
