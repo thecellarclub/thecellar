@@ -343,7 +343,7 @@ export default function HomePage() {
                 Your tier is awarded on your rolling twelve-month spend.
               </p>
 
-              <MenuEntry name="Bailey" price="free to join" />
+              <MenuEntry name="Elvet" price="free to join" />
               <div className="mb-9">
                 <PerkEntry name="Wonderful wine texts" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="2 / month" />
@@ -351,7 +351,7 @@ export default function HomePage() {
                 <PerkEntry name="Free delivery" value="12 bottles" />
               </div>
 
-              <MenuEntry name="Elvet" price="unlocks at £500" />
+              <MenuEntry name="Bailey" price="unlocks at £500" />
               <div className="mb-9">
                 <PerkEntry name="Wonderful wine texts" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="5 / month" />
