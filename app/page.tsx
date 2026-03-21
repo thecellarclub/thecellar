@@ -227,7 +227,6 @@ export default function HomePage() {
           {/* ── Arch header — logo + door ── */}
           <div
             className="relative flex flex-col items-center justify-center pt-14 pb-10 overflow-hidden"
-            style={{ borderBottom: `1px solid ${BORDER}` }}
           >
             <CellarDoorSvg />
             <div className="relative z-10 text-center">
@@ -256,10 +255,7 @@ export default function HomePage() {
           </div>
 
           {/* ── Tagline + sommelier — below the door ── */}
-          <div
-            className="text-center px-8 py-8"
-            style={{ borderBottom: `1px solid ${BORDER}` }}
-          >
+          <div className="text-center px-8 pb-8">
             <p
               className="font-serif italic"
               style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
@@ -274,19 +270,9 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* ── Pull quote ── */}
-          <div className="px-8 pt-10 pb-2">
-            <p
-              className="font-serif leading-snug"
-              style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', color: '#1C0E09' }}
-            >
-              Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-            </p>
-          </div>
-
           {/* ── Sign-up form ── */}
           <FadeUp>
-            <div className="px-8 py-10" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <div className="px-8 pb-10">
               <SignupForm />
               <p
                 className="font-serif italic text-xs text-center mt-4"
@@ -428,10 +414,7 @@ export default function HomePage() {
           </div>
 
           {/* ── Footer — inside the card ── */}
-          <div
-            className="px-8 py-8 text-center space-y-2"
-            style={{ borderTop: `1px solid ${BORDER}` }}
-          >
+          <div className="px-8 py-8 text-center space-y-2">
             <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
               CD WINES LTD &middot; Company No. 15796479
             </p>
