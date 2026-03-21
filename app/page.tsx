@@ -62,16 +62,18 @@ function MenuEntry({
   name,
   price,
   description,
+  featured = false,
 }: {
   name: string
   price: string
   description?: string
+  featured?: boolean
 }) {
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-3">
         <span
-          className="font-serif text-lg shrink-0"
+          className={`font-serif shrink-0 ${featured ? 'text-2xl' : 'text-lg'}`}
           style={{ color: '#120608' }}
         >
           {name}
@@ -84,7 +86,7 @@ function MenuEntry({
           }}
         />
         <span
-          className="font-serif text-base shrink-0 text-right"
+          className={`font-serif shrink-0 text-right ${featured ? 'text-xl' : 'text-base'}`}
           style={{ color: 'rgba(160,100,10,0.9)' }}
         >
           {price}
@@ -92,8 +94,8 @@ function MenuEntry({
       </div>
       {description && (
         <p
-          className="font-serif italic text-sm leading-relaxed mt-1.5"
-          style={{ color: 'rgba(18,6,8,0.48)' }}
+          className="font-serif italic text-base leading-relaxed mt-2"
+          style={{ color: 'rgba(18,6,8,0.52)' }}
         >
           {description}
         </p>
@@ -179,14 +181,14 @@ function HeroSignupForm() {
 
 export default function HomePage() {
   return (
-    <div className="bg-cream min-h-screen py-10 px-4 sm:px-6">
+    <div className="min-h-screen py-10 px-4 sm:px-6" style={{ background: '#EDE0CE' }}>
 
       {/* ── Card ── */}
       <div
         className="max-w-2xl mx-auto"
         style={{
-          background: '#F0E6DC',
-          border: '1px solid rgba(18,6,8,0.14)',
+          background: '#EDE0CE',
+          border: '1px solid rgba(18,6,8,0.18)',
           boxShadow: '0 2px 16px rgba(18,6,8,0.08)',
         }}
       >
@@ -201,10 +203,10 @@ export default function HomePage() {
           </div>
           <div className="w-12 h-px mx-auto mb-6 opacity-60" style={{ background: '#C9851D' }} />
 
-          {/* Quote headline — styled like section titles */}
+          {/* Quote headline — black, prominent */}
           <p
-            className="font-serif text-xs uppercase tracking-[0.32em] text-center"
-            style={{ color: 'rgba(160,100,10,0.75)' }}
+            className="font-serif text-center leading-snug"
+            style={{ fontSize: 'clamp(1.2rem, 3vw, 1.7rem)', color: '#120608' }}
           >
             Wines you won&apos;t find on any shelf, at prices that feel like a secret.
           </p>
@@ -213,13 +215,13 @@ export default function HomePage() {
         {/* ── Menu body ── */}
         <div className="px-8 py-10">
 
-          {/* ── Reservations (join) — no section title ── */}
-          <div className="mb-14">
+          {/* ── How It Works ── */}
+          <MenuSection title="How It Works">
             <MenuEntry name="We text you twice each week" price="2" />
             <MenuEntry name="Reply how many bottles you want" price="4" />
             <MenuEntry name="We store it until you fill a case of" price="12" />
             <MenuEntry name="Then ship it to you for" price="free" />
-            <div className="mt-6 max-w-sm mx-auto">
+            <div className="mt-10 max-w-sm mx-auto">
               <HeroSignupForm />
             </div>
             <p className="font-serif italic text-xs text-center mt-4" style={{ color: 'rgba(18,6,8,0.32)' }}>
@@ -228,36 +230,36 @@ export default function HomePage() {
                 Log in here
               </Link>
             </p>
-          </div>
+          </MenuSection>
 
-          {/* ── Membership ── */}
+          {/* ── Why Bother ── */}
           <MenuSection title="Why Bother">
-            <MenuEntry
+            <MenuEntry featured
               name="Off the beaten path"
               price="40+ countries"
               description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
             />
-            <MenuEntry
+            <MenuEntry featured
               name="Sommelier selected"
               price="20 years"
               description="Every bottle is chosen by Daniel Jonberger. Time at the 2-star Raby Hunt. A genuine obsession with finding bottles that make people feel something."
             />
-            <MenuEntry
+            <MenuEntry featured
               name="Better prices"
               price="direct import rates"
               description="We buy in volume across our two wine bars. You get the benefit of that."
             />
-            <MenuEntry
+            <MenuEntry featured
               name="Free storage"
               price="until your case is full"
               description="Your bottles wait for you. No storage charge, no pressure to buy more."
             />
-            <MenuEntry
+            <MenuEntry featured
               name="Wine concierge"
               price="unlimited questions"
               description="Got a question? Looking for a gift? Text Daniel directly. He'll sort it."
             />
-            <MenuEntry
+            <MenuEntry featured
               name="Request a wine"
               price="group buy, bulk price"
               description="Want something we haven't featured? Request it. If enough members are in, we'll run it as a drop."
