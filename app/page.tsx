@@ -160,108 +160,6 @@ function MenuSection({ title, children }: { title: string; children: React.React
   )
 }
 
-// ─── How It Works menu ─────────────────────────────────────────────────────────
-
-function HowItWorksMenu() {
-  const [active, setActive] = useState(0)
-
-  const steps = [
-    {
-      name: 'We text you',
-      price: 'twice weekly',
-      description: 'Daniel picks something remarkable and texts it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn\'t be this affordable.',
-      messages: [
-        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
-      ],
-    },
-    {
-      name: 'You reply',
-      price: 'how many you want',
-      description: 'Text back the quantity. We confirm, charge your card, and add the bottles to your cellar. No login, no basket, no faff.',
-      messages: [
-        { from: 'daniel', text: 'Morning. Just landed a beautiful Primitivo from Puglia — 2018, proper Sunday drinking. £14/bottle. How many?' },
-        { from: 'you', text: '3 please' },
-        { from: 'daniel', text: 'Sorted — 3 × Primitivo at £14 = £42. Card charged. Added to your cellar.' },
-      ],
-    },
-    {
-      name: 'We store it',
-      price: 'until you have twelve',
-      description: 'Your bottles go into your cellar account. Mix and match across drops — build your case your way.',
-      messages: [
-        { from: 'you', text: 'How many bottles do I have?' },
-        { from: 'daniel', text: 'You\'ve got 9 bottles stored. 3 more until we ship your case for free.' },
-        { from: 'you', text: 'What have I got so far?' },
-        { from: 'daniel', text: '2 × Primitivo · 3 × Grüner Veltliner · 2 × Mencía · 2 × Xinomavro. A very good case.' },
-      ],
-    },
-    {
-      name: 'We ship it',
-      price: '£0',
-      description: null,
-      messages: [
-        { from: 'daniel', text: 'Your case is full — 12 bottles ready to go. We\'ll ship to your saved address. Expect it Thursday.' },
-        { from: 'you', text: 'Perfect, thanks.' },
-      ],
-    },
-  ]
-
-  return (
-    <div>
-      {/* Clickable menu entries */}
-      <div className="mb-8">
-        {steps.map((step, i) => (
-          <MenuEntry
-            key={step.name}
-            name={step.name}
-            price={step.price}
-            description={step.description ?? undefined}
-            onClick={() => setActive(i)}
-            active={i === active}
-          />
-        ))}
-      </div>
-
-      {/* SMS mock — updates on entry click */}
-      <div
-        className="rounded-xl overflow-hidden"
-        style={{ background: '#0D0407', border: '1px solid rgba(240,230,220,0.07)' }}
-      >
-        {/* Header bar */}
-        <div
-          className="flex items-center justify-between px-5 py-3 border-b"
-          style={{ borderColor: 'rgba(240,230,220,0.06)' }}
-        >
-          <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.35)' }}>
-            The Cellar Club
-          </span>
-          <span className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.22)' }}>
-            SMS
-          </span>
-        </div>
-
-        {/* Messages */}
-        <div className="px-5 py-5 space-y-3 min-h-[140px]">
-          {steps[active].messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.from === 'you' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className="max-w-[78%] px-4 py-2.5 font-sans text-sm leading-relaxed"
-                style={
-                  msg.from === 'you'
-                    ? { background: '#9B1B30', color: '#F0E6DC', borderRadius: '18px 18px 4px 18px' }
-                    : { background: '#2A1118', color: 'rgba(240,230,220,0.82)', borderRadius: '18px 18px 18px 4px' }
-                }
-              >
-                {msg.text}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Hero form ─────────────────────────────────────────────────────────────────
 
 function buildPhone(raw: string): string {
@@ -340,10 +238,38 @@ export default function HomePage() {
 
           <div className="w-12 h-px bg-gold mx-auto mb-5 opacity-60" />
 
-          <p className="font-serif italic text-cream/50 text-sm">
-            A private cellar. Two offers a week. Yours by text.
+          {/* Quote headline */}
+          <p
+            className="font-serif text-cream/88 leading-snug mb-8 max-w-lg mx-auto"
+            style={{ fontSize: 'clamp(1.15rem, 3vw, 1.7rem)' }}
+          >
+            Wines you won&apos;t find on any shelf, at prices that feel like a secret.
           </p>
-          <p className="font-sans text-cream/28 text-xs tracking-[0.22em] uppercase mt-3">
+
+          {/* Mini wine menu summary */}
+          <div className="max-w-xs mx-auto text-left mb-6">
+            {[
+              ['We text you each week', 'twice'],
+              ['Reply how many you want', '3 bottles'],
+              ['We store it until you fill a case of', '12'],
+              ['Then ship it to you for', '£0'],
+            ].map(([name, price]) => (
+              <div key={name} className="flex items-baseline gap-2 mb-2.5">
+                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(240,230,220,0.68)' }}>
+                  {name}
+                </span>
+                <span
+                  className="flex-1 min-w-0"
+                  style={{ borderBottom: '1px dotted rgba(240,230,220,0.16)', marginBottom: '0.3em' }}
+                />
+                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(201,133,29,0.82)' }}>
+                  {price}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <p className="font-sans text-cream/28 text-xs tracking-[0.22em] uppercase">
             Sommelier &middot; Daniel Jonberger
           </p>
         </div>
@@ -366,16 +292,11 @@ export default function HomePage() {
           </p>
         </MenuSection>
 
-        {/* ── How It Works ── */}
-        <MenuSection title="How It Works">
-          <HowItWorksMenu />
-        </MenuSection>
-
         {/* ── Membership ── */}
         <MenuSection title="Membership">
           <MenuEntry
             name="Off the beaten path"
-            price="12+ countries"
+            price="40+ countries"
             description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
           />
           <MenuEntry
@@ -409,51 +330,85 @@ export default function HomePage() {
         <MenuSection title="The Levels">
           <p
             className="font-serif italic text-sm leading-relaxed mb-8"
-            style={{ color: 'rgba(240,230,220,0.38)' }}
+            style={{ color: 'rgba(240,230,220,0.35)' }}
           >
-            Tiers are assessed annually on your rolling twelve-month spend.
+            Tiers assessed annually on your rolling twelve-month spend.
           </p>
 
+          {/* Bailey */}
           <MenuEntry name="Bailey" price="free to join" />
-          <div className="pl-5 mb-8 space-y-1.5">
+          <div className="pl-4 mb-10">
             {[
-              'Two weekly drops via SMS',
-              'Free delivery at 12 bottles',
-              'Unlimited wine request service',
-              'Wine concierge (up to 2 requests/month)',
-            ].map((perk) => (
-              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
-                &mdash; {perk}
-              </p>
+              ['SMS drops', '2 / week'],
+              ['Concierge requests', '2 / month'],
+              ['Wine requests', 'unlimited'],
+              ['Free delivery', 'at 12 bottles'],
+            ].map(([name, price]) => (
+              <div key={name} className="flex items-baseline gap-2 mb-2">
+                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(240,230,220,0.48)' }}>
+                  {name}
+                </span>
+                <span
+                  className="flex-1 min-w-0"
+                  style={{ borderBottom: '1px dotted rgba(240,230,220,0.12)', marginBottom: '0.3em' }}
+                />
+                <span className="font-serif text-sm shrink-0 text-right" style={{ color: 'rgba(201,133,29,0.55)' }}>
+                  {price}
+                </span>
+              </div>
             ))}
           </div>
 
+          {/* Elvet */}
           <MenuEntry name="Elvet" price="unlocks at £500" />
-          <div className="pl-5 mb-8 space-y-1.5">
+          <div className="pl-4 mb-10">
             {[
-              'Everything in Bailey',
-              'Up to 5 wine concierge requests/month',
-              '2 × tickets to wine tastings (Durham or London)',
-              '5% discount on all orders',
-            ].map((perk) => (
-              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
-                &mdash; {perk}
-              </p>
+              ['SMS drops', '2 / week'],
+              ['Concierge requests', '5 / month'],
+              ['Wine requests', 'unlimited'],
+              ['Tasting tickets', '2 / year'],
+              ['Discount', '5%'],
+              ['Free delivery', 'at 12 bottles'],
+            ].map(([name, price]) => (
+              <div key={name} className="flex items-baseline gap-2 mb-2">
+                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(240,230,220,0.48)' }}>
+                  {name}
+                </span>
+                <span
+                  className="flex-1 min-w-0"
+                  style={{ borderBottom: '1px dotted rgba(240,230,220,0.12)', marginBottom: '0.3em' }}
+                />
+                <span className="font-serif text-sm shrink-0 text-right" style={{ color: 'rgba(201,133,29,0.55)' }}>
+                  {price}
+                </span>
+              </div>
             ))}
           </div>
 
+          {/* Palatine */}
           <MenuEntry name="Palatine" price="unlocks at £1,000" />
-          <div className="pl-5 mb-2 space-y-1.5">
+          <div className="pl-4 mb-2">
             {[
-              'Everything in Elvet',
-              'Free delivery at 6 bottles',
-              '10% discount on all orders',
-              '4 × tickets to wine tastings (Durham or London)',
-              'First look — 2 hours before everyone else',
-            ].map((perk) => (
-              <p key={perk} className="font-sans text-xs leading-relaxed" style={{ color: 'rgba(240,230,220,0.4)' }}>
-                &mdash; {perk}
-              </p>
+              ['SMS drops', '2 / week'],
+              ['Concierge requests', 'unlimited'],
+              ['Wine requests', 'unlimited'],
+              ['Tasting tickets', '4 / year'],
+              ['Discount', '10%'],
+              ['Free delivery', 'at 6 bottles'],
+              ['First look', '2 hrs early'],
+            ].map(([name, price]) => (
+              <div key={name} className="flex items-baseline gap-2 mb-2">
+                <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(240,230,220,0.48)' }}>
+                  {name}
+                </span>
+                <span
+                  className="flex-1 min-w-0"
+                  style={{ borderBottom: '1px dotted rgba(240,230,220,0.12)', marginBottom: '0.3em' }}
+                />
+                <span className="font-serif text-sm shrink-0 text-right" style={{ color: 'rgba(201,133,29,0.55)' }}>
+                  {price}
+                </span>
+              </div>
             ))}
           </div>
         </MenuSection>
@@ -494,50 +449,6 @@ export default function HomePage() {
         </MenuSection>
 
       </div>
-
-      {/* ── Pull quote — full width, exactly as original ── */}
-      <section className="bg-maroon-dark px-6 py-28 overflow-hidden">
-        <FadeUp>
-          <div className="max-w-3xl mx-auto text-center relative">
-
-            <span
-              className="font-serif select-none pointer-events-none absolute"
-              aria-hidden="true"
-              style={{
-                fontSize: '28rem',
-                lineHeight: 0.8,
-                color: '#F0E6DC',
-                opacity: 0.045,
-                top: '-3rem',
-                left: '50%',
-                transform: 'translateX(-52%)',
-                fontStyle: 'normal',
-                zIndex: 0,
-              }}
-            >
-              &ldquo;
-            </span>
-
-            <blockquote className="relative" style={{ zIndex: 1 }}>
-              <p
-                className="font-serif text-cream/90 leading-[1.25]"
-                style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)' }}
-              >
-                Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-              </p>
-              <footer className="mt-10 space-y-1.5">
-                <p className="font-sans text-cream/35 text-[0.7rem] tracking-[0.25em] uppercase">
-                  The Cellar Club
-                </p>
-                <p className="font-serif text-cream/30 text-sm italic">
-                  Not recommended for anyone who was happy with their wine spend.
-                </p>
-              </footer>
-            </blockquote>
-
-          </div>
-        </FadeUp>
-      </section>
 
       {/* ── Footer ── */}
       <footer className="bg-maroon border-t border-cream/10 px-6 py-10">
