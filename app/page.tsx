@@ -157,12 +157,6 @@ function PerkEntry({ name, value }: { name: string; value: string }) {
 
 // ─── Sign-up form — light theme ────────────────────────────────────────────────
 
-function buildPhone(raw: string): string {
-  const stripped = raw.replace(/[\s\-]/g, '')
-  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
-  return '+44' + stripped
-}
-
 function SignupForm() {
   const [phone, setPhone] = useState('')
   const router = useRouter()
@@ -199,7 +193,7 @@ function SignupForm() {
       </div>
       <button
         type="submit"
-        className="group text-white px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:bg-[#7d1526] whitespace-nowrap"
+        className="group text-white px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:opacity-90 whitespace-nowrap"
         style={{ background: '#9B1B30' }}
       >
         Join the Club{' '}
@@ -213,230 +207,256 @@ function SignupForm() {
 
 export default function HomePage() {
   const PAGE_BG = '#E6D9CA'
+  const CARD_BG = '#F2EAE0'
   const TEXT_DARK = '#1C0E09'
+  const BORDER = 'rgba(42,24,16,0.18)'
 
   return (
-    <div style={{ background: PAGE_BG, color: TEXT_DARK }}>
+    <div style={{ background: PAGE_BG, color: TEXT_DARK, minHeight: '100vh' }}>
 
-      {/* ── Arch header — logo only, compact ── */}
-      <section
-        className="relative flex flex-col items-center justify-center px-6 pt-14 pb-10 overflow-hidden"
-        style={{ background: PAGE_BG }}
-      >
-        <CellarDoorSvg />
+      {/* ── Centered menu card with border all the way around ── */}
+      <div className="max-w-2xl mx-auto sm:py-10 px-4 sm:px-6">
+        <div
+          style={{
+            background: CARD_BG,
+            border: `1px solid ${BORDER}`,
+            color: TEXT_DARK,
+          }}
+        >
 
-        <div className="relative z-10 text-center">
-          <div className="mb-5">
-            <span
-              className="block font-serif text-xs uppercase tracking-[0.35em]"
-              style={{ color: 'rgba(42,24,16,0.5)' }}
-            >
-              the
-            </span>
-            <span
-              className="block font-serif text-6xl md:text-7xl uppercase tracking-[0.08em] leading-none"
-              style={{ color: TEXT_DARK }}
-            >
-              CELLAR
-            </span>
-            <span
-              className="block font-serif text-xs uppercase tracking-[0.35em]"
-              style={{ color: 'rgba(42,24,16,0.5)' }}
-            >
-              club
-            </span>
-          </div>
-          <div className="w-10 h-px mx-auto" style={{ background: 'rgba(100,50,20,0.35)' }} />
-        </div>
-      </section>
-
-      {/* ── Menu body ── */}
-      <div
-        className="max-w-2xl mx-auto px-8 pb-20"
-        style={{ border: '1px solid rgba(42,24,16,0.18)', borderTop: 'none' }}
-      >
-
-        {/* Quote headline */}
-        <FadeUp>
-          <p
-            className="font-serif text-left leading-snug mb-10 mt-8"
-            style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', color: '#1C0E09' }}
+          {/* ── Arch header — logo + door ── */}
+          <div
+            className="relative flex flex-col items-center justify-center pt-14 pb-10 overflow-hidden"
+            style={{ borderBottom: `1px solid ${BORDER}` }}
           >
-            Wines you won&apos;t find on any shelf, at prices that feel like a secret.
-          </p>
-        </FadeUp>
+            <CellarDoorSvg />
+            <div className="relative z-10 text-center">
+              <div className="mb-5">
+                <span
+                  className="block font-serif text-xs uppercase tracking-[0.35em]"
+                  style={{ color: 'rgba(42,24,16,0.45)' }}
+                >
+                  the
+                </span>
+                <span
+                  className="block font-serif text-6xl md:text-7xl uppercase tracking-[0.08em] leading-none"
+                  style={{ color: TEXT_DARK }}
+                >
+                  CELLAR
+                </span>
+                <span
+                  className="block font-serif text-xs uppercase tracking-[0.35em]"
+                  style={{ color: 'rgba(42,24,16,0.45)' }}
+                >
+                  club
+                </span>
+              </div>
+              <div className="w-10 h-px mx-auto" style={{ background: 'rgba(100,50,20,0.3)' }} />
+            </div>
+          </div>
 
-        {/* ── How It Works ── */}
-        <MenuSection title="How It Works">
-          <MenuEntry name="We text you twice each week" price="2" description="Daniel picks something remarkable and sends it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn't be this affordable." />
-          <MenuEntry name="Reply how many bottles you want" price="4" description="Text back the quantity. We confirm, charge your card, and add the bottles to your cellar. No login, no basket, no faff." />
-          <MenuEntry name="We store it until you fill a case of" price="12" description="Your bottles go into your cellar account. Mix and match across drops — build your case your way." />
-          <MenuEntry name="Then ship it to you for" price="free" />
-
-          {/* Sign-up form sits here, directly below the 4 lines */}
-          <div className="mt-8 mb-2">
-            <SignupForm />
+          {/* ── Tagline + sommelier — below the door ── */}
+          <div
+            className="text-center px-8 py-10"
+            style={{ borderBottom: `1px solid ${BORDER}` }}
+          >
             <p
-              className="font-serif italic text-xs text-center mt-4"
+              className="font-serif leading-snug"
+              style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', color: '#1C0E09' }}
+            >
+              Wines you won&apos;t find on any shelf, at prices that feel like a secret.
+            </p>
+            <p
+              className="font-serif italic text-sm mt-3"
+              style={{ color: 'rgba(42,24,16,0.45)', letterSpacing: '0.04em' }}
+            >
+              A private cellar. Two offers a week. Yours by text.
+            </p>
+            <p
+              className="font-sans text-xs uppercase tracking-[0.28em] mt-2"
               style={{ color: 'rgba(42,24,16,0.38)' }}
             >
-              Already a member?{' '}
-              <Link
-                href="/portal"
-                className="underline underline-offset-2 transition-colors hover:opacity-70"
-                style={{ color: 'rgba(42,24,16,0.5)' }}
-              >
-                Log in here
-              </Link>
+              Sommelier &middot; Daniel Jonberger
             </p>
           </div>
-        </MenuSection>
 
-        {/* ── Why Bother (membership) ── */}
-        <MenuSection title="Why Bother">
-          <MenuEntry
-            name="Off the beaten path"
-            price="40+ countries"
-            description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
-          />
-          <MenuEntry
-            name="Sommelier selected"
-            price="20 years"
-            description="Every bottle is chosen by Daniel Jonberger. Time at the 2-star Raby Hunt. A genuine obsession with finding bottles that make people feel something."
-          />
-          <MenuEntry
-            name="Better prices"
-            price="direct import rates"
-            description="We buy in volume across our two wine bars. You get the benefit of that."
-          />
-          <MenuEntry
-            name="Free storage"
-            price="until your case is full"
-            description="Your bottles wait for you. No storage charge, no pressure to buy more."
-          />
-          <MenuEntry
-            name="Wine concierge"
-            price="unlimited questions"
-            description="Got a question? Looking for a gift? Text Daniel directly. He'll sort it."
-          />
-          <MenuEntry
-            name="Request a wine"
-            price="group buy, bulk price"
-            description="Want something we haven't featured? Request it. If enough members are in, we'll run it as a drop."
-          />
-        </MenuSection>
-
-        {/* ── The Levels ── */}
-        <MenuSection title="Welcome to the Club">
-          <p
-            className="font-serif italic text-sm leading-relaxed mb-7"
-            style={{ color: 'rgba(42,24,16,0.38)' }}
-          >
-            Tiers assessed annually on your rolling twelve-month spend.
-          </p>
-
-          <MenuEntry name="Bailey" price="free to join" />
-          <div className="pl-5 mb-9">
-            <PerkEntry name="SMS drops" value="2 / week" />
-            <PerkEntry name="Concierge requests" value="2 / month" />
-            <PerkEntry name="Wine requests" value="unlimited" />
-            <PerkEntry name="Free delivery" value="at 12 bottles" />
-          </div>
-
-          <MenuEntry name="Elvet" price="unlocks at £500" />
-          <div className="pl-5 mb-9">
-            <PerkEntry name="SMS drops" value="2 / week" />
-            <PerkEntry name="Concierge requests" value="5 / month" />
-            <PerkEntry name="Wine requests" value="unlimited" />
-            <PerkEntry name="Tasting tickets" value="2 / year" />
-            <PerkEntry name="Discount" value="5%" />
-            <PerkEntry name="Free delivery" value="at 12 bottles" />
-          </div>
-
-          <MenuEntry name="Palatine" price="unlocks at £1,000" />
-          <div className="pl-5 mb-2">
-            <PerkEntry name="SMS drops" value="2 / week" />
-            <PerkEntry name="Concierge requests" value="unlimited" />
-            <PerkEntry name="Wine requests" value="unlimited" />
-            <PerkEntry name="Tasting tickets" value="4 / year" />
-            <PerkEntry name="Discount" value="10%" />
-            <PerkEntry name="Free delivery" value="at 6 bottles" />
-            <PerkEntry name="First look" value="2 hrs early" />
-          </div>
-        </MenuSection>
-
-        {/* ── Our Story ── */}
-        <MenuSection title="Our Story">
-          <div
-            className="space-y-5 font-serif text-base leading-relaxed"
-            style={{ color: 'rgba(42,24,16,0.72)' }}
-          >
-            <FadeUp>
-              <p>
-                We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
-              </p>
-            </FadeUp>
-            <FadeUp delay={60}>
-              <p>
-                Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
-              </p>
-            </FadeUp>
-            <FadeUp delay={120}>
-              <p>
-                The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
-              </p>
-            </FadeUp>
-          </div>
-
-          <FadeUp delay={180}>
-            <div className="mt-10">
-              <Link
-                href="/join"
-                className="group inline-block font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:opacity-90"
-                style={{ background: '#9B1B30', color: '#F0E6DC' }}
+          {/* ── Sign-up form ── */}
+          <FadeUp>
+            <div className="px-8 py-10" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <SignupForm />
+              <p
+                className="font-serif italic text-xs text-center mt-4"
+                style={{ color: 'rgba(42,24,16,0.38)' }}
               >
-                Join the Club{' '}
-                <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">→</span>
-              </Link>
+                Already a member?{' '}
+                <Link
+                  href="/portal"
+                  className="underline underline-offset-2 transition-colors hover:opacity-70"
+                  style={{ color: 'rgba(42,24,16,0.5)' }}
+                >
+                  Log in here
+                </Link>
+              </p>
             </div>
           </FadeUp>
-        </MenuSection>
 
-      </div>
+          {/* ── Menu sections ── */}
+          <div className="px-8 pt-10 pb-12">
 
-      {/* ── Footer ── */}
-      <footer
-        className="px-6 py-10 border-t"
-        style={{ borderColor: 'rgba(42,24,16,0.12)', background: PAGE_BG }}
-      >
-        <div className="max-w-2xl mx-auto text-center space-y-2">
-          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
-            CD WINES LTD &middot; Company No. 15796479
-          </p>
-          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
-            Licensed under the Licensing Act 2003 &middot; Licence No. DCCC/PLA0856
-          </p>
-          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
-            We do not sell alcohol to anyone under 18. Please drink responsibly.
-          </p>
-          <div className="flex justify-center gap-6 pt-2">
-            <Link
-              href="/privacy"
-              className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
-              style={{ color: 'rgba(42,24,16,0.4)' }}
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="/terms"
-              className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
-              style={{ color: 'rgba(42,24,16,0.4)' }}
-            >
-              Terms &amp; Conditions
-            </Link>
+            {/* ── How It Works ── */}
+            <MenuSection title="How It Works">
+              <MenuEntry name="We text you twice each week" price="2" />
+              <MenuEntry name="Reply how many bottles you want" price="4" />
+              <MenuEntry name="We store it until you fill a case of" price="12" />
+              <MenuEntry name="Then ship it to you for" price="free" />
+            </MenuSection>
+
+            {/* ── Why Bother ── */}
+            <MenuSection title="Why Bother">
+              <MenuEntry
+                name="Off the beaten path"
+                price="40+ countries"
+                description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
+              />
+              <MenuEntry
+                name="Sommelier selected"
+                price="20 years"
+                description="Every bottle is chosen by Daniel Jonberger. Time at the 2-star Raby Hunt. A genuine obsession with finding bottles that make people feel something."
+              />
+              <MenuEntry
+                name="Better prices"
+                price="direct import rates"
+                description="We buy in volume across our two wine bars. You get the benefit of that."
+              />
+              <MenuEntry
+                name="Free storage"
+                price="until your case is full"
+                description="Your bottles wait for you. No storage charge, no pressure to buy more."
+              />
+              <MenuEntry
+                name="Wine concierge"
+                price="unlimited questions"
+                description="Got a question? Looking for a gift? Text Daniel directly. He'll sort it."
+              />
+              <MenuEntry
+                name="Request a wine"
+                price="group buy, bulk price"
+                description="Want something we haven't featured? Request it. If enough members are in, we'll run it as a drop."
+              />
+            </MenuSection>
+
+            {/* ── Welcome to the Club (tiers) ── */}
+            <MenuSection title="Welcome to the Club">
+              <p
+                className="font-serif italic text-sm leading-relaxed mb-7"
+                style={{ color: 'rgba(42,24,16,0.38)' }}
+              >
+                Tiers assessed annually on your rolling twelve-month spend.
+              </p>
+
+              <MenuEntry name="Bailey" price="free to join" />
+              <div className="pl-5 mb-9">
+                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Concierge requests" value="2 / month" />
+                <PerkEntry name="Wine requests" value="unlimited" />
+                <PerkEntry name="Free delivery" value="at 12 bottles" />
+              </div>
+
+              <MenuEntry name="Elvet" price="unlocks at £500" />
+              <div className="pl-5 mb-9">
+                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Concierge requests" value="5 / month" />
+                <PerkEntry name="Wine requests" value="unlimited" />
+                <PerkEntry name="Tasting tickets" value="2 / year" />
+                <PerkEntry name="Discount" value="5%" />
+                <PerkEntry name="Free delivery" value="at 12 bottles" />
+              </div>
+
+              <MenuEntry name="Palatine" price="unlocks at £1,000" />
+              <div className="pl-5 mb-2">
+                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Concierge requests" value="unlimited" />
+                <PerkEntry name="Wine requests" value="unlimited" />
+                <PerkEntry name="Tasting tickets" value="4 / year" />
+                <PerkEntry name="Discount" value="10%" />
+                <PerkEntry name="Free delivery" value="at 6 bottles" />
+                <PerkEntry name="First look" value="2 hrs early" />
+              </div>
+            </MenuSection>
+
+            {/* ── Our Story ── */}
+            <MenuSection title="Our Story">
+              <div
+                className="space-y-5 font-serif text-base leading-relaxed"
+                style={{ color: 'rgba(42,24,16,0.72)' }}
+              >
+                <FadeUp>
+                  <p>
+                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
+                  </p>
+                </FadeUp>
+                <FadeUp delay={60}>
+                  <p>
+                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
+                  </p>
+                </FadeUp>
+                <FadeUp delay={120}>
+                  <p>
+                    The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
+                  </p>
+                </FadeUp>
+              </div>
+
+              <FadeUp delay={180}>
+                <div className="mt-10">
+                  <Link
+                    href="/join"
+                    className="group inline-block font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:opacity-90"
+                    style={{ background: '#9B1B30', color: '#F0E6DC' }}
+                  >
+                    Join the Club{' '}
+                    <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">→</span>
+                  </Link>
+                </div>
+              </FadeUp>
+            </MenuSection>
+
           </div>
+
+          {/* ── Footer — inside the card ── */}
+          <div
+            className="px-8 py-8 text-center space-y-2"
+            style={{ borderTop: `1px solid ${BORDER}` }}
+          >
+            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+              CD WINES LTD &middot; Company No. 15796479
+            </p>
+            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+              Licensed under the Licensing Act 2003 &middot; Licence No. DCCC/PLA0856
+            </p>
+            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+              We do not sell alcohol to anyone under 18. Please drink responsibly.
+            </p>
+            <div className="flex justify-center gap-6 pt-2">
+              <Link
+                href="/privacy"
+                className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
+                style={{ color: 'rgba(42,24,16,0.38)' }}
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
+                style={{ color: 'rgba(42,24,16,0.38)' }}
+              >
+                Terms &amp; Conditions
+              </Link>
+            </div>
+          </div>
+
         </div>
-      </footer>
+      </div>
 
     </div>
   )
