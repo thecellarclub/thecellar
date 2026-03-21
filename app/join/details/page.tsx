@@ -38,7 +38,7 @@ export default function DetailsPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/signup/complete', {
+      const res = await fetch('/api/signup/save-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,7 +67,7 @@ export default function DetailsPage() {
         return
       }
 
-      router.push('/join/confirmed')
+      router.push('/join/address')
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -79,7 +79,7 @@ export default function DetailsPage() {
     <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
-          Step 3 of 4
+          Step 3 of 5
         </p>
         <h2 className="font-serif text-2xl text-cream">A few more details</h2>
         <p className="font-sans text-sm text-cream/55 mt-1">
@@ -242,7 +242,7 @@ export default function DetailsPage() {
           disabled={loading || !firstName.trim() || !lastName.trim() || !dobDay || !dobMonth || !dobYear}
           className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {loading ? 'Completing sign-up…' : 'Complete sign-up'}
+          {loading ? 'Saving…' : 'Continue →'}
         </button>
       </form>
     </div>

@@ -5,55 +5,30 @@ import { stripe } from '@/lib/stripe'
 import { normaliseUKPhone } from '@/lib/phone'
 import { sendSms } from '@/lib/twilio'
 
-function calculateAge(dob: Date): number {
-  const today = new Date()
-  let age = today.getFullYear() - dob.getFullYear()
-  const m = today.getMonth() - dob.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
-  return age
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, dobDay, dobMonth, dobYear, ageConsent, marketingConsent } =
-      await req.json()
+    // Read address from request body (submitted by AddressForm)
+    const { line1, line2, city, postcode } = await req.json()
 
-    // Validate required fields
-    if (!firstName?.trim()) {
-      return NextResponse.json({ error: 'First name is required' }, { status: 400 })
-    }
-    if (!lastName?.trim()) {
-      return NextResponse.json({ error: 'Last name is required' }, { status: 400 })
-    }
-    if (!dobDay || !dobMonth || !dobYear) {
-      return NextResponse.json({ error: 'Date of birth is required' }, { status: 400 })
-    }
-    if (!ageConsent) {
-      return NextResponse.json({ error: 'You must confirm you are 18 or over' }, { status: 400 })
-    }
-    if (!marketingConsent) {
-      return NextResponse.json({ error: 'SMS marketing consent is required to sign up' }, { status: 400 })
+    if (!line1?.trim() || !city?.trim() || !postcode?.trim()) {
+      return NextResponse.json({ error: 'Please fill in your address, city and postcode.' }, { status: 400 })
     }
 
-    // Build and validate DOB
-    const dob = new Date(
-      parseInt(dobYear),
-      parseInt(dobMonth) - 1,
-      parseInt(dobDay)
-    )
-    if (isNaN(dob.getTime())) {
-      return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 })
-    }
-    if (calculateAge(dob) < 18) {
-      return NextResponse.json(
-        { error: 'under_18' },
-        { status: 400 }
-      )
-    }
-
-    // Check session is complete
+    // Read everything else from session (saved by save-details)
     const session = await getSignupSession()
-    if (!session.phone || !session.phoneVerified || !session.stripeCustomerId) {
+
+    if (
+      !session.phone ||
+      !session.phoneVerified ||
+      !session.stripeCustomerId ||
+      !session.paymentMethodId ||
+      !session.firstName ||
+      !session.lastName ||
+      !session.email ||
+      !session.dobDay ||
+      !session.dobMonth ||
+      !session.dobYear
+    ) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
     }
 
@@ -64,51 +39,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid phone in session. Please start again.' }, { status: 400 })
     }
 
-    // Get payment method — prefer one stored in session, else retrieve from SetupIntent
-    let paymentMethodId = session.paymentMethodId
-    if (!paymentMethodId && session.setupIntentId) {
-      const si = await stripe.setupIntents.retrieve(session.setupIntentId)
-      paymentMethodId = typeof si.payment_method === 'string'
-        ? si.payment_method
-        : si.payment_method?.id
-    }
-
-    if (!paymentMethodId) {
-      return NextResponse.json({ error: 'No payment method found. Please add your card again.' }, { status: 400 })
-    }
-
-    // Get email from Stripe customer
-    const stripeCustomer = await stripe.customers.retrieve(session.stripeCustomerId)
-    if (stripeCustomer.deleted) {
-      return NextResponse.json({ error: 'Stripe customer not found. Please start again.' }, { status: 400 })
-    }
-    const email = stripeCustomer.email
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email not found. Please start again.' }, { status: 400 })
-    }
+    const paymentMethodId = session.paymentMethodId
 
     const supabase = createServiceClient()
 
-    // Check phone/email not already taken (race condition guard)
+    // Race condition guard: phone already registered
     const { data: existingPhone } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('phone', normalisedPhone)
-      .single()
-
+      .from('customers').select('id').eq('phone', normalisedPhone).maybeSingle()
     if (existingPhone) {
       return NextResponse.json({ error: 'looks_like_already_signed_up' }, { status: 409 })
     }
 
-    // Create customer record
-    const dobString = `${dobYear}-${String(dobMonth).padStart(2, '0')}-${String(dobDay).padStart(2, '0')}`
+    const dobString = `${session.dobYear}-${String(session.dobMonth).padStart(2, '0')}-${String(session.dobDay).padStart(2, '0')}`
 
+    // Create customer record with default_address from this request
     const { error: insertError } = await supabase.from('customers').insert({
       phone: normalisedPhone,
-      email,
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
+      email: session.email,
+      first_name: session.firstName,
+      last_name: session.lastName,
       stripe_customer_id: session.stripeCustomerId,
       stripe_payment_method_id: paymentMethodId,
       dob: dobString,
@@ -116,10 +65,15 @@ export async function POST(req: NextRequest) {
       active: true,
       gdpr_marketing_consent: true,
       gdpr_consent_at: new Date().toISOString(),
+      default_address: {
+        line1: line1.trim(),
+        line2: line2?.trim() || null,
+        city: city.trim(),
+        postcode: postcode.trim().toUpperCase(),
+      },
     })
 
     if (insertError) {
-      // Unique constraint violation on email
       if (insertError.code === '23505') {
         return NextResponse.json(
           { error: 'An account with this email already exists.' },
@@ -129,18 +83,16 @@ export async function POST(req: NextRequest) {
       throw insertError
     }
 
-    // Set the payment method as default on the Stripe customer
+    // Set payment method as default on Stripe customer
     await stripe.customers.update(session.stripeCustomerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
 
-    // Send welcome SMS — awaited so it completes before the serverless function exits.
-    // Wrapped in try/catch so a Twilio failure never blocks the signup success response.
-    // Note: avoid em-dash and non-GSM-7 characters or Twilio forces Unicode encoding (70 chars/segment)
+    // Send welcome SMS — awaited so it completes before the serverless function exits
     try {
       await sendSms(
         normalisedPhone,
-        `A hearty welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 - then deliver it to you for free.`
+        `A hearty welcome to The Cellar Club, ${session.firstName}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 - then deliver it to you for free.`
       )
     } catch (err) {
       console.error('[complete] welcome SMS failed', err)

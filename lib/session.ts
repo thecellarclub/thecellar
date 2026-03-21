@@ -7,6 +7,12 @@ export interface SignupSessionData {
   stripeCustomerId?: string
   setupIntentId?: string
   paymentMethodId?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  dobDay?: number
+  dobMonth?: number
+  dobYear?: number
 }
 
 export const sessionOptions: SessionOptions = {
