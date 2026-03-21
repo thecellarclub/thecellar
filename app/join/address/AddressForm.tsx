@@ -57,7 +57,7 @@ export default function AddressForm() {
     <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
-          Step 4 of 5
+          Step 4 of 4
         </p>
         <h2 className="font-serif text-2xl text-cream">Where do you want your bottles sent?</h2>
         <p className="font-sans text-sm text-cream/50 mt-1">

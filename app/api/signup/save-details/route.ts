@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { normaliseUKPhone } from '@/lib/phone'
-import { stripe } from '@/lib/stripe'
 
 function calculateAge(dob: Date): number {
   const today = new Date()
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSignupSession()
 
-    if (!session.phone || !session.phoneVerified || !session.paymentMethodId || !session.stripeCustomerId) {
+    if (!session.phone || !session.phoneVerified) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
     }
 
@@ -46,16 +45,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'under_18' }, { status: 400 })
     }
 
-    // Get email from Stripe customer (collected at card step)
-    const stripeCustomer = await stripe.customers.retrieve(session.stripeCustomerId)
-    if (stripeCustomer.deleted) {
-      return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
-    }
-    const email = stripeCustomer.email
-    if (!email) {
-      return NextResponse.json({ error: 'Email not found. Please start again.' }, { status: 400 })
-    }
-
     const sb = createServiceClient()
     const normalisedPhone = normaliseUKPhone(session.phone)
 
@@ -66,17 +55,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'looks_like_already_signed_up' }, { status: 409 })
     }
 
-    // Guard: email already registered
-    const { data: existingEmail } = await sb
-      .from('customers').select('id').eq('email', email).maybeSingle()
-    if (existingEmail) {
-      return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 })
-    }
-
     // Save to session — complete route will read this
     session.firstName = firstName.trim()
     session.lastName = lastName.trim()
-    session.email = email
     session.dobDay = day
     session.dobMonth = month
     session.dobYear = year

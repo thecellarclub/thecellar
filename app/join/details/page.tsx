@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const MONTHS = [
@@ -22,13 +21,11 @@ export default function DetailsPage() {
   const [ageConsent, setAgeConsent] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
-  const [emailExists, setEmailExists] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
-    setEmailExists(false)
 
     if (!ageConsent || !marketingConsent) {
       setError('Please tick both boxes to continue.')
@@ -59,15 +56,13 @@ export default function DetailsPage() {
           setError('Sorry — you must be 18 or over to sign up.')
         } else if (data.error === 'looks_like_already_signed_up') {
           setError("Looks like you're already signed up!")
-        } else if (data.error === 'An account with this email already exists.') {
-          setEmailExists(true)
         } else {
           setError(data.error || 'Something went wrong. Please try again.')
         }
         return
       }
 
-      router.push('/join/address')
+      router.push('/join/card')
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -79,7 +74,7 @@ export default function DetailsPage() {
     <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
-          Step 3 of 5
+          Step 2 of 4
         </p>
         <h2 className="font-serif text-2xl text-cream">A few more details</h2>
         <p className="font-sans text-sm text-cream/55 mt-1">
@@ -212,24 +207,6 @@ export default function DetailsPage() {
             </span>
           </label>
         </div>
-
-        {emailExists && (
-          <div className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3 space-y-1">
-            <p>An account with this email already exists.</p>
-            <p>
-              Already a member?{' '}
-              <Link href="/portal" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
-                Log in to your portal →
-              </Link>
-            </p>
-            <p>
-              Or{' '}
-              <Link href="/join/card" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
-                go back to use a different email →
-              </Link>
-            </p>
-          </div>
-        )}
 
         {error && (
           <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">

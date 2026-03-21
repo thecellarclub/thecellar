@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
+import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
@@ -12,8 +13,16 @@ export async function POST(req: NextRequest) {
 
     const session = await getSignupSession()
 
-    if (!session.phone || !session.phoneVerified) {
+    if (!session.phone || !session.phoneVerified || !session.firstName) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
+    }
+
+    // Guard: email already registered
+    const sb = createServiceClient()
+    const { data: existingEmail } = await sb
+      .from('customers').select('id').eq('email', email).maybeSingle()
+    if (existingEmail) {
+      return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 })
     }
 
     // Create Stripe customer
@@ -31,6 +40,7 @@ export async function POST(req: NextRequest) {
     // Store in session
     session.stripeCustomerId = customer.id
     session.setupIntentId = setupIntent.id
+    session.email = email
     await session.save()
 
     return NextResponse.json({ clientSecret: setupIntent.client_secret })

@@ -108,7 +108,7 @@ function CardFormInner() {
         })
       }
 
-      router.push('/join/details')
+      router.push('/join/address')
     } catch {
       setError('Something went wrong. Please try again.')
       setStep('form')
@@ -121,7 +121,7 @@ function CardFormInner() {
     <div className="bg-maroon-dark border border-cream/12 p-8">
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
-          Step 2 of 4
+          Step 3 of 4
         </p>
         <h2 className="font-serif text-2xl text-cream">Email &amp; card details</h2>
         <p className="font-sans text-sm text-cream/55 mt-1">

@@ -5,8 +5,8 @@ import CardForm from './CardForm'
 export default async function CardPage() {
   const session = await getSignupSession()
 
-  // Guard: must have verified phone to reach this step
-  if (!session.phone || !session.phoneVerified) {
+  // Guard: must have verified phone and completed details (age check) to reach this step
+  if (!session.phone || !session.phoneVerified || !session.firstName) {
     redirect('/join')
   }
 

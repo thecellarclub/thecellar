@@ -34,7 +34,7 @@ export default function VerifyPage() {
         return
       }
 
-      router.push('/join/card')
+      router.push('/join/details')
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
