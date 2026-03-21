@@ -61,7 +61,7 @@ function CellarDoorSvg() {
       viewBox="0 0 1000 800"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="absolute inset-0 w-full h-full hidden sm:block"
+      className="absolute inset-0 w-full h-full"
       style={{ opacity: 0.22 }}
       aria-hidden="true"
     >
