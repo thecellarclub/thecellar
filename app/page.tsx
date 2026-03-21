@@ -113,7 +113,7 @@ function MenuEntry({
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-3">
-        <span className="font-serif text-lg md:text-xl shrink-0" style={{ color: '#1C0E09' }}>
+        <span className="font-serif text-base md:text-lg shrink-0" style={{ color: '#1C0E09' }}>
           {name}
         </span>
         <span
