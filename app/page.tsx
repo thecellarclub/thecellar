@@ -338,14 +338,14 @@ export default function HomePage() {
             {/* ── Welcome to the Club (tiers) ── */}
             <MenuSection title="Welcome to the Club">
               <p
-                className="font-serif italic text-sm leading-relaxed mb-7"
-                style={{ color: 'rgba(42,24,16,0.38)' }}
+                className="font-serif italic text-base leading-relaxed mb-7"
+                style={{ color: 'rgba(42,24,16,0.55)' }}
               >
-                Tiers assessed annually on your rolling twelve-month spend.
+                Your tier is awarded on your rolling twelve-month spend.
               </p>
 
               <MenuEntry name="Bailey" price="free to join" />
-              <div className="pl-5 mb-9">
+              <div className="mb-9">
                 <PerkEntry name="SMS drops" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="2 / month" />
                 <PerkEntry name="Wine requests" value="unlimited" />
@@ -353,7 +353,7 @@ export default function HomePage() {
               </div>
 
               <MenuEntry name="Elvet" price="unlocks at £500" />
-              <div className="pl-5 mb-9">
+              <div className="mb-9">
                 <PerkEntry name="SMS drops" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="5 / month" />
                 <PerkEntry name="Wine requests" value="unlimited" />
@@ -363,7 +363,7 @@ export default function HomePage() {
               </div>
 
               <MenuEntry name="Palatine" price="unlocks at £1,000" />
-              <div className="pl-5 mb-2">
+              <div className="mb-2">
                 <PerkEntry name="SMS drops" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="unlimited" />
                 <PerkEntry name="Wine requests" value="unlimited" />
