@@ -21,15 +21,15 @@ A wine subscription SMS service for Craig's Crush wine bar in Durham. Customers 
 | Session | iron-session (signup) + custom JWT (portal) |
 
 ## Live URLs
-- **Production:** https://thecellarclub.vercel.app
-- **Twilio webhook:** https://thecellarclub.vercel.app/api/webhooks/twilio/inbound
-- **Stripe webhook:** https://thecellarclub.vercel.app/api/webhooks/stripe
-- **Cron:** https://thecellarclub.vercel.app/api/cron/case-nudges (runs daily 9am UTC via Vercel Cron)
+- **Production:** https://thecellar.club
+- **Twilio webhook:** https://thecellar.club/api/webhooks/twilio/inbound
+- **Stripe webhook:** https://thecellar.club/api/webhooks/stripe
+- **Cron:** https://thecellar.club/api/cron/case-nudges (runs daily 9am UTC via Vercel Cron)
 
 ## Compliance
 - Company: CD WINES LTD (No. 15796479)
 - Premises Licence: DCCC/PLA0856
-- Domain: thecellar.club (registering)
+- Domain: thecellar.club ✅ live
 
 ---
 
@@ -54,59 +54,53 @@ A wine subscription SMS service for Craig's Crush wine bar in Durham. Customers 
 | Admin: refund + manual add | ✅ Done |
 | Sign-up address step (/join/address) | ✅ Done |
 | SMS-based SHIP confirmation (YES/CHANGE) | ✅ Done |
-| Customer portal (/portal) | ✅ Done (was 404 in prod — fixed by pushing code) |
+| Customer portal (/portal) | ✅ Done |
 | Tier system (Bailey / Elvet / Palatine) | ✅ Done |
 | Homepage tier section (THE LEVELS) | ✅ Done |
-| Admin mobile optimisation (hamburger nav, card layouts, chat-bubble threads) | ✅ Done |
+| Admin mobile optimisation | ✅ Done |
 | Email notification fix (REQUEST/QUESTION → hello@crushwines.co) | ✅ Done |
 | Spectral font swap | ✅ Done |
 | `/authenticate` page (3DS) | ✅ Done |
 | `/billing` page (card update) | ✅ Done |
 | Compliance pages (/privacy, /terms) | ✅ Done |
-| Phone number normalisation bug | ✅ Done (migration 011 apply to live DB) |
-| Remove "Crush/Norse guests only" restriction text | ✅ Done |
-| Landing page v2 (maroon, bottle SVG, pull quote) | ✅ Done (v2 run) |
-| Landing page v3 (revert fonts/sections, new hero, refined quote, tier copy) | ✅ Done |
-| Login link for existing members (join page + homepage) | ✅ Done |
-| +44 prefix on phone inputs (homepage, join, portal) | ⏳ Prompt ready |
-| OFFER SMS command | ⏳ Prompt ready |
-| Post-charge Scenario 2 ship SMS bug | ⏳ Prompt ready |
-| Welcome SMS with "save this number" instruction | ⏳ Prompt ready |
-| Admin panel: payment failure hardening | ✅ Done |
-| Admin panel: shipment detail page + dispatch button | ✅ Done |
-| Admin panel: concierge desktop two-panel inbox | ✅ Done |
-| Admin panel: customer detail page restructure (Cellar/Shipped/Payments) | ✅ Done |
-| Concierge: close/reopen thread, ordering, filter | ✅ Done |
-| Portal: payments tab + shipments tab | ✅ Done |
-| Portal: tier spend progress bar | ✅ Done |
-| SMS two-step flow (REQUEST/QUESTION with sms_awaiting state) | ✅ Done |
-| Admin panel: font contrast fixes | ✅ Done |
-| Refund flow: verify Stripe call vs cellar-only removal | ✅ Done |
-| 3DS PaymentIntent expiry handling on /authenticate | ✅ Done |
-| Null PM guard in cron case-nudges | ✅ Done |
-| Shipping address pre-fill on /ship page | ⏳ Backlog |
+| Phone number normalisation bug | ✅ Done |
+| Landing page v3 (maroon, door SVG, pull quote, tier copy) | ✅ Done |
+| Login link for existing members | ✅ Done |
+| +44 prefix on phone inputs | ✅ Done |
+| OFFER SMS command | ✅ Done |
+| Welcome SMS (save this number) | ✅ Done |
+| Cellar door SVG simplified (double outline + handle only) | ✅ Done |
+| Homepage: remove reassurance line from hero | ✅ Done |
+| Sign-up: skip phone re-entry if entered on homepage | ✅ Done |
+| Sign-up: first name + last name at step 3 | ✅ Done |
+| Admin payments: refund marks order as 'refunded' in DB | ✅ Done |
+| Portal: payments tab shows refunded status | ✅ Done |
+| Shipping address pre-fill on /ship page (from default_address) | ✅ Done |
+| Welcome SMS awaited in try/catch (was fire-and-forget, never sent on Vercel) | ✅ Done |
+| Welcome SMS content updated (shorter, GSM-7 safe, no em-dash) | ✅ Done |
+| Sign-up UX: autofill contrast fix (webkit-autofill override) | ✅ Done |
+| Sign-up UX: age/residency checkbox reworded (two checkboxes, helper text) | ✅ Done |
+| Sign-up UX: arch hidden on mobile | ✅ Done |
+| Sign-up UX: duplicate email error + portal login link | ✅ Done |
+| Concierge reopen on new message to closed thread | ✅ Done |
+| Offer reply capture via sms_awaiting = 'offer' | ✅ Done |
+| Admin concierge: purchase_query badge + context display | ✅ Done |
+| /ship confirm: save address back to customers.default_address | ✅ Done |
+| Homepage redesign: cream wine-menu layout (MenuEntry dot-leaders, card border) | ✅ Done |
+| Homepage: cellar door SVG shown on mobile | ✅ Done |
+| Homepage: section padding/spacing fixes | ✅ Done |
+| Homepage: hero phone input gold border, stacked layout | ✅ Done |
+| Homepage: favicon — cellar door SVG (app/icon.svg) | ✅ Done |
+| From-email updated to cheers@thecellar.club (Resend) | ✅ Done |
+| Custom domain: thecellar.club (Vercel env vars updated) | ✅ Done |
+| SHIP CONFIRM bug fix: cellar query used created_at (wrong — column is added_at) | ✅ Done |
+| SHIP CONFIRM bug fix: stripe_payment_intent_id + stripe_charge_status missing from shipments table — migration 018 | ✅ Done |
 
 ---
 
 ## Known bugs / outstanding issues
 
-### 1. Phone number normalisation — ✅ Code fixed, migration 011 pending on live DB
-Twilio sends `from` in E.164 (+447xxx). Webhook now normalises before DB lookup. Migration 011 normalises existing records. **Apply migration 011 to live Supabase DB.**
-
-### 2. Payment failure — root cause unknown
-Stripe is throwing something other than a card decline (generic catch block hit). Logging improved in `admin-qa` prompt so next failure will log `type/code/message`. Most likely cause: payment method not set up for off-session use, or test/live mode mismatch. Check Vercel logs after next failure.
-
-### 3. Post-charge Scenario 2 ship SMS — ✅ Fix written (not yet applied)
-`lib/post-charge.ts` Scenario 2 (exactly 12 bottles) sends "We'll text you a delivery link shortly. Reply SHIP any time to confirm your address." — no link is ever sent. Fix: create pending shipment immediately and send the link in the same message (same as Scenario 3). Included in `claude-code-prompt-sms-ui-fixes.md`.
-
-### 4. Refund flow — needs verification
-Current RefundButton may only remove cellar rows without calling `stripe.refunds.create()`. Needs to be checked and fixed if so. Covered in `claude-code-prompt-admin-qa.md`.
-
-### 5. 3DS PaymentIntent expiry (~24 hours)
-PaymentIntents in `requires_action` state are cancelled by Stripe after ~24h. The /authenticate page needs to handle `canceled` status gracefully. Covered in `claude-code-prompt-admin-qa.md`.
-
-### 6. Twilio display name — not possible for two-way SMS (UK)
-UK regulatory rules: alphanumeric sender IDs are one-way only. Two-way SMS requires a mobile number. The mobile number is correct — customers just need to save it. Welcome SMS "save this number as The Cellar Club" instruction added via `claude-code-prompt-sms-ui-fixes.md`.
+None currently known.
 
 ---
 
@@ -114,29 +108,38 @@ UK regulatory rules: alphanumeric sender IDs are one-way only. Two-way SMS requi
 
 ### Ready to run
 
-| Prompt file | What it covers |
-|---|---|
-| `claude-code-prompt-sms-ui-fixes.md` | +44 prefix on phone inputs (homepage, join, portal). OFFER SMS command. Post-charge Scenario 2 ship SMS fix. Welcome SMS with "save this number" instruction. |
+Nothing outstanding. All prompts run.
 
 ### Previously run ✅
-- `claude-code-prompt-landing-page-v3.md` — revert v2 bulk changes, new hero, styled pull quote, membership card copy ✅
+- `claude-code-prompt-new-domain.md` — update from-email to cheers@thecellar.club, note Vercel env var updates ✅
+- `claude-code-prompt-homepage-redesign-v3.md` — cream wine-menu layout ✅
+- `claude-code-prompt-signup-ux-corrections.md` — two checkboxes (age+delivery combined), portal login link on duplicate email error ✅
+- `claude-code-prompt-2026-03-20.md` — concierge reopen, offer reply via sms_awaiting, purchase_query badge, ship confirm saves address ✅
+- `claude-code-prompt-signup-ux-fixes.md` — autofill contrast, arch hidden mobile, checkbox reword ✅
+- `claude-code-prompt-ux-fixes-2026-03-19.md` — door SVG, reassurance line, phone skip, last name, refund status, ship pre-fill ✅
+- `claude-code-prompt-fixes-2026-03-19.md` — phone normalisation, restriction text, UK-only enforcement ✅
 - `claude-code-prompt-admin-qa.md` — payment hardening, shipment detail, concierge desktop two-panel, contrast fixes ✅
-- `claude-code-prompt-portal-progress-bar.md` — tier spend progress bar in portal ✅
+- `claude-code-prompt-portal-progress-bar.md` ✅
 - `claude-code-prompt-admin-portal-sms-improvements.md` — customer detail restructure, concierge close/filter, portal tabs, SMS two-step flow ✅
-- `claude-code-prompt-fixes-2026-03-19.md` — phone normalisation, restriction text removal, UK-only enforcement ✅
-- `claude-code-prompt-landing-page-v2.md` — maroon, bottle SVG, pull quote, tier copy, login links ✅
+- `claude-code-prompt-landing-page-v3.md` ✅
+- `claude-code-prompt-sms-ui-fixes.md` ✅
+- `claude-code-prompt-door-refund-fixes.md` ✅
+- `claude-code-prompt-landing-page-v2.md` ✅
 - `claude-code-prompt-order-confirmation.md` ✅
 - `claude-code-prompt-portal-and-tiers-FINAL.md` ✅
 - `claude-code-prompt-email-notifications-fix.md` ✅
 - `claude-code-prompt-admin-mobile.md` ✅
 
-### Migrations to apply to live Supabase DB
-After running prompts, these SQL files need to be run in the Supabase SQL editor:
-- **011** — normalise existing phone numbers to E.164 (apply now)
-- **012** — add `tracking_provider` to shipments (after admin-qa prompt)
-- **013** — add `shipment_id` to cellar (after admin-portal-sms prompt)
-- **014** — add `concierge_status` to customers (after admin-portal-sms prompt)
-- **015** — add `sms_awaiting` to customers (after admin-portal-sms prompt)
+### Migrations applied to live Supabase DB
+- **001–010** ✅ — initial schema, tokens, RLS, phase 2 tables, billing token, case timer, default_address, tiers
+- **011** ✅ — normalise phone numbers to E.164
+- **012** ✅ — add `tracking_provider` to shipments
+- **013** ✅ — add `shipment_id` to cellar
+- **014** ✅ — add `concierge_status` to customers
+- **015** ✅ — add `sms_awaiting` to customers
+- **016** ✅ — add `last_name` to customers
+- **017** ✅ — add `category` + `context` to concierge_messages
+- **018** ✅ — add `stripe_payment_intent_id` + `stripe_charge_status` to shipments
 
 ---
 
@@ -152,6 +155,8 @@ After running prompts, these SQL files need to be run in the Supabase SQL editor
 - If `default_address` saved: sends SMS with address for YES/CHANGE confirmation — no link needed
 - If no saved address: sends /ship?token link as before
 - YES handler checks for pending shipment BEFORE pending order
+- /ship confirm page now saves address back to `customers.default_address`
+- **Early ship (< 12 bottles)**: SHIP → "5 bottles, costs £15, reply SHIP CONFIRM" → SHIP CONFIRM charges £15 via Stripe then creates shipment + sends /ship?token link
 
 ### 3-month case rule
 - Timer (`case_started_at`) starts when first bottle lands in a new case
@@ -173,13 +178,22 @@ After running prompts, these SQL files need to be run in the Supabase SQL editor
 ### Email
 - No order receipt emails — everything via SMS
 - Only customer-facing email: shipment dispatch (tracking number)
-- Admin notifications: REQUEST + QUESTION → hello@crushwines.co
+- Admin notifications: REQUEST + QUESTION + purchase queries → hello@crushwines.co
+- From address: cheers@thecellar.club (Resend)
 
 ### SMS commands (full list)
-NUMBER, YES, CHANGE, ACCOUNT, STOP/UNSUBSCRIBE, CELLAR, SHIP, SHIP CONFIRM, PAUSE, STATUS, REQUEST, QUESTION, OFFER (adding — see sms-ui-fixes prompt)
+NUMBER, YES, CHANGE, ACCOUNT, STOP/UNSUBSCRIBE, CELLAR, SHIP, SHIP CONFIRM, PAUSE, STATUS, REQUEST, QUESTION, OFFER
 
-### SMS two-step flow (sms_awaiting state) — pending
-Currently REQUEST/QUESTION require the trigger word to be repeated in the reply (e.g. "REQUEST Chateau Musar"). This is clunky. New flow: bare trigger word sets `sms_awaiting = 'request'|'question'` on customer. Next inbound message (whatever it says) is processed as the content. EXIT returns to main menu. Backward compat: "REQUEST something" (with content in same message) still works.
+### SMS sms_awaiting state machine
+Trigger word sets state, next message is treated as content. EXIT returns to main menu.
+- `sms_awaiting = 'request'` — set by REQUEST command
+- `sms_awaiting = 'question'` — set by QUESTION command
+- `sms_awaiting = 'offer'` — set when blast goes out OR customer uses OFFER command. Non-numeric reply captured as purchase_query in concierge tab with offer context. Numbers still trigger order flow as normal.
+
+### Welcome SMS
+- Fires at end of sign-up (complete/route.ts), **awaited** in try/catch so Vercel doesn't kill it before it fires
+- Content: hearty welcome, save this number, how it works (offers → reply → cellar → case = free ship)
+- GSM-7 safe — no em-dashes or non-standard characters (forces Unicode encoding if present)
 
 ### Portal (/portal)
 - No-password login via SMS OTP
@@ -187,42 +201,62 @@ Currently REQUEST/QUESTION require the trigger word to be repeated in the reply 
 - Custom JWT session (PORTAL_JWT_SECRET), 30 days, httpOnly cookie
 - Backup payment method stored in `backup_payment_method_id` on customers
 
+### Homepage
+- Cream wine-menu aesthetic: card with brown border on warmer cream background
+- MenuEntry components: name + dotted leader + price (right), italic description below
+- MenuSection: flanking gold rules with label
+- Sections: How It Works, Why Bother, The Club (tiers), Our Story
+- Cellar door SVG shown on all breakpoints (was hidden on mobile)
+- Favicon: cellar door SVG (app/icon.svg)
+- Domain: thecellar.club (no www)
+
 ### Design system
-- Background: #120608 (Deep Maroon)
-- Accent: #9B1B30 (Rio Red)
-- Text: #F0E6DC (Cream)
-- Gold: #C9851D (sparingly — section labels, tier accents)
-- Fonts: Cormorant Garamond (headings), Spectral (body — replaced Inter)
-- Reference: Rochambeau Club aesthetic
+- Homepage: cream card (#F2EAE0) on warm sand (#E6D9CA), dark brown text (#1C0E09), rio red (#9B1B30) accents
+- Admin/portal/join: dark maroon (#120608), rio red (#9B1B30), cream (#F0E6DC), gold (#C9851D)
+- Fonts: Cormorant Garamond (headings), Spectral (body)
+- Cellar door SVG: double outline + handle only (simplified)
 
 ### SMS / geography
 - UK-only at launch
 - Twilio sends `From` in E.164 (+447xxx) — all stored numbers must match this format
 - `normaliseUKPhone()` in `lib/phone.ts` handles 07xxx → +447xxx conversion
 
+### Domain
+- Custom domain: thecellar.club (no www)
+- Vercel env vars: NEXT_PUBLIC_APP_URL=https://thecellar.club, NEXTAUTH_URL=https://thecellar.club
+- All SMS links use NEXT_PUBLIC_APP_URL env var — no hardcoded URLs in codebase
+
 ---
 
 ## Database migrations applied
-- 001: tokens
+- 001: tokens (order auth_token, shipment token)
 - 002: RLS policies
 - 003: active offer flag
 - 004: phase 2 tables (special_requests, concierge_messages, refunds)
-- 005: billing token
+- 005: billing token, shipping_fee_pence on shipments, texts_snoozed_until on customers
 - 006: order confirmation (order_status, confirmation_expires_at, case timer fields)
-- 007: (numbered by Claude Code — order confirmation + case timer)
+- 007: order confirmation + case timer
 - 008: default_address on customers
 - 009: tier fields + backup_payment_method_id on customers
-- 010: (pending) normalise existing phone numbers to E.164
+- 010: (legacy — superseded by 011)
+- 011: normalise phone numbers to E.164
+- 012: tracking_provider on shipments
+- 013: shipment_id on cellar
+- 014: concierge_status on customers
+- 015: sms_awaiting on customers
+- 016: last_name on customers
+- 017: category + context on concierge_messages
+- 018: stripe_payment_intent_id + stripe_charge_status on shipments
 
 ---
 
 ## Backlog (not building yet)
-- **Trigger payment for manually-added bottles** — "Charge" button alongside Refund in customer detail. Charges saved card off-session for comped/corrected bottles.
-- **SNOOZE command** — parked intentionally, don't want to encourage opt-outs at launch
-- **Discount enforcement** — 5% (Elvet) / 10% (Palatine) to be auto-applied at charge time once subscriber base warrants
-- **Question limit enforcement** — 5/month (Bailey), 10/month (Elvet), unlimited (Palatine) — manual for now
-- **Early texts for Palatine** — tiered blast timing, 2 hours earlier — requires blast system changes, backlog
+- **Trigger payment for manually-added bottles** — "Charge" button alongside Refund in customer detail
+- **SNOOZE command** — parked, don't want to encourage opt-outs at launch
+- **Discount enforcement** — 5% (Elvet) / 10% (Palatine) auto-applied at charge time
+- **Question limit enforcement** — 5/month (Bailey), 10/month (Elvet), unlimited (Palatine)
+- **Early texts for Palatine** — 2 hours earlier than other tiers
 - **Birthday gift (Palatine)** — manual for now
 
 ## Last updated
-2026-03-19 (session 2) — Prompts 1–4 run (landing-page-v3, admin-qa, portal-progress-bar, admin-portal-sms-improvements). One remaining: claude-code-prompt-sms-ui-fixes.md. Migrations 012–015 need applying to live DB. Payment failure root cause still unknown — Vercel logs needed.
+2026-03-21 (session 5 end) — Custom domain live, homepage cream wine-menu design, SHIP CONFIRM early-pay bug fixed (wrong column name + missing DB columns), welcome SMS fix (was never sending on Vercel due to unawaited promise). Migration 018 applied. All known bugs resolved.
