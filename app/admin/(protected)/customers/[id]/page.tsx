@@ -134,6 +134,14 @@ export default async function CustomerDetailPage({
   const shipped = cellar.filter((c) => c.shipped_at)
   const unshippedBottles = unshipped.reduce((s, c) => s + c.quantity, 0)
 
+  const succeededOrders = orderRows.filter((o) => o.stripe_charge_status === 'succeeded')
+  const totalBottlesOrdered = succeededOrders.reduce((s, o) => s + o.quantity, 0)
+  const totalSpendPence = succeededOrders.reduce((s, o) => s + o.total_pence, 0)
+  const offersReceived = (customer as Record<string, unknown>).offers_received as number ?? 0
+  const replyRate = offersReceived > 0
+    ? Math.round((succeededOrders.length / offersReceived) * 100)
+    : null
+
   // Map order_id → cellar entry (oldest unshipped first) for refund buttons
   const cellarByOrderId = new Map<string, CellarEntry>()
   for (const c of [...cellar].reverse()) {
@@ -174,12 +182,35 @@ export default async function CustomerDetailPage({
           <p className="font-medium">{formatDate(customer.subscribed_at)}</p>
         </div>
         <div>
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Tier</p>
+          <p className="font-medium capitalize">{customer.tier ?? 'Bailey'}</p>
+        </div>
+        <div>
           <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Cellar</p>
           <p className="font-medium text-lg">{unshippedBottles} <span className="text-xs text-gray-500 font-normal">bottles</span></p>
         </div>
         <div>
-          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Tier</p>
-          <p className="font-medium capitalize">{customer.tier ?? 'Bailey'}</p>
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Total spend</p>
+          <p className="font-medium">{penceToGbp(totalSpendPence)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Bottles ordered</p>
+          <p className="font-medium">{totalBottlesOrdered} <span className="text-xs text-gray-500 font-normal">all time</span></p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Offers received</p>
+          <p className="font-medium">{offersReceived}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Reply rate</p>
+          <p className="font-medium">
+            {replyRate !== null ? `${replyRate}%` : '—'}
+            {offersReceived > 0 && (
+              <span className="text-xs text-gray-400 font-normal ml-1">
+                ({succeededOrders.length}/{offersReceived})
+              </span>
+            )}
+          </p>
         </div>
       </div>
 

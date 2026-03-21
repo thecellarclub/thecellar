@@ -114,6 +114,13 @@ export async function POST(req: NextRequest) {
         .from('customers')
         .update({ sms_awaiting: 'offer' })
         .in('id', recipientIds)
+
+      // Increment offers_received for each customer reached
+      await Promise.all(
+        recipientIds.map((cid) =>
+          sb.rpc('increment_offers_received', { customer_id: cid })
+        )
+      )
     }
 
     console.log(`[texts/send] textId=${text.id} sent=${sent} failures=${failures.length}`)
