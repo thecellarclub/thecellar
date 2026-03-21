@@ -89,8 +89,8 @@ function MenuSection({ title, children }: { title: string; children: React.React
       <div className="flex items-center gap-4 mb-7">
         <div className="flex-1 h-px" style={{ background: 'rgba(100,50,20,0.2)' }} />
         <p
-          className="font-serif text-xs uppercase tracking-[0.32em] shrink-0"
-          style={{ color: 'rgba(100,50,20,0.6)' }}
+          className="font-serif text-sm uppercase tracking-[0.28em] shrink-0"
+          style={{ color: 'rgba(42,24,16,0.65)' }}
         >
           {title}
         </p>
@@ -113,7 +113,7 @@ function MenuEntry({
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-3">
-        <span className="font-serif text-lg shrink-0" style={{ color: '#1C0E09' }}>
+        <span className="font-serif text-xl shrink-0" style={{ color: '#1C0E09' }}>
           {name}
         </span>
         <span
@@ -126,8 +126,8 @@ function MenuEntry({
       </div>
       {description && (
         <p
-          className="font-serif italic text-sm leading-relaxed mt-1.5"
-          style={{ color: 'rgba(42,24,16,0.48)' }}
+          className="font-serif italic text-base leading-relaxed mt-1.5"
+          style={{ color: 'rgba(42,24,16,0.55)' }}
         >
           {description}
         </p>
@@ -212,7 +212,7 @@ function SignupForm() {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const PAGE_BG = '#EDE5D8'
+  const PAGE_BG = '#E6D9CA'
   const TEXT_DARK = '#1C0E09'
 
   return (
@@ -251,13 +251,16 @@ export default function HomePage() {
       </section>
 
       {/* ── Menu body ── */}
-      <div className="max-w-2xl mx-auto px-8 pb-20">
+      <div
+        className="max-w-2xl mx-auto px-8 pb-20"
+        style={{ border: '1px solid rgba(42,24,16,0.18)', borderTop: 'none' }}
+      >
 
         {/* Quote headline */}
         <FadeUp>
           <p
-            className="font-serif text-center leading-snug mb-10 mt-2"
-            style={{ fontSize: 'clamp(1.2rem, 3vw, 1.75rem)', color: 'rgba(42,24,16,0.82)' }}
+            className="font-serif text-left leading-snug mb-10 mt-8"
+            style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', color: '#1C0E09' }}
           >
             Wines you won&apos;t find on any shelf, at prices that feel like a secret.
           </p>
@@ -265,10 +268,10 @@ export default function HomePage() {
 
         {/* ── How It Works ── */}
         <MenuSection title="How It Works">
-          <MenuEntry name="We text you each week" price="twice" description="Daniel picks something remarkable and sends it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn't be this affordable." />
-          <MenuEntry name="Reply how many you want" price="3 bottles" description="Text back the quantity. We confirm, charge your card, and add the bottles to your cellar. No login, no basket, no faff." />
+          <MenuEntry name="We text you twice each week" price="2" description="Daniel picks something remarkable and sends it to you. A skin-contact Slovenian, a Texan Tempranillo, a Burgundy that shouldn't be this affordable." />
+          <MenuEntry name="Reply how many bottles you want" price="4" description="Text back the quantity. We confirm, charge your card, and add the bottles to your cellar. No login, no basket, no faff." />
           <MenuEntry name="We store it until you fill a case of" price="12" description="Your bottles go into your cellar account. Mix and match across drops — build your case your way." />
-          <MenuEntry name="Then ship it to you for" price="£0" />
+          <MenuEntry name="Then ship it to you for" price="free" />
 
           {/* Sign-up form sits here, directly below the 4 lines */}
           <div className="mt-8 mb-2">
@@ -324,7 +327,7 @@ export default function HomePage() {
         </MenuSection>
 
         {/* ── The Levels ── */}
-        <MenuSection title="The Levels">
+        <MenuSection title="Welcome to the Club">
           <p
             className="font-serif italic text-sm leading-relaxed mb-7"
             style={{ color: 'rgba(42,24,16,0.38)' }}
