@@ -319,7 +319,7 @@ export default function HomePage() {
               />
               <MenuEntry
                 name="Free storage"
-                price="until your case is full"
+                price="until you fill a case"
                 description="Your bottles wait for you. No storage charge, no pressure to buy more."
               />
               <MenuEntry
