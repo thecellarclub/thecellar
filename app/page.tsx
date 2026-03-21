@@ -250,7 +250,6 @@ export default function HomePage() {
                   club
                 </span>
               </div>
-              <div className="w-10 h-px mx-auto" style={{ background: 'rgba(100,50,20,0.3)' }} />
             </div>
           </div>
 
