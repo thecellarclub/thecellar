@@ -336,7 +336,7 @@ export default function HomePage() {
             </MenuSection>
 
             {/* ── Welcome to the Club (tiers) ── */}
-            <MenuSection title="Welcome to the Club">
+            <MenuSection title="The Club">
               <p
                 className="font-serif italic text-base leading-relaxed mb-7"
                 style={{ color: 'rgba(42,24,16,0.55)' }}
