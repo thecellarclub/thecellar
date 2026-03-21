@@ -113,14 +113,14 @@ function MenuEntry({
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-3">
-        <span className="font-serif text-xl shrink-0" style={{ color: '#1C0E09' }}>
+        <span className="font-serif text-lg md:text-xl shrink-0" style={{ color: '#1C0E09' }}>
           {name}
         </span>
         <span
           className="flex-1 min-w-0"
           style={{ borderBottom: '1px dotted rgba(42,24,16,0.2)', marginBottom: '0.3em' }}
         />
-        <span className="font-serif text-base shrink-0 text-right" style={{ color: '#9B1B30' }}>
+        <span className="font-serif text-lg shrink-0 text-right" style={{ color: '#9B1B30' }}>
           {price}
         </span>
       </div>
@@ -141,14 +141,14 @@ function MenuEntry({
 function PerkEntry({ name, value }: { name: string; value: string }) {
   return (
     <div className="flex items-baseline gap-2 mb-2">
-      <span className="font-serif text-sm shrink-0" style={{ color: 'rgba(42,24,16,0.48)' }}>
+      <span className="font-serif text-base shrink-0" style={{ color: 'rgba(42,24,16,0.55)' }}>
         {name}
       </span>
       <span
         className="flex-1 min-w-0"
         style={{ borderBottom: '1px dotted rgba(42,24,16,0.13)', marginBottom: '0.3em' }}
       />
-      <span className="font-serif text-sm shrink-0 text-right" style={{ color: 'rgba(155,27,48,0.6)' }}>
+      <span className="font-serif text-base shrink-0 text-right" style={{ color: 'rgba(155,27,48,0.7)' }}>
         {value}
       </span>
     </div>
