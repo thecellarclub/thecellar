@@ -310,12 +310,12 @@ export default function HomePage() {
               <MenuEntry
                 name="Sommelier selected"
                 price="20 years"
-                description="Every bottle is chosen by Daniel Jonberger. Time at the 2-star Raby Hunt. A genuine obsession with finding bottles that make people feel something."
+                description="Every bottle is selected by your sommelier, Daniel. He was last at the 2-star Raby Hunt. You've got that in your pocket."
               />
               <MenuEntry
                 name="Better prices"
                 price="direct import rates"
-                description="We buy in volume across our two wine bars. You get the benefit of that."
+                description="We join in with you to buy these wines in volume across both our wine bars. You get the benefit of that."
               />
               <MenuEntry
                 name="Free storage"
@@ -345,31 +345,31 @@ export default function HomePage() {
 
               <MenuEntry name="Bailey" price="free to join" />
               <div className="mb-9">
-                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Wonderful wine texts" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="2 / month" />
                 <PerkEntry name="Wine requests" value="unlimited" />
-                <PerkEntry name="Free delivery" value="at 12 bottles" />
+                <PerkEntry name="Free delivery" value="12 bottles" />
               </div>
 
               <MenuEntry name="Elvet" price="unlocks at £500" />
               <div className="mb-9">
-                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Wonderful wine texts" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="5 / month" />
                 <PerkEntry name="Wine requests" value="unlimited" />
                 <PerkEntry name="Tasting tickets" value="2 / year" />
                 <PerkEntry name="Discount" value="5%" />
-                <PerkEntry name="Free delivery" value="at 12 bottles" />
+                <PerkEntry name="Free delivery" value="12 bottles" />
               </div>
 
               <MenuEntry name="Palatine" price="unlocks at £1,000" />
               <div className="mb-2">
-                <PerkEntry name="SMS drops" value="2 / week" />
+                <PerkEntry name="Wonderful wine texts" value="2 / week" />
                 <PerkEntry name="Concierge requests" value="unlimited" />
                 <PerkEntry name="Wine requests" value="unlimited" />
                 <PerkEntry name="Tasting tickets" value="4 / year" />
                 <PerkEntry name="Discount" value="10%" />
-                <PerkEntry name="Free delivery" value="at 6 bottles" />
-                <PerkEntry name="First look" value="2 hrs early" />
+                <PerkEntry name="Free delivery" value="6 bottles" />
+                <PerkEntry name="Get our texts" value="2 hrs early" />
               </div>
             </MenuSection>
 
@@ -381,7 +381,7 @@ export default function HomePage() {
               >
                 <FadeUp>
                   <p>
-                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — with a cellar big enough to warrant its own membership.
+                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — it&apos;s got a biigg old cellar so we thought why not share it with all you lot.
                   </p>
                 </FadeUp>
                 <FadeUp delay={60}>
