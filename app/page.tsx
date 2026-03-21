@@ -179,8 +179,7 @@ function HeroSignupForm() {
 
 export default function HomePage() {
   return (
-    // Dark maroon page background — card floats on top
-    <div className="bg-maroon min-h-screen py-10 px-4 sm:px-6">
+    <div className="bg-cream min-h-screen py-10 px-4 sm:px-6">
 
       {/* ── Card ── */}
       <div
@@ -188,7 +187,7 @@ export default function HomePage() {
         style={{
           background: '#F0E6DC',
           border: '1px solid rgba(18,6,8,0.14)',
-          boxShadow: '0 8px 48px rgba(18,6,8,0.45)',
+          boxShadow: '0 2px 16px rgba(18,6,8,0.08)',
         }}
       >
 
@@ -202,10 +201,10 @@ export default function HomePage() {
           </div>
           <div className="w-12 h-px mx-auto mb-6 opacity-60" style={{ background: '#C9851D' }} />
 
-          {/* Quote headline — left aligned */}
+          {/* Quote headline — styled like section titles */}
           <p
-            className="font-serif leading-snug"
-            style={{ fontSize: 'clamp(1.1rem, 2.8vw, 1.55rem)', color: 'rgba(18,6,8,0.78)' }}
+            className="font-serif text-xs uppercase tracking-[0.32em] text-center"
+            style={{ color: 'rgba(160,100,10,0.75)' }}
           >
             Wines you won&apos;t find on any shelf, at prices that feel like a secret.
           </p>
@@ -214,12 +213,12 @@ export default function HomePage() {
         {/* ── Menu body ── */}
         <div className="px-8 py-10">
 
-          {/* ── Reservations (join) ── */}
-          <MenuSection title="Reservations">
-            <MenuEntry name="We text you each week" price="twice" />
-            <MenuEntry name="Reply how many you want" price="3 bottles" />
+          {/* ── Reservations (join) — no section title ── */}
+          <div className="mb-14">
+            <MenuEntry name="We text you twice each week" price="2" />
+            <MenuEntry name="Reply how many bottles you want" price="4" />
             <MenuEntry name="We store it until you fill a case of" price="12" />
-            <MenuEntry name="Then ship it to you for" price="£0" />
+            <MenuEntry name="Then ship it to you for" price="free" />
             <div className="mt-6 max-w-sm mx-auto">
               <HeroSignupForm />
             </div>
@@ -229,10 +228,10 @@ export default function HomePage() {
                 Log in here
               </Link>
             </p>
-          </MenuSection>
+          </div>
 
           {/* ── Membership ── */}
-          <MenuSection title="Membership">
+          <MenuSection title="Why Bother">
             <MenuEntry
               name="Off the beaten path"
               price="40+ countries"
@@ -266,7 +265,7 @@ export default function HomePage() {
           </MenuSection>
 
           {/* ── The Levels ── */}
-          <MenuSection title="The Levels">
+          <MenuSection title="Welcome to the Club">
             <p
               className="font-serif italic text-sm leading-relaxed mb-8"
               style={{ color: 'rgba(18,6,8,0.38)' }}
