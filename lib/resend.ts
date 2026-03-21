@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM_EMAIL = 'The Cellar Club <noreply@thecellarclub.vercel.app>'
+const FROM_EMAIL = 'The Cellar Club <cheers@thecellar.club>'
 const ADMIN_EMAIL = 'hello@crushwines.co'
 
 /**
