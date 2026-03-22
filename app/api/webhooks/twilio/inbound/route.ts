@@ -154,7 +154,7 @@ async function handleShip(
   // Check for existing pending shipment — resend link rather than duplicate
   const { data: existing } = await sb
     .from('shipments')
-    .select('token')
+    .select('id, token, bottle_count')
     .eq('customer_id', customer.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
@@ -162,10 +162,14 @@ async function handleShip(
     .maybeSingle()
 
   if (existing?.token) {
-    await sendSms(
-      from,
-      `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`
-    )
+    const { data: addrCust } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
+    const addr = addrCust?.default_address as Record<string, string> | null
+    if (addr?.line1) {
+      const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
+      await sendSms(from, `You've got a shipment ready — ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+    } else {
+      await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
+    }
     return twimlOk()
   }
 
@@ -229,10 +233,14 @@ async function handleShip(
       .in('id', selectedIds)
   }
 
-  await sendSms(
-    from,
-    `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${token}`
-  )
+  const { data: addrCust } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
+  const addr = addrCust?.default_address as Record<string, string> | null
+  if (addr?.line1) {
+    const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
+    await sendSms(from, `Your case is ready to ship — ${bottlesToShip} bottles to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+  } else {
+    await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${token}`)
+  }
   return twimlOk()
 }
 
@@ -264,7 +272,7 @@ async function handleShipConfirm(
   // Check for existing pending shipment — resend link rather than duplicate
   const { data: existing } = await sb
     .from('shipments')
-    .select('token')
+    .select('id, token, bottle_count')
     .eq('customer_id', customer.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
@@ -272,10 +280,14 @@ async function handleShipConfirm(
     .maybeSingle()
 
   if (existing?.token) {
-    await sendSms(
-      from,
-      `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`
-    )
+    const { data: addrCust } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
+    const addr = addrCust?.default_address as Record<string, string> | null
+    if (addr?.line1) {
+      const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
+      await sendSms(from, `You've got a shipment ready — ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+    } else {
+      await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
+    }
     return twimlOk()
   }
 
@@ -442,10 +454,14 @@ async function handleShipConfirm(
       await sb.from('cellar').update({ shipment_id: newShipment.id }).in('id', earlySelectedIds)
     }
 
-    await sendSms(
-      from,
-      `Payment taken — confirm your delivery address at ${APP_URL}/ship?token=${token}`
-    )
+    const { data: addrCust } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
+    const addr = addrCust?.default_address as Record<string, string> | null
+    if (addr?.line1) {
+      const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
+      await sendSms(from, `Payment taken — we'll ship your ${bottlesToShipEarly} bottle${bottlesToShipEarly === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+    } else {
+      await sendSms(from, `Payment taken — confirm your delivery address at ${APP_URL}/ship?token=${token}`)
+    }
     return twimlOk()
   }
 
