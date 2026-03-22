@@ -215,7 +215,7 @@ export default function HomePage() {
     <div style={{ background: PAGE_BG, color: TEXT_DARK, minHeight: '100vh' }}>
 
       {/* ── Centered menu card with border all the way around ── */}
-      <div className="max-w-2xl mx-auto py-6 sm:py-10 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto pt-10 pb-6 sm:pt-16 sm:pb-10 px-4 sm:px-6">
         <div
           style={{
             background: CARD_BG,
@@ -397,7 +397,7 @@ export default function HomePage() {
               </div>
 
               <FadeUp delay={180}>
-                <div className="mt-10 text-center">
+                <div className="mt-7 text-center">
                   <Link
                     href="/join"
                     className="group inline-block font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:opacity-90"
@@ -413,7 +413,7 @@ export default function HomePage() {
           </div>
 
           {/* ── Footer — inside the card ── */}
-          <div className="px-8 py-8 text-center space-y-2">
+          <div className="px-8 py-5 text-center space-y-2">
             <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
               CD WINES LTD &middot; Company No. 15796479
             </p>
