@@ -62,7 +62,7 @@ function CellarDoorSvg() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="absolute inset-0 w-full h-full"
-      style={{ opacity: 0.22 }}
+      style={{ opacity: 0.32 }}
       aria-hidden="true"
     >
       <path
@@ -126,8 +126,8 @@ function MenuEntry({
       </div>
       {description && (
         <p
-          className="font-serif italic text-base leading-relaxed mt-1.5"
-          style={{ color: 'rgba(42,24,16,0.55)' }}
+          className="font-serif italic leading-relaxed mt-1.5"
+          style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}
         >
           {description}
         </p>
