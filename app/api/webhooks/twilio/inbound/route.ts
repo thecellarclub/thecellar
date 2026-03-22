@@ -1045,7 +1045,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .maybeSingle() as { data: Customer | null }
 
     if (!customer) {
-      await sendSms(from, `Hi! This is The Cellar Club — a members-only wine subscription. To join, sign up at ${APP_URL}/join`)
+      await sendSms(from, `A hearty welcome to the Cellar — well, hopefully.\n\nCall us old fashioned but it'd be nice to know your name — tell us at ${APP_URL}/join\n\nThen you'll enjoy sommelier selected wines at insider rates.`)
       return twimlOk()
     }
 
