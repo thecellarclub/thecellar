@@ -259,7 +259,7 @@ export default function HomePage() {
               className="font-serif italic"
               style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
             >
-              A private cellar. Two offers a week. Yours by text.
+              My private cellar. Two offers a week. Yours by text.
             </p>
             <p
               className="font-sans text-xs uppercase tracking-[0.28em] mt-2"
@@ -296,8 +296,8 @@ export default function HomePage() {
             <MenuSection title="How It Works">
               <MenuEntry name="We text you twice each week" price="2" />
               <MenuEntry name="Reply how many bottles you want" price="4" />
-              <MenuEntry name="We store it until you fill a case of" price="12" />
-              <MenuEntry name="Then ship it to you for" price="free" />
+              <MenuEntry name="We store it until you fill a case" price="12" />
+              <MenuEntry name="Then ship it to you" price="free" />
             </MenuSection>
 
             {/* ── Why Bother ── */}
@@ -381,22 +381,27 @@ export default function HomePage() {
               >
                 <FadeUp>
                   <p>
-                    We&apos;re Craig and Daniel. We opened Crush wine bar in Durham a couple years ago and just got the keys to a second one — it&apos;s got a biigg old cellar so we thought why not share it with all you lot.
+                    We&apos;re Daniel &amp; Craig. We opened Crush wine bar in Durham a couple years ago and just got the keys to our second place - it&apos;s got a big ol&apos; cellar so we thought, why not share it with you lot.
                   </p>
                 </FadeUp>
                 <FadeUp delay={60}>
                   <p>
-                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt, and yet he still manages to talk about wine without coming across like a tw**.
+                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt and yet he still manages to talk about it without coming across like a tw**.
                   </p>
                 </FadeUp>
                 <FadeUp delay={120}>
                   <p>
-                    The Cellar Club is what happens when a great sommelier has lots of storage space, direct import relationships, and a group of people who trust him to find something worth drinking.
+                    Access to all the benefits above is rarely public. Which is exactly why we wanted to do it. This is usually the domain of people with land, lineage and names like Tarquin.
+                  </p>
+                </FadeUp>
+                <FadeUp delay={180}>
+                  <p>
+                    So, welcome. Welcome to the feeling of having your own private sommelier, climate-controlled storage and black book of every winemaker worth knowing. Land and lineage sadly not included.
                   </p>
                 </FadeUp>
               </div>
 
-              <FadeUp delay={180}>
+              <FadeUp delay={240}>
                 <div className="mt-7 text-center">
                   <Link
                     href="/join"
