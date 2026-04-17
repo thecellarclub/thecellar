@@ -32,6 +32,12 @@ a:active,
 
 /* ── Browser autofill — prevent yellow background on dark theme ── */
 /* Chrome/Safari use box-shadow inset trick to override the autofill colour */
+/* ── Typing indicator bounce ── */
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-4px); opacity: 0.9; }
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,

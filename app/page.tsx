@@ -1,163 +1,71 @@
 'use client'
 
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { FadeUp } from './_components/FadeUp'
+import { TextDemo } from './_components/TextDemo'
 
-// ─── Scroll fade-up ────────────────────────────────────────────────────────────
+// ── Colour tokens ───────────────────────────────────────────────────────────
 
-function FadeUp({
-  children,
-  delay = 0,
-  className = '',
-}: {
-  children: React.ReactNode
-  delay?: number
-  className?: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [animated, setAnimated] = useState(false)
-  const [visible, setVisible] = useState(false)
+const PAGE_BG    = '#EDE8DF'
+const CARD_BG    = '#F5EFE6'
+const TEXT_DARK  = '#1C0E09'
+const TEXT_FAINT = 'rgba(42,24,16,0.40)'
+const BORDER     = 'rgba(42,24,16,0.18)'
+const ACCENT     = '#9B1B30'
 
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    setAnimated(true)
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) { setVisible(true); observer.disconnect() }
-      },
-      { threshold: 0.08 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+// ── Decorated headline — first letter of each word slightly larger ──────────
 
+function DecoratedHeading({ text }: { text: string }) {
+  const words = text.split(' ')
   return (
-    <div
-      ref={ref}
-      className={className}
-      style={
-        animated
-          ? {
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'translateY(0)' : 'translateY(20px)',
-              transition: `opacity 500ms ease-out ${delay}ms, transform 500ms ease-out ${delay}ms`,
-            }
-          : {}
-      }
+    <h1
+      className="font-serif uppercase leading-tight mb-5"
+      style={{ color: TEXT_DARK, letterSpacing: '0.07em' }}
     >
-      {children}
+      {words.map((word, wi) => (
+        <span key={wi}>
+          {wi > 0 ? ' ' : ''}
+          <span style={{ fontSize: 'clamp(1.9rem, 4.2vw, 2.6rem)', fontWeight: 400 }}>
+            {word.slice(0, 1)}
+          </span>
+          <span style={{ fontSize: 'clamp(1.5rem, 3.3vw, 2.1rem)', fontWeight: 400 }}>
+            {word.slice(1)}
+          </span>
+        </span>
+      ))}
+    </h1>
+  )
+}
+
+// ── Section title with flanking rules ──────────────────────────────────────
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-4 mb-7 justify-center">
+      <div className="w-24 h-px shrink-0" style={{ background: 'rgba(100,50,20,0.2)' }} />
+      <p
+        className="font-sans text-sm uppercase tracking-[0.28em] shrink-0"
+        style={{ color: 'rgba(42,24,16,0.65)' }}
+      >
+        {title}
+      </p>
+      <div className="w-24 h-px shrink-0" style={{ background: 'rgba(100,50,20,0.2)' }} />
     </div>
   )
 }
 
-// ─── Arch SVG — dark strokes for cream background ─────────────────────────────
+// ── Sign-up form ────────────────────────────────────────────────────────────
 
-function CellarDoorSvg() {
-  return (
-    <svg
-      viewBox="0 0 1000 800"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="absolute inset-0 w-full h-full"
-      style={{ opacity: 0.32 }}
-      aria-hidden="true"
-    >
-      <path
-        d="M 268 782 L 268 310 A 232 232 0 0 1 732 310 L 732 782 Z"
-        stroke="#3D1A12"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M 286 770 L 286 310 A 214 214 0 0 1 714 310 L 714 770 Z"
-        stroke="#3D1A12"
-        strokeWidth="1"
-      />
-      <circle cx="666" cy="546" r="30" stroke="#3D1A12" strokeWidth="1.5" />
-      <circle cx="666" cy="546" r="16" stroke="#3D1A12" strokeWidth="1.5" />
-    </svg>
-  )
-}
-
-// ─── Menu components ───────────────────────────────────────────────────────────
-
-function MenuSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-12">
-      <div className="flex items-center gap-4 mb-7">
-        <div className="flex-1 h-px" style={{ background: 'rgba(100,50,20,0.2)' }} />
-        <p
-          className="font-serif text-sm uppercase tracking-[0.28em] shrink-0"
-          style={{ color: 'rgba(42,24,16,0.65)' }}
-        >
-          {title}
-        </p>
-        <div className="flex-1 h-px" style={{ background: 'rgba(100,50,20,0.2)' }} />
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function MenuEntry({
-  name,
-  price,
-  description,
+function SignupForm({
+  buttonText = 'JOIN THE CLUB',
+  showLoginLink = false,
 }: {
-  name: string
-  price: string
-  description?: string
+  buttonText?: string
+  showLoginLink?: boolean
 }) {
-  return (
-    <div className="mb-5">
-      <div className="flex items-baseline gap-3">
-        <span className="font-serif text-base md:text-lg shrink-0" style={{ color: '#1C0E09' }}>
-          {name}
-        </span>
-        <span
-          className="flex-1 min-w-0"
-          style={{ borderBottom: '1px dotted rgba(42,24,16,0.2)', marginBottom: '0.3em' }}
-        />
-        <span className="font-serif text-lg shrink-0 text-right" style={{ color: '#9B1B30' }}>
-          {price}
-        </span>
-      </div>
-      {description && (
-        <p
-          className="font-serif italic leading-relaxed mt-1.5"
-          style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}
-        >
-          {description}
-        </p>
-      )}
-    </div>
-  )
-}
-
-// ─── Tier perk row (indented, smaller) ────────────────────────────────────────
-
-function PerkEntry({ name, value }: { name: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2 mb-2">
-      <span className="font-serif text-base shrink-0" style={{ color: 'rgba(42,24,16,0.55)' }}>
-        {name}
-      </span>
-      <span
-        className="flex-1 min-w-0"
-        style={{ borderBottom: '1px dotted rgba(42,24,16,0.13)', marginBottom: '0.3em' }}
-      />
-      <span className="font-serif text-base shrink-0 text-right" style={{ color: 'rgba(155,27,48,0.7)' }}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-// ─── Sign-up form — light theme ────────────────────────────────────────────────
-
-function SignupForm() {
   const [phone, setPhone] = useState('')
   const router = useRouter()
 
@@ -171,283 +79,281 @@ function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-      <div
-        className="flex-1 flex items-stretch focus-within:border-opacity-60 transition-colors"
-        style={{ border: '1px solid rgba(42,24,16,0.28)' }}
-      >
-        <span
-          className="flex items-center px-3 font-sans text-base select-none bg-transparent whitespace-nowrap border-r"
-          style={{ color: 'rgba(42,24,16,0.45)', borderColor: 'rgba(42,24,16,0.18)' }}
+    <div className="w-full max-w-lg">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+        <div
+          className="flex-1 flex items-stretch transition-colors focus-within:border-opacity-60"
+          style={{ border: `1px solid ${BORDER}` }}
         >
-          +44
-        </span>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="7700 900000"
-          className="flex-1 bg-transparent px-4 py-3 focus:outline-none font-sans text-base"
-          style={{ color: '#1C0E09' }}
-        />
-      </div>
-      <button
-        type="submit"
-        className="group text-white px-6 py-3 font-sans font-medium text-base transition-all duration-150 hover:opacity-90 whitespace-nowrap"
-        style={{ background: '#9B1B30' }}
-      >
-        Join the Club{' '}
-        <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">→</span>
-      </button>
-    </form>
+          <span
+            className="flex items-center px-3 font-sans select-none whitespace-nowrap border-r bg-transparent"
+            style={{ color: TEXT_FAINT, borderColor: 'rgba(42,24,16,0.12)', fontSize: 11 }}
+          >
+            +44
+          </span>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="YOUR MOBILE NUMBER"
+            className="flex-1 bg-transparent px-4 py-3.5 focus:outline-none"
+            style={{
+              color: TEXT_DARK,
+              fontSize: phone ? 14 : 11,
+              letterSpacing: phone ? '0.01em' : '0.22em',
+              textTransform: phone ? 'none' : 'uppercase',
+              fontFamily: 'var(--font-spectral)',
+            }}
+          />
+        </div>
+        <button
+          type="submit"
+          className="group whitespace-nowrap font-sans font-medium px-5 py-3.5 transition-all duration-150 hover:opacity-90 active:opacity-75"
+          style={{ background: ACCENT, color: '#F0E6DC', fontSize: 11, letterSpacing: '0.22em' }}
+        >
+          <span className="uppercase">{buttonText}</span>
+          {' '}
+          <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">→</span>
+        </button>
+      </form>
+
+      {showLoginLink && (
+        <p className="font-serif italic text-sm mt-3" style={{ color: TEXT_FAINT }}>
+          Already a member?{' '}
+          <Link
+            href="/portal"
+            className="underline underline-offset-2 transition-opacity hover:opacity-70"
+            style={{ color: 'rgba(42,24,16,0.52)' }}
+          >
+            Log in
+          </Link>
+        </p>
+      )}
+    </div>
   )
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// ── FAQ data ────────────────────────────────────────────────────────────────
+
+const FAQS: Array<{ q: string; a: React.ReactNode }> = [
+  {
+    q: 'How much does it cost to join?',
+    a: (
+      <>
+        Nothing. The Cellar Club is free to join — you just need to have bought at least one bottle through us to unlock the benefits. Tier perks (more concierge access, tasting tickets, discounts) scale with your rolling twelve-month spend.{' '}
+        <Link href="/club" className="underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: TEXT_DARK }}>
+          See tiers
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    q: 'How does delivery work?',
+    a: 'Free once you fill a case (12 bottles). If you want something sooner, you can ship early for a flat £15.',
+  },
+  {
+    q: 'Why use The Cellar Club instead of a normal wine shop?',
+    a: "Better prices and better wines. We buy in volume across both our wine bars and pass the direct-import rates on to you. Most of what we stock isn't on supermarket shelves — it's sourced directly from small producers Daniel knows personally.",
+  },
+  {
+    q: 'Can you help me source a specific bottle?',
+    a: "Yes. Text Daniel with what you're after. If we can find it, we'll run an offer to the whole club — if enough members are in, everyone gets it at the group-buy price.",
+  },
+  {
+    q: 'How is this different from a wine club?',
+    a: "Normal wine clubs send you a box of whatever they've decided on that month. We send you individual offers by text, you choose which (if any) you want, and your bottles are stored for free until you've got enough for a case. You're also texting a real person, not a subscription form.",
+  },
+  {
+    q: 'What does Daniel actually send?',
+    a: 'Two wines a week, chosen by him. Range varies wildly — could be a £12 everyday drinker, could be a £60 one-off from a producer who only makes a few hundred cases. All of them are wines Daniel would happily pour for himself.',
+  },
+]
+
+// ── Page ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const PAGE_BG = '#E6D9CA'
-  const CARD_BG = '#F2EAE0'
-  const TEXT_DARK = '#1C0E09'
-  const BORDER = 'rgba(42,24,16,0.18)'
-
   return (
     <div style={{ background: PAGE_BG, color: TEXT_DARK, minHeight: '100vh' }}>
 
-      {/* ── Centered menu card with border all the way around ── */}
-      <div className="max-w-2xl mx-auto pt-10 pb-6 sm:pt-16 sm:pb-10 px-4 sm:px-6">
-        <div
-          style={{
-            background: CARD_BG,
-            border: `1px solid ${BORDER}`,
-            color: TEXT_DARK,
-          }}
-        >
+      {/* ── Hero: logo + headline + subheading + form + demo ────────────── */}
+      <section className="px-6 pt-10 md:pt-12 pb-10 md:pb-14">
+        {/* Logo — centred above the two-column grid */}
+        <div className="flex justify-center mb-5 md:mb-6">
+          <Image
+            src="/logo.png"
+            alt="The Cellar Club"
+            width={880}
+            height={720}
+            priority
+            className="h-auto w-[155px] md:w-[192px]"
+            style={{ mixBlendMode: 'multiply' }}
+          />
+        </div>
 
-          {/* ── Arch header — logo + door ── */}
-          <div
-            className="relative flex flex-col items-center justify-center pt-14 pb-10 overflow-hidden"
-          >
-            <CellarDoorSvg />
-            <div className="relative z-10 text-center">
-              <div className="mb-5">
-                <span
-                  className="block font-serif text-xs uppercase tracking-[0.35em]"
-                  style={{ color: 'rgba(42,24,16,0.45)' }}
-                >
-                  the
-                </span>
-                <span
-                  className="block font-serif text-6xl md:text-7xl uppercase tracking-[0.08em] leading-none"
-                  style={{ color: TEXT_DARK }}
-                >
-                  CELLAR
-                </span>
-                <span
-                  className="block font-serif text-xs uppercase tracking-[0.35em]"
-                  style={{ color: 'rgba(42,24,16,0.45)' }}
-                >
-                  club
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
 
-          {/* ── Tagline + sommelier — below the door ── */}
-          <div className="text-center px-8 pt-6 pb-8">
-            <p
-              className="font-serif italic"
-              style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.25rem)', color: 'rgba(42,24,16,0.72)' }}
+          {/* Left column: headline → sub → form */}
+          <div>
+            <DecoratedHeading text="Text your personal sommelier." />
+
+            <div
+              className="font-serif mb-7 space-y-3"
+              style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
-              My private cellar. Two offers a week. Yours by text.
-            </p>
-            <p
-              className="font-sans text-xs uppercase tracking-[0.28em] mt-2"
-              style={{ color: 'rgba(42,24,16,0.38)' }}
-            >
-              Daniel Jonberger &middot; Sommelier
-            </p>
+              <p>Meet Daniel — former sommelier at the 2 Michelin star Raby Hunt. Every week he&apos;ll text you two exceptional wines. You reply how many you want.</p>
+              <p>Better yet, you can text him anytime to ask a question or request something rare. We cellar everything for free and ship whenever you fill a case.</p>
+            </div>
+
+            <SignupForm buttonText="JOIN THE CLUB" showLoginLink />
           </div>
 
-          {/* ── Sign-up form ── */}
-          <FadeUp>
-            <div className="px-8 pb-6">
-              <SignupForm />
-              <p
-                className="font-serif italic text-xs text-center mt-4"
-                style={{ color: 'rgba(42,24,16,0.38)' }}
-              >
-                Already a member?{' '}
-                <Link
-                  href="/portal"
-                  className="underline underline-offset-2 transition-colors hover:opacity-70"
-                  style={{ color: 'rgba(42,24,16,0.5)' }}
-                >
-                  Log in here
-                </Link>
-              </p>
-            </div>
-          </FadeUp>
-
-          {/* ── Menu sections ── */}
-          <div className="px-8 pt-6 pb-4">
-
-            {/* ── How It Works ── */}
-            <MenuSection title="How It Works">
-              <MenuEntry name="We text you twice each week" price="2" />
-              <MenuEntry name="Reply how many bottles you want" price="4" />
-              <MenuEntry name="We store it until you fill a case" price="12" />
-              <MenuEntry name="Then ship it to you" price="free" />
-            </MenuSection>
-
-            {/* ── Why Bother ── */}
-            <MenuSection title="Why Bother">
-              <MenuEntry
-                name="Off the beaten path"
-                price="40+ countries"
-                description="We import directly and have relationships most retailers don't. Taiwan, Georgia, Texas, India: if it's interesting, Daniel will find it."
-              />
-              <MenuEntry
-                name="Sommelier selected"
-                price="20 years"
-                description="Every bottle is selected by your sommelier, Daniel. He was last at the 2-star Raby Hunt. You've got that in your pocket."
-              />
-              <MenuEntry
-                name="Better prices"
-                price="direct import rates"
-                description="We join in with you to buy these wines in volume across both our wine bars. You get the benefit of that."
-              />
-              <MenuEntry
-                name="Free storage"
-                price="until you fill a case"
-                description="Your bottles wait for you. No storage charge, no pressure to buy more."
-              />
-              <MenuEntry
-                name="Wine concierge"
-                price="unlimited questions"
-                description="Got a question? Looking for a gift? Text Daniel directly. He'll sort it."
-              />
-              <MenuEntry
-                name="Request a wine"
-                price="group buy, bulk price"
-                description="Want something we haven't featured? Request it. If enough members are in, we'll run it as a drop."
-              />
-            </MenuSection>
-
-            {/* ── Welcome to the Club (tiers) ── */}
-            <MenuSection title="The Club">
-              <p
-                className="font-serif italic leading-relaxed mb-7"
-                style={{ fontSize: 'clamp(1.05rem, 2.5vw, 1.1rem)', color: 'rgba(42,24,16,0.55)' }}
-              >
-                Your tier is awarded on your rolling twelve-month spend.
-              </p>
-
-              <MenuEntry name="Elvet" price="free to join" />
-              <div className="mb-9">
-                <PerkEntry name="Wonderful wine texts" value="2 / week" />
-                <PerkEntry name="Concierge requests" value="2 / month" />
-                <PerkEntry name="Wine requests" value="unlimited" />
-                <PerkEntry name="Free delivery" value="12 bottles" />
-              </div>
-
-              <MenuEntry name="Bailey" price="unlocks at £500" />
-              <div className="mb-9">
-                <PerkEntry name="Wonderful wine texts" value="2 / week" />
-                <PerkEntry name="Concierge requests" value="5 / month" />
-                <PerkEntry name="Wine requests" value="unlimited" />
-                <PerkEntry name="Tasting tickets" value="2 / year" />
-                <PerkEntry name="Discount" value="5%" />
-                <PerkEntry name="Free delivery" value="12 bottles" />
-              </div>
-
-              <MenuEntry name="Palatine" price="unlocks at £1,000" />
-              <div className="mb-2">
-                <PerkEntry name="Wonderful wine texts" value="2 / week" />
-                <PerkEntry name="Concierge requests" value="unlimited" />
-                <PerkEntry name="Wine requests" value="unlimited" />
-                <PerkEntry name="Tasting tickets" value="4 / year" />
-                <PerkEntry name="Discount" value="10%" />
-                <PerkEntry name="Free delivery" value="6 bottles" />
-                <PerkEntry name="Get our texts" value="2 hrs early" />
-              </div>
-            </MenuSection>
-
-            {/* ── Our Story ── */}
-            <MenuSection title="Our Story">
-              <div
-                className="space-y-5 font-serif text-base leading-relaxed"
-                style={{ color: 'rgba(42,24,16,0.72)' }}
-              >
-                <FadeUp>
-                  <p>
-                    We&apos;re Daniel &amp; Craig. We opened Crush wine bar in Durham a couple years ago and just got the keys to our second place - it&apos;s got a big ol&apos; cellar so we thought, why not share it with you lot.
-                  </p>
-                </FadeUp>
-                <FadeUp delay={60}>
-                  <p>
-                    Daniel is fab with wine. Twenty years in the industry, time at the 2-star Raby Hunt and yet he still manages to talk about it without coming across like a tw**.
-                  </p>
-                </FadeUp>
-                <FadeUp delay={120}>
-                  <p>
-                    Access to all the benefits above is rarely public. Which is exactly why we wanted to do it. This is usually the domain of people with land, lineage and names like Tarquin.
-                  </p>
-                </FadeUp>
-                <FadeUp delay={180}>
-                  <p>
-                    So, welcome. Welcome to the feeling of having your own private sommelier, climate-controlled storage and black book of every winemaker worth knowing. Land and lineage sadly not included.
-                  </p>
-                </FadeUp>
-              </div>
-
-              <FadeUp delay={240}>
-                <div className="mt-7 text-center">
-                  <Link
-                    href="/join"
-                    className="group inline-block font-sans font-medium px-8 py-3.5 transition-all duration-150 hover:opacity-90"
-                    style={{ background: '#9B1B30', color: '#F0E6DC' }}
-                  >
-                    Join the Club{' '}
-                    <span className="inline-block transition-transform duration-150 group-hover:translate-x-[3px]">→</span>
-                  </Link>
-                </div>
-              </FadeUp>
-            </MenuSection>
-
-          </div>
-
-          {/* ── Footer — inside the card ── */}
-          <div className="px-8 py-5 text-center space-y-2">
-            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
-              CD WINES LTD &middot; Company No. 15796479
-            </p>
-            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
-              Licensed under the Licensing Act 2003 &middot; Licence No. DCCC/PLA0856
-            </p>
-            <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
-              We do not sell alcohol to anyone under 18. Please drink responsibly.
-            </p>
-            <div className="flex justify-center gap-6 pt-2">
-              <Link
-                href="/privacy"
-                className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
-                style={{ color: 'rgba(42,24,16,0.38)' }}
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="/terms"
-                className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
-                style={{ color: 'rgba(42,24,16,0.38)' }}
-              >
-                Terms &amp; Conditions
-              </Link>
-            </div>
+          {/* Right column: animated text demo */}
+          <div className="flex justify-center md:justify-end">
+            <TextDemo />
           </div>
 
         </div>
-      </div>
+      </section>
+
+      {/* ── A NOTE FROM DANIEL + letter card ────────────────────────────── */}
+      <section className="px-6 py-10 md:py-12">
+        <div className="max-w-2xl mx-auto">
+          <FadeUp>
+            <SectionTitle title="A Note From Daniel" />
+            <div style={{ background: CARD_BG, border: `1px solid ${BORDER}` }} className="p-8 sm:p-10">
+              <div
+                className="font-serif space-y-5 leading-[1.75]"
+                style={{ fontSize: 'clamp(1.05rem, 2vw, 1.12rem)', color: TEXT_DARK }}
+              >
+                <p>
+                  Tickety boo there. I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockliffe Hall, all that jazz. Although I always think it&apos;s hard to call yourself a sommelier without coming across like a complete tw**. So forget the labels.
+                </p>
+
+                <p>
+                  All you need to know is I bloody love wine.
+                </p>
+
+                <p>
+                  Twice a week, you&apos;ll get a message from me. Not a newsletter — an actual text, from my actual phone. Two wines I&apos;m genuinely excited about. Could be a Georgian amber wine that smells like your nan&apos;s garden. Could be something from a tiny producer in the Jura who only makes 200 cases a year. Could be a Texas red that has no business being as good as it is. I import a lot of this stuff directly, so you&apos;re getting prices most people can&apos;t.
+                </p>
+
+                <p>
+                  Here&apos;s the thing that makes this different: you can text me back. Got a question? Ask. Want a recommendation for a dinner party? I&apos;ll sort it. Looking for a specific bottle? Tell me and I&apos;ll find it — and if enough of you want the same thing, we&apos;ll do a group buy and get it at a price that&apos;d make a merchant weep.
+                </p>
+
+                <p>
+                  I opened Crush wine bar in Durham a couple of years ago and just got the keys to a second place with a proper cellar.
+                </p>
+
+                <p>
+                  I wanted to change that.
+                </p>
+
+                <p>
+                  So welcome. Your cellar&apos;s ready. Text me anytime.
+                </p>
+
+                {/* Sign-off image */}
+                <div className="mt-6">
+                  <Image
+                    src="/sign-off.png"
+                    alt="Daniel Jonberger"
+                    width={430}
+                    height={430}
+                    className="w-[180px] md:w-[220px] h-auto"
+                    style={{ mixBlendMode: 'multiply' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── GOOD TO KNOW + FAQ card ──────────────────────────────────────── */}
+      <section className="px-6 py-10 md:py-12">
+        <div className="max-w-2xl mx-auto">
+          <FadeUp>
+            <SectionTitle title="Good to Know" />
+            <div style={{ background: CARD_BG, border: `1px solid ${BORDER}` }} className="px-8 py-8 sm:px-10">
+              {FAQS.map((faq, i) => (
+                <details
+                  key={i}
+                  className="group"
+                  style={{ borderTop: i === 0 ? undefined : `1px solid ${BORDER}` }}
+                >
+                  <summary
+                    className="flex items-center justify-between gap-4 py-4 cursor-pointer list-none font-serif select-none"
+                    style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
+                  >
+                    <span>{faq.q}</span>
+                    <span
+                      className="shrink-0 leading-none transition-transform duration-200 group-open:rotate-45"
+                      style={{ color: 'rgba(42,24,16,0.35)', fontSize: '1.4rem' }}
+                      aria-hidden="true"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <div
+                    className="font-serif pb-4 leading-relaxed"
+                    style={{ fontSize: 'clamp(1rem, 1.8vw, 1.08rem)', color: TEXT_DARK }}
+                  >
+                    {faq.a}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── THIS WEEK'S WINE + final CTA ────────────────────────────────── */}
+      <section className="px-6 py-10 md:py-12">
+        <div className="max-w-lg mx-auto">
+          <FadeUp>
+            <SectionTitle title="This Week's Wine" />
+            <div className="flex justify-center">
+              <SignupForm buttonText="START TEXTING DANIEL" />
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer
+        className="px-6 pt-8 pb-10 text-center"
+        style={{ borderTop: `1px solid ${BORDER}` }}
+      >
+        <div className="max-w-2xl mx-auto space-y-2">
+          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+            CD WINES LTD &middot; Company No. 15796479
+          </p>
+          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+            Licensed under the Licensing Act 2003 &middot; Licence No. DCCC/PLA0856
+          </p>
+          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>
+            We do not sell alcohol to anyone under 18. Please drink responsibly.
+          </p>
+          <div className="flex justify-center gap-6 pt-2">
+            <Link
+              href="/privacy"
+              className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
+              style={{ color: 'rgba(42,24,16,0.38)' }}
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70"
+              style={{ color: 'rgba(42,24,16,0.38)' }}
+            >
+              Terms &amp; Conditions
+            </Link>
+          </div>
+        </div>
+      </footer>
 
     </div>
   )
