@@ -227,11 +227,11 @@ export default function HomePage() {
                 style={{ fontSize: 'clamp(1.05rem, 2vw, 1.12rem)', color: TEXT_DARK }}
               >
                 <p>
-                  Tickety boo there. I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockliffe Hall, all that jazz. Although I always think it&apos;s hard to call yourself a sommelier without coming across like a complete tw**. So forget the labels.
+                  Tickety boo there. I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without coming across like a complete tw**, so let&apos;s forget the labels.
                 </p>
 
                 <p>
-                  All you need to know is I bloody love wine.
+                  All you need to know is I bloody love wine. Not the poncy, swirl-and-spit, guess-the-vintage kind. The kind where you open something on a Tuesday night and it makes you stop and go &ldquo;…what is that?&rdquo; That&apos;s the feeling I chase. That&apos;s what I text you about.
                 </p>
 
                 <p>
@@ -239,15 +239,15 @@ export default function HomePage() {
                 </p>
 
                 <p>
-                  Here&apos;s the thing that makes this different: you can text me back. Got a question? Ask. Want a recommendation for a dinner party? I&apos;ll sort it. Looking for a specific bottle? Tell me and I&apos;ll find it — and if enough of you want the same thing, we&apos;ll do a group buy and get it at a price that&apos;d make a merchant weep.
+                  Here&apos;s the thing that makes this different: you can text me back. Want a recommendation for a dinner party? I&apos;ll sort it. Looking for a special present for someone? Tell me and I&apos;ll find something. Want to see your favourite wine featured? If enough of you want it, everyone gets it at a price that&apos;d make a merchant weep.
                 </p>
 
                 <p>
-                  I opened Crush wine bar in Durham a couple of years ago and just got the keys to a second place with a proper cellar.
+                  I opened Crush wine bar in Durham a couple of years ago and just got the keys to a second place with a proper cellar. So your wine lives there, climate-controlled, no charge, until you&apos;ve filled a case. Then we ship it to you for free.
                 </p>
 
                 <p>
-                  I wanted to change that.
+                  This kind of access — a direct line to someone who knows every winemaker worth knowing, free storage, direct import prices — it&apos;s usually reserved for people with land, lineage and names like Tarquin. I wanted to change that.
                 </p>
 
                 <p>
