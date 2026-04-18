@@ -70,6 +70,7 @@ export function TextDemo() {
       className="relative mx-auto w-full"
       style={{
         maxWidth: 300,
+        minHeight: 420,  // tall enough for all 4 messages + typing indicators
         background: '#F2EAE0',
         border: `1px solid ${BORDER}`,
         borderRadius: 28,
