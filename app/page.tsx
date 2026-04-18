@@ -201,7 +201,7 @@ export default function HomePage() {
               className="font-serif mb-7 space-y-3"
               style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
-              <p>Meet Daniel — former sommelier at the 2 Michelin star Raby Hunt. Every week he&apos;ll text you two exceptional wines. You reply how many you want.</p>
+              <p>Meet Daniel — former sommelier at the 2 Michelin star Raby Hunt. Every week he&apos;ll text you exceptional wines. You reply how many you want.</p>
               <p>Better yet, you can text him anytime to ask a question or request something rare. We cellar everything for free and ship whenever you fill a case.</p>
             </div>
 
@@ -227,7 +227,7 @@ export default function HomePage() {
                 style={{ fontSize: 'clamp(1.05rem, 2vw, 1.12rem)', color: TEXT_DARK }}
               >
                 <p>
-                  Tickety boo there. I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without coming across like a complete tw**, so let&apos;s forget the labels.
+                  I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without coming across like a complete tw**, so let&apos;s forget the labels.
                 </p>
 
                 <p>
