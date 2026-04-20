@@ -201,11 +201,16 @@ export default function HomePage() {
               className="font-serif mb-7 space-y-3"
               style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
-              <p>Meet Daniel — former sommelier at the 2 Michelin star Raby Hunt. Every week he&apos;ll text you exceptional wines. You reply how many you want.</p>
-              <p>Better yet, you can text him anytime to ask a question or request something rare. We cellar everything for free and ship whenever you fill a case.</p>
+              <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
+              <p>Twice a week, he&apos;ll send you a wine he&apos;s genuinely excited about. Reply with how many you want.</p>
+              <p>And you can text him anytime — could be a dinner party pairing, a gift or a bottle you can&apos;t find anywhere.</p>
+              <p>We store everything in our cellar and ship for free once you&apos;ve filled a case.</p>
             </div>
 
-            <SignupForm buttonText="JOIN THE CLUB" showLoginLink />
+            <SignupForm buttonText="START TEXTING DANIEL" showLoginLink />
+            <p className="font-serif italic mt-3" style={{ fontSize: '0.88rem', color: TEXT_FAINT }}>
+              Free to join. You only pay for wines you say yes to.
+            </p>
           </div>
 
           {/* Right column: animated text demo */}
@@ -315,7 +320,7 @@ export default function HomePage() {
           <FadeUp>
             <SectionTitle title="This Week's Wine" />
             <div className="flex justify-center">
-              <SignupForm buttonText="START TEXTING DANIEL" />
+              <SignupForm buttonText="JOIN THE CLUB" />
             </div>
           </FadeUp>
         </div>
