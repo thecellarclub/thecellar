@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     // Send SMS
     try {
       await twilioClient.messages.create({
-        body: `Your Cellar Text verification code is: ${code}`,
+        body: `Your The Cellar Club verification code is: ${code}`,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: phone,
       })
@@ -96,6 +96,15 @@ export async function POST(req: NextRequest) {
     session.phone = phone
     session.phoneVerified = false
     await session.save()
+
+    // Persist phone to signup_progress so we can recover drop-offs
+    const { error: progressError } = await supabase
+      .from('signup_progress')
+      .upsert(
+        { phone, last_step: 'phone', updated_at: new Date().toISOString() },
+        { onConflict: 'phone' }
+      )
+    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

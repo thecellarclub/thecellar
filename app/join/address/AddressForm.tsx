@@ -50,17 +50,17 @@ export default function AddressForm() {
   }
 
   const inputClass =
-    'w-full bg-maroon border border-cream/20 text-cream placeholder-cream/30 px-4 py-3 font-sans text-base focus:outline-none focus:border-cream/50 transition-colors'
-  const labelClass = 'block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide'
+    'w-full bg-[#EDE8DF] border border-[rgba(42,24,16,0.18)] text-[#1C0E09] px-4 py-3 font-sans text-base focus:outline-none transition-colors'
+  const labelClass = 'block font-sans text-xs text-[rgba(42,24,16,0.55)] mb-1.5 uppercase tracking-wide'
 
   return (
-    <div className="bg-maroon-dark border border-cream/12 p-8">
+    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 4 of 4
         </p>
-        <h2 className="font-serif text-2xl text-cream">Where do you want your bottles sent?</h2>
-        <p className="font-sans text-sm text-cream/50 mt-1">
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Where do you want your bottles sent?</h2>
+        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.50)' }}>
           We&apos;ll store your wines until your case is full, then ship here for free.
         </p>
       </div>
@@ -82,7 +82,7 @@ export default function AddressForm() {
         <div>
           <label className={labelClass}>
             Address line 2{' '}
-            <span className="text-cream/30 normal-case">(optional)</span>
+            <span className="text-[rgba(42,24,16,0.35)] normal-case">(optional)</span>
           </label>
           <input
             type="text"
@@ -122,7 +122,7 @@ export default function AddressForm() {
         </div>
 
         {error && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             {error}
           </p>
         )}

@@ -83,6 +83,13 @@ export async function POST(req: NextRequest) {
       throw insertError
     }
 
+    // Clean up signup_progress now that the customer row exists
+    const { error: progressError } = await supabase
+      .from('signup_progress')
+      .delete()
+      .eq('phone', normalisedPhone)
+    if (progressError) console.error('[signup_progress] delete failed:', progressError.message)
+
     // Set payment method as default on Stripe customer
     await stripe.customers.update(session.stripeCustomerId, {
       invoice_settings: { default_payment_method: paymentMethodId },

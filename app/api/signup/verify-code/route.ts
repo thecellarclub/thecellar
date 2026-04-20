@@ -73,6 +73,15 @@ export async function POST(req: NextRequest) {
     session.phoneVerified = true
     await session.save()
 
+    // Persist verified step
+    const { error: progressError } = await supabase
+      .from('signup_progress')
+      .upsert(
+        { phone: session.phone, last_step: 'verified', updated_at: new Date().toISOString() },
+        { onConflict: 'phone' }
+      )
+    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[verify-code]', err)

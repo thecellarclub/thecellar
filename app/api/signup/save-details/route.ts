@@ -63,6 +63,24 @@ export async function POST(req: NextRequest) {
     session.dobYear = year
     await session.save()
 
+    // Persist details step
+    const dobString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const { error: progressError } = await sb
+      .from('signup_progress')
+      .upsert(
+        {
+          phone: session.phone,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          dob: dobString,
+          age_verified: true,
+          last_step: 'details',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'phone' }
+      )
+    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[save-details]', err)

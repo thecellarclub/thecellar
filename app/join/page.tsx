@@ -70,28 +70,28 @@ function JoinPageInner() {
 
   if (autoSubmitting) {
     return (
-      <div className="bg-maroon-dark border border-cream/12 p-8">
-        <p className="font-sans text-sm text-cream/60">Sending code…</p>
+      <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
+        <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.55)' }}>Sending code…</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-maroon-dark border border-cream/12 p-8">
+    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 1 of 4
         </p>
-        <h2 className="font-serif text-2xl text-cream">Your mobile number</h2>
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Your mobile number</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="phone" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="phone" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             UK mobile number
           </label>
-          <div className="flex items-stretch border border-cream/20 focus-within:border-cream/50 transition-colors">
-            <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+          <div className="flex items-stretch border transition-colors" style={{ borderColor: 'rgba(42,24,16,0.18)' }}>
+            <span className="flex items-center px-3 font-sans text-base border-r select-none bg-transparent whitespace-nowrap" style={{ color: 'rgba(42,24,16,0.60)', borderColor: 'rgba(42,24,16,0.18)' }}>
               +44
             </span>
             <input
@@ -102,22 +102,23 @@ function JoinPageInner() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              className="flex-1 bg-maroon px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+              className="flex-1 bg-[#EDE8DF] px-4 py-3 focus:outline-none font-sans text-base"
+              style={{ color: '#1C0E09' }}
             />
           </div>
         </div>
 
         {alreadySignedUp && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             Looks like you&apos;re already signed up.{' '}
-            <Link href="/portal" className="underline underline-offset-2 text-cream/80 hover:text-cream transition-colors">
+            <Link href="/portal" className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#9B1B30' }}>
               Log in here →
             </Link>
           </p>
         )}
 
         {error && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             {error}
           </p>
         )}

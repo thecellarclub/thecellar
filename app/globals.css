@@ -48,3 +48,14 @@ input:-webkit-autofill:active {
   caret-color: #F0E6DC;
 }
 
+/* Light theme autofill (join/sign-up flow uses #EDE8DF inputs with dark text) */
+input.bg-\[\#EDE8DF\]:-webkit-autofill,
+input.bg-\[\#EDE8DF\]:-webkit-autofill:hover,
+input.bg-\[\#EDE8DF\]:-webkit-autofill:focus,
+input.bg-\[\#EDE8DF\]:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #EDE8DF inset !important;
+  box-shadow: 0 0 0 1000px #EDE8DF inset !important;
+  -webkit-text-fill-color: #1C0E09 !important;
+  caret-color: #1C0E09;
+}
+

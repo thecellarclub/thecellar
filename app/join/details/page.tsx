@@ -71,13 +71,13 @@ export default function DetailsPage() {
   }
 
   return (
-    <div className="bg-maroon-dark border border-cream/12 p-8">
+    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 2 of 4
         </p>
-        <h2 className="font-serif text-2xl text-cream">A few more details</h2>
-        <p className="font-sans text-sm text-cream/55 mt-1">
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>A few more details</h2>
+        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Required for age verification and UK compliance.
         </p>
       </div>
@@ -85,7 +85,7 @@ export default function DetailsPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* First name */}
         <div>
-          <label htmlFor="firstName" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="firstName" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             First name
           </label>
           <input
@@ -96,13 +96,14 @@ export default function DetailsPage() {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
-            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
+            className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base"
+            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
           />
         </div>
 
         {/* Last name */}
         <div>
-          <label htmlFor="lastName" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="lastName" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Last name
           </label>
           <input
@@ -113,13 +114,14 @@ export default function DetailsPage() {
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             required
-            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base"
+            className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base"
+            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
           />
         </div>
 
         {/* Date of birth */}
         <div>
-          <label className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Date of birth
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -130,7 +132,8 @@ export default function DetailsPage() {
                 value={dobDay}
                 onChange={(e) => setDobDay(e.target.value)}
                 required
-                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
+                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
+                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
               >
                 <option value="">Day</option>
                 {DAYS.map((d) => (
@@ -145,7 +148,8 @@ export default function DetailsPage() {
                 value={dobMonth}
                 onChange={(e) => setDobMonth(e.target.value)}
                 required
-                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
+                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
+                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
               >
                 <option value="">Month</option>
                 {MONTHS.map((m, i) => (
@@ -160,7 +164,8 @@ export default function DetailsPage() {
                 value={dobYear}
                 onChange={(e) => setDobYear(e.target.value)}
                 required
-                className="w-full bg-maroon border border-cream/20 px-3 py-3 text-cream focus:outline-none focus:border-cream/50 transition-colors appearance-none font-sans"
+                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
+                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
               >
                 <option value="">Year</option>
                 {YEARS.map((y) => (
@@ -182,12 +187,12 @@ export default function DetailsPage() {
                 onChange={(e) => setAgeConsent(e.target.checked)}
                 className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
               />
-              <span className="text-sm text-cream/60 leading-relaxed font-sans">
+              <span className="text-sm leading-relaxed font-sans" style={{ color: 'rgba(42,24,16,0.65)' }}>
                 I confirm I am 18 or over and have a UK delivery address.{' '}
-                <span className="text-red-400">*</span>
+                <span className="text-red-600">*</span>
               </span>
             </label>
-            <p className="font-sans text-xs text-cream/35 mt-1 ml-7">
+            <p className="font-sans text-xs mt-1 ml-7" style={{ color: 'rgba(42,24,16,0.40)' }}>
               Required — we sell alcohol and are legally required to verify your age.
             </p>
           </div>
@@ -200,16 +205,16 @@ export default function DetailsPage() {
               onChange={(e) => setMarketingConsent(e.target.checked)}
               className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#9B1B30] cursor-pointer"
             />
-            <span className="text-sm text-cream/60 leading-relaxed font-sans">
-              I agree to receive promotional SMS messages from The Cellar Club. Reply{' '}
-              <strong className="text-cream/80 font-medium">STOP</strong> at any time to unsubscribe.{' '}
-              <span className="text-red-400">*</span>
+            <span className="text-sm leading-relaxed font-sans" style={{ color: 'rgba(42,24,16,0.65)' }}>
+              I agree to receive SMS messages from The Cellar Club. Reply{' '}
+              <strong style={{ color: '#1C0E09' }} className="font-medium">STOP</strong> at any time to unsubscribe.{' '}
+              <span className="text-red-600">*</span>
             </span>
           </label>
         </div>
 
         {error && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             {error}
           </p>
         )}

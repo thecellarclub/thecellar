@@ -44,11 +44,11 @@ export default function VerifyPage() {
 
   if (tooManyAttempts) {
     return (
-      <div className="bg-maroon-dark border border-cream/12 p-8 text-center">
-        <p className="text-cream/70 font-sans mb-4">Too many incorrect attempts.</p>
-        <p className="font-sans text-cream/50 text-sm mb-6">
+      <div className="bg-[#F5EFE6] border p-8 text-center" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
+        <p className="font-sans mb-4" style={{ color: 'rgba(42,24,16,0.70)' }}>Too many incorrect attempts.</p>
+        <p className="font-sans text-sm mb-6" style={{ color: 'rgba(42,24,16,0.50)' }}>
           Please wait a few minutes and{' '}
-          <Link href="/join" className="text-cream/60 underline underline-offset-2 hover:text-cream">
+          <Link href="/join" className="underline underline-offset-2" style={{ color: '#9B1B30' }}>
             request a new code
           </Link>
           .
@@ -58,20 +58,20 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="bg-maroon-dark border border-cream/12 p-8">
+    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 1 of 4
         </p>
-        <h2 className="font-serif text-2xl text-cream">Check your messages</h2>
-        <p className="font-sans text-sm text-cream/55 mt-1">
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Check your messages</h2>
+        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Enter the 6-digit code we just sent to your phone.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="code" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="code" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Verification code
           </label>
           <input
@@ -84,12 +84,13 @@ export default function VerifyPage() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
             required
-            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors text-base tracking-widest text-center text-xl font-sans"
+            className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors text-base tracking-widest text-center text-xl font-sans"
+            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
           />
         </div>
 
         {error && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             {error}
           </p>
         )}
@@ -102,9 +103,9 @@ export default function VerifyPage() {
           {loading ? 'Verifying…' : 'Verify code'}
         </button>
 
-        <p className="text-center font-sans text-sm text-cream/40">
+        <p className="text-center font-sans text-sm" style={{ color: 'rgba(42,24,16,0.40)' }}>
           Didn&apos;t get a code?{' '}
-          <Link href="/join" className="text-cream/60 underline underline-offset-2 hover:text-cream">
+          <Link href="/join" className="underline underline-offset-2" style={{ color: '#9B1B30' }}>
             Go back and resend
           </Link>
         </p>

@@ -15,15 +15,15 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
-      color: '#F0E6DC',
+      color: '#1C0E09',
       fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
       fontSize: '16px',
-      '::placeholder': { color: 'rgba(240,230,220,0.3)' },
-      iconColor: '#F0E6DC',
+      '::placeholder': { color: 'rgba(42,24,16,0.35)' },
+      iconColor: '#1C0E09',
     },
     invalid: {
-      color: '#f87171',
-      iconColor: '#f87171',
+      color: '#b91c1c',
+      iconColor: '#b91c1c',
     },
   },
 }
@@ -118,21 +118,21 @@ function CardFormInner() {
   }
 
   return (
-    <div className="bg-maroon-dark border border-cream/12 p-8">
+    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] text-gold mb-1">
+        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 3 of 4
         </p>
-        <h2 className="font-serif text-2xl text-cream">Email &amp; card details</h2>
-        <p className="font-sans text-sm text-cream/55 mt-1">
-          Your card is saved securely. You&apos;ll only be charged when you order a wine.
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Email &amp; card details</h2>
+        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
+          The Cellar Club is free to join. You&apos;ll only be charged when you order wine.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="email" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Email address
           </label>
           <input
@@ -144,25 +144,26 @@ function CardFormInner() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
-            className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base disabled:opacity-60"
+            className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base disabled:opacity-60"
+            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
           />
         </div>
 
         {/* Card element */}
         <div>
-          <label className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+          <label className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Card details
           </label>
-          <div className="bg-maroon border border-cream/20 px-4 py-3.5 focus-within:border-cream/50 transition-colors">
+          <div className="bg-[#EDE8DF] border px-4 py-3.5 transition-colors" style={{ borderColor: 'rgba(42,24,16,0.18)' }}>
             <CardElement options={CARD_ELEMENT_OPTIONS} />
           </div>
-          <p className="mt-1.5 font-sans text-xs text-cream/30">
+          <p className="mt-1.5 font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>
             Secured by Stripe. We never see your full card number.
           </p>
         </div>
 
         {error && (
-          <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+          <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
             {error}
           </p>
         )}

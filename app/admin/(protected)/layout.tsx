@@ -5,7 +5,7 @@ import AdminNav from '../_components/AdminNav'
 import SignOutButton from '../_components/SignOutButton'
 import MobileAdminNav from '../_components/MobileAdminNav'
 
-export const metadata = { title: 'Cellar Text Admin' }
+export const metadata = { title: 'The Cellar Club Admin' }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Belt-and-braces: proxy.ts handles the redirect, this catches any gap
@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Desktop sidebar — hidden on mobile */}
       <aside className="hidden md:flex md:flex-col w-52 bg-gray-900 text-white shrink-0">
         <div className="px-4 py-5 border-b border-gray-700">
-          <p className="font-bold text-sm tracking-wide">Cellar Text</p>
+          <p className="font-bold text-sm tracking-wide">The Cellar Club</p>
           <p className="text-xs text-gray-400 mt-0.5">Admin</p>
         </div>
         <AdminNav />

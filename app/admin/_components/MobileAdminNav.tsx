@@ -29,7 +29,7 @@ export default function MobileAdminNav() {
         style={{ height: '56px' }}
       >
         <div>
-          <p className="font-bold text-sm tracking-wide">Cellar Text</p>
+          <p className="font-bold text-sm tracking-wide">The Cellar Club</p>
           <p className="text-xs text-gray-400">Admin</p>
         </div>
         <button
@@ -63,7 +63,7 @@ export default function MobileAdminNav() {
               className="flex items-center justify-between px-4 border-b border-gray-700 shrink-0"
               style={{ height: '56px' }}
             >
-              <p className="font-bold text-sm tracking-wide">Cellar Text Admin</p>
+              <p className="font-bold text-sm tracking-wide">The Cellar Club Admin</p>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close navigation"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
+import { createServiceClient } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,21 @@ export async function POST(req: NextRequest) {
 
     session.paymentMethodId = paymentMethodId
     await session.save()
+
+    // Persist card_complete step
+    const supabase = createServiceClient()
+    const { error: progressError } = await supabase
+      .from('signup_progress')
+      .upsert(
+        {
+          phone: session.phone,
+          stripe_payment_method_id: paymentMethodId,
+          last_step: 'card_complete',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'phone' }
+      )
+    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

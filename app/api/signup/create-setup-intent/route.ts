@@ -43,6 +43,21 @@ export async function POST(req: NextRequest) {
     session.email = email
     await session.save()
 
+    // Persist card_started step
+    const { error: progressError } = await sb
+      .from('signup_progress')
+      .upsert(
+        {
+          phone: session.phone,
+          email,
+          stripe_customer_id: customer.id,
+          last_step: 'card_started',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'phone' }
+      )
+    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
+
     return NextResponse.json({ clientSecret: setupIntent.client_secret })
   } catch (err) {
     console.error('[create-setup-intent]', err)
