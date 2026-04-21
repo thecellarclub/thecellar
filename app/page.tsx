@@ -204,7 +204,7 @@ export default function HomePage() {
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
               <p>Twice a week, he&apos;ll text you a wine he&apos;s genuinely excited about. If you fancy it, just reply how many.</p>
               <p>And you can text Daniel anytime — dinner party pairings, present recommendations, tracking down that wine you had on holiday...</p>
-              <p>We store everything in our cellar and ship for free once you&apos;ve filled a case.</p>
+              <p>Free to join. Free cellar storage. Free shipping once you&apos;ve filled a case.</p>
             </div>
 
             <SignupForm buttonText="TEXT DANIEL" />
