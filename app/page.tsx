@@ -203,7 +203,7 @@ export default function HomePage() {
             >
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
               <p>Twice a week, he&apos;ll send you a wine he&apos;s genuinely excited about. Reply with how many you want.</p>
-              <p>And you can text him anytime — could be a dinner party pairing, a gift or a bottle you can&apos;t find anywhere.</p>
+              <p>And you can text him anytime — dinner party pairings, present recommendations, the lot.</p>
               <p>We store everything in our cellar and ship for free once you&apos;ve filled a case.</p>
             </div>
 
