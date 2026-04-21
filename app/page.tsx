@@ -208,6 +208,9 @@ export default function HomePage() {
             </div>
 
             <SignupForm buttonText="TEXT DANIEL" />
+            <p className="font-serif font-semibold mt-3" style={{ fontSize: '0.88rem', color: TEXT_DARK }}>
+              Free to join. You only pay for wines you order.
+            </p>
             <p className="font-serif italic text-sm mt-2" style={{ color: TEXT_FAINT }}>
               Already a member?{' '}
               <a href="/portal" className="underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: 'rgba(42,24,16,0.52)' }}>
