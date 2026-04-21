@@ -77,9 +77,6 @@ export default function DetailsPage() {
           Step 2 of 4
         </p>
         <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>A few more details</h2>
-        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
-          Required for age verification and UK compliance.
-        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
