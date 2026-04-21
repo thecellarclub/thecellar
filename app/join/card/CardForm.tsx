@@ -123,7 +123,7 @@ function CardFormInner() {
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 3 of 4
         </p>
-        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Save your email and card (optional)</h2>
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Save your email and card</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
           We won&apos;t charge anything now. This just lets you reply to offers without typing in card details each time.
         </p>
