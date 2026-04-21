@@ -202,7 +202,7 @@ export default function HomePage() {
               style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
-              <p>Twice a week, he&apos;ll send you a wine he&apos;s genuinely excited about. You reply if you fancy it.</p>
+              <p>Twice a week, he&apos;ll text you a wine he&apos;s genuinely excited about. You reply if you fancy it.</p>
               <p>And you can text him anytime — dinner party pairings, present recommendations, the lot.</p>
               <p>We store everything in our cellar and ship for free once you&apos;ve filled a case.</p>
             </div>
