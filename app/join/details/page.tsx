@@ -3,25 +3,24 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-const currentYear = new Date().getFullYear()
-const YEARS = Array.from({ length: 100 }, (_, i) => currentYear - 18 - i)
+function formatDob(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return digits.slice(0, 2) + '-' + digits.slice(2)
+  return digits.slice(0, 2) + '-' + digits.slice(2, 4) + '-' + digits.slice(4)
+}
 
 export default function DetailsPage() {
   const router = useRouter()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [dobDay, setDobDay] = useState('')
-  const [dobMonth, setDobMonth] = useState('')
-  const [dobYear, setDobYear] = useState('')
+  const [dob, setDob] = useState('')
   const [ageConsent, setAgeConsent] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const dobComplete = dob.replace(/\D/g, '').length === 8
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -32,6 +31,11 @@ export default function DetailsPage() {
       return
     }
 
+    const digits = dob.replace(/\D/g, '')
+    const dobDay = parseInt(digits.slice(0, 2), 10)
+    const dobMonth = parseInt(digits.slice(2, 4), 10)
+    const dobYear = parseInt(digits.slice(4, 8), 10)
+
     setLoading(true)
 
     try {
@@ -41,9 +45,9 @@ export default function DetailsPage() {
         body: JSON.stringify({
           firstName,
           lastName,
-          dobDay: parseInt(dobDay),
-          dobMonth: parseInt(dobMonth),
-          dobYear: parseInt(dobYear),
+          dobDay,
+          dobMonth,
+          dobYear,
           ageConsent,
           marketingConsent,
         }),
@@ -121,59 +125,22 @@ export default function DetailsPage() {
 
         {/* Date of birth */}
         <div>
-          <label className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
-            Date of birth
+          <label htmlFor="dob" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
+            Date of birth <span style={{ color: 'rgba(42,24,16,0.40)', textTransform: 'none', letterSpacing: 0 }}>(DD-MM-YYYY)</span>
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label htmlFor="dob-day" className="sr-only">Day</label>
-              <select
-                id="dob-day"
-                value={dobDay}
-                onChange={(e) => setDobDay(e.target.value)}
-                required
-                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
-                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
-              >
-                <option value="">Day</option>
-                {DAYS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="dob-month" className="sr-only">Month</label>
-              <select
-                id="dob-month"
-                value={dobMonth}
-                onChange={(e) => setDobMonth(e.target.value)}
-                required
-                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
-                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
-              >
-                <option value="">Month</option>
-                {MONTHS.map((m, i) => (
-                  <option key={m} value={i + 1}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="dob-year" className="sr-only">Year</label>
-              <select
-                id="dob-year"
-                value={dobYear}
-                onChange={(e) => setDobYear(e.target.value)}
-                required
-                className="w-full bg-[#EDE8DF] border px-3 py-3 focus:outline-none transition-colors appearance-none font-sans"
-                style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
-              >
-                <option value="">Year</option>
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <input
+            id="dob"
+            type="text"
+            inputMode="numeric"
+            autoComplete="bday"
+            placeholder="DD-MM-YYYY"
+            value={dob}
+            onChange={(e) => setDob(formatDob(e.target.value))}
+            required
+            maxLength={10}
+            className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base tracking-widest"
+            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
+          />
         </div>
 
         {/* Consent checkboxes */}
@@ -218,7 +185,7 @@ export default function DetailsPage() {
 
         <button
           type="submit"
-          disabled={loading || !firstName.trim() || !lastName.trim() || !dobDay || !dobMonth || !dobYear}
+          disabled={loading || !firstName.trim() || !lastName.trim() || !dobComplete}
           className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving…' : 'Continue →'}
