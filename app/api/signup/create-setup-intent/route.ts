@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
 
     const session = await getSignupSession()
 
-    if (!session.phone || !session.phoneVerified || !session.firstName) {
+    if (!session.phone || !session.phoneVerified || !session.firstName || !session.stripeCustomerId) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
     }
 
-    // Guard: email already registered
+    // Guard: email already registered by another customer
     const sb = createServiceClient()
     const { data: existingEmail } = await sb
       .from('customers').select('id').eq('email', email).maybeSingle()
@@ -25,20 +25,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 })
     }
 
-    // Create Stripe customer
-    const customer = await stripe.customers.create({
-      email,
-      phone: session.phone,
-    })
-
-    // Create SetupIntent for off-session use
+    // Reuse the Stripe customer created at Step 2 — do not create a second one
     const setupIntent = await stripe.setupIntents.create({
-      customer: customer.id,
+      customer: session.stripeCustomerId,
       usage: 'off_session',
     })
 
-    // Store in session
-    session.stripeCustomerId = customer.id
     session.setupIntentId = setupIntent.id
     session.email = email
     await session.save()
@@ -50,7 +42,7 @@ export async function POST(req: NextRequest) {
         {
           phone: session.phone,
           email,
-          stripe_customer_id: customer.id,
+          stripe_customer_id: session.stripeCustomerId,
           last_step: 'card_started',
           updated_at: new Date().toISOString(),
         },

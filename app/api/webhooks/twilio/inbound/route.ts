@@ -16,7 +16,7 @@ interface Customer {
   phone: string
   first_name: string | null
   stripe_customer_id: string
-  stripe_payment_method_id: string
+  stripe_payment_method_id: string | null
   active: boolean
   texts_snoozed_until: string | null
   tier: string
@@ -684,6 +684,20 @@ async function handlePendingOrder(
       .eq('id', wine.id)
     console.error('[twilio/inbound] order insert error', orderErr)
     await sendSms(from, `Something went wrong. Please try again.`)
+    return twimlOk()
+  }
+
+  // If the customer has no saved card, send billing link instead of plain YES prompt
+  if (!customer.stripe_payment_method_id) {
+    const billingToken = crypto.randomUUID()
+    await sb.from('customers').update({
+      billing_token: billingToken,
+      billing_token_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    }).eq('id', customer.id)
+    await sendSms(
+      from,
+      `Got it — ${qty} bottle${qty !== 1 ? 's' : ''} of ${wine.name} (£${(totalPence / 100).toFixed(2)}). We just need a card on file to confirm — add one at ${APP_URL}/billing?token=${billingToken} and reply YES. Expires in 10 minutes.`
+    )
     return twimlOk()
   }
 

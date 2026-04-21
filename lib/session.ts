@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 export interface SignupSessionData {
   phone?: string
   phoneVerified?: boolean
+  customerId?: string
   stripeCustomerId?: string
   setupIntentId?: string
   paymentMethodId?: string

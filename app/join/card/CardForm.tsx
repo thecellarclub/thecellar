@@ -47,7 +47,7 @@ function CardFormInner() {
     setStep('processing')
 
     try {
-      // 1. Create Stripe customer + SetupIntent on the server
+      // 1. Create SetupIntent on the server (reuses Stripe customer from Step 2)
       const intentRes = await fetch('/api/signup/create-setup-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +94,7 @@ function CardFormInner() {
         return
       }
 
-      // 3. Save the payment method ID to session
+      // 3. Save the payment method ID to session + customer row
       const paymentMethodId =
         typeof setupIntent.payment_method === 'string'
           ? setupIntent.payment_method
@@ -123,9 +123,9 @@ function CardFormInner() {
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 3 of 4
         </p>
-        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Email &amp; card details</h2>
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Save your email and card (optional)</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
-          The Cellar Club is free to join. You&apos;ll only be charged when you order wine.
+          We won&apos;t charge anything now. This just lets you reply to offers without typing in card details each time.
         </p>
       </div>
 
@@ -176,6 +176,17 @@ function CardFormInner() {
           {step === 'processing' ? 'Setting up your account…' : 'Save card & continue'}
         </button>
       </form>
+
+      <div className="text-center mt-4">
+        <button
+          onClick={() => router.push('/join/confirmed?skipped=1')}
+          disabled={loading}
+          className="font-sans text-sm underline disabled:opacity-40"
+          style={{ color: 'rgba(42,24,16,0.45)' }}
+        >
+          Skip for now
+        </button>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
+import { stripe } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,15 +13,31 @@ export async function POST(req: NextRequest) {
 
     const session = await getSignupSession()
 
-    if (!session.stripeCustomerId) {
+    if (!session.stripeCustomerId || !session.customerId || !session.email) {
       return NextResponse.json({ error: 'Session expired. Please start again.' }, { status: 400 })
     }
 
     session.paymentMethodId = paymentMethodId
     await session.save()
 
-    // Persist card_complete step
     const supabase = createServiceClient()
+
+    // Persist card + email onto the existing customer row created at Step 2
+    const { error: updateError } = await supabase
+      .from('customers')
+      .update({
+        stripe_payment_method_id: paymentMethodId,
+        email: session.email,
+      })
+      .eq('id', session.customerId)
+    if (updateError) console.error('[save-payment-method] customer update failed:', updateError.message)
+
+    // Set as default on the Stripe customer
+    await stripe.customers.update(session.stripeCustomerId, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    })
+
+    // Persist card_complete step
     const { error: progressError } = await supabase
       .from('signup_progress')
       .upsert(

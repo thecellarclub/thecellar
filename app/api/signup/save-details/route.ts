@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { normaliseUKPhone } from '@/lib/phone'
+import { stripe } from '@/lib/stripe'
+import { sendSms } from '@/lib/twilio'
 
 function calculateAge(dob: Date): number {
   const today = new Date()
@@ -55,7 +57,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'looks_like_already_signed_up' }, { status: 409 })
     }
 
-    // Save to session — complete route will read this
+    // Create Stripe customer (no payment method yet — attached at Step 3)
+    const stripeCustomer = await stripe.customers.create({
+      phone: normalisedPhone,
+      name: `${firstName.trim()} ${lastName.trim()}`,
+      metadata: { signup_source: 'cellar_club_web' },
+    })
+
+    // Insert customer row with what we know now; email/card/address added at Steps 3 & 4
+    const dobString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const { data: inserted, error: insertError } = await sb.from('customers').insert({
+      phone: normalisedPhone,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      stripe_customer_id: stripeCustomer.id,
+      dob: dobString,
+      age_verified: true,
+      active: true,
+      gdpr_marketing_consent: true,
+      gdpr_consent_at: new Date().toISOString(),
+    }).select('id').single()
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return NextResponse.json({ error: 'looks_like_already_signed_up' }, { status: 409 })
+      }
+      throw insertError
+    }
+
+    // Persist IDs + name to session so Steps 3 and 4 can enrich the existing row
+    session.customerId = inserted.id
+    session.stripeCustomerId = stripeCustomer.id
     session.firstName = firstName.trim()
     session.lastName = lastName.trim()
     session.dobDay = day
@@ -63,8 +95,7 @@ export async function POST(req: NextRequest) {
     session.dobYear = year
     await session.save()
 
-    // Persist details step
-    const dobString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    // Persist progress step
     const { error: progressError } = await sb
       .from('signup_progress')
       .upsert(
@@ -81,7 +112,17 @@ export async function POST(req: NextRequest) {
       )
     if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
 
-    return NextResponse.json({ ok: true })
+    // Send welcome SMS — failure is logged but must not block signup
+    try {
+      await sendSms(
+        normalisedPhone,
+        `Welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 — then deliver it to you for free.`
+      )
+    } catch (err) {
+      console.error('[save-details] welcome SMS failed', err)
+    }
+
+    return NextResponse.json({ ok: true, welcomed: true })
   } catch (err) {
     console.error('[save-details]', err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })

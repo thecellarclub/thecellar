@@ -5,7 +5,7 @@ import AddressForm from './AddressForm'
 export default async function AddressPage() {
   const session = await getSignupSession()
 
-  if (!session.phone || !session.phoneVerified || !session.paymentMethodId || !session.firstName) {
+  if (!session.phone || !session.phoneVerified || !session.customerId || !session.firstName) {
     redirect('/join')
   }
 

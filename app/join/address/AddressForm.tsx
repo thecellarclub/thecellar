@@ -59,7 +59,7 @@ export default function AddressForm() {
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 4 of 4
         </p>
-        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Where do you want your bottles sent?</h2>
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Save your delivery address (optional)</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.50)' }}>
           We&apos;ll store your wines until your case is full, then ship here for free.
         </p>
@@ -132,9 +132,20 @@ export default function AddressForm() {
           disabled={loading || !line1.trim() || !city.trim() || !postcode.trim()}
           className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {loading ? 'Completing sign-up…' : 'Complete sign-up →'}
+          {loading ? 'Saving…' : 'Save address →'}
         </button>
       </form>
+
+      <div className="text-center mt-4">
+        <button
+          onClick={() => router.push('/join/confirmed?skipped=1')}
+          disabled={loading}
+          className="font-sans text-sm underline disabled:opacity-40"
+          style={{ color: 'rgba(42,24,16,0.45)' }}
+        >
+          Skip for now
+        </button>
+      </div>
     </div>
   )
 }
