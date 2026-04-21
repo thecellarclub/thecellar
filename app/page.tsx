@@ -209,7 +209,7 @@ export default function HomePage() {
 
             <SignupForm buttonText="TALK TO DANIEL" />
             <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_FAINT }}>
-              Free to join. You only pay for wines you say yes to.
+              Free to join. You only pay for wines you order.
             </p>
             <p className="font-serif italic text-sm mt-2" style={{ color: TEXT_FAINT }}>
               Already a member?{' '}
