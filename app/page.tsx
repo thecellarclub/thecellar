@@ -211,7 +211,7 @@ export default function HomePage() {
             <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_FAINT }}>
               Free to join. You only pay for wines you say yes to.
             </p>
-            <p className="font-serif text-sm mt-2" style={{ color: TEXT_FAINT }}>
+            <p className="font-serif italic text-sm mt-2" style={{ color: TEXT_FAINT }}>
               Already a member?{' '}
               <a href="/portal" className="underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: 'rgba(42,24,16,0.52)' }}>
                 Log in
