@@ -208,7 +208,7 @@ export default function HomePage() {
             </div>
 
             <SignupForm buttonText="TALK TO DANIEL" showLoginLink />
-            <p className="font-serif italic mt-3" style={{ fontSize: '0.88rem', color: TEXT_FAINT }}>
+            <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_FAINT }}>
               Free to join. You only pay for wines you say yes to.
             </p>
           </div>
