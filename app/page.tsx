@@ -207,7 +207,7 @@ export default function HomePage() {
               <p>We store everything in our cellar and send it for free once you&apos;ve filled a case.</p>
             </div>
 
-            <SignupForm buttonText="JOIN WAITLIST" />
+            <SignupForm buttonText="THIS WEEK'S WINE" />
             <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_DARK }}>
               Free to join. You only pay for wines you order.
             </p>
