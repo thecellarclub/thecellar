@@ -202,16 +202,16 @@ export default function HomePage() {
               style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
-              <p>Twice a week, he&apos;ll text you a wine he&apos;s genuinely excited about. If you fancy it, just reply how many.</p>
-              <p>And you can text Daniel anytime — dinner party pairings, present recommendations, tracking down that wine you had on holiday...</p>
-              <p>We store everything in our cellar and ship for free once you&apos;ve filled a case.</p>
+              <p>Twice a week, he&apos;ll text you a wine he&apos;s genuinely excited about. Want some? Just reply with a number.</p>
+              <p>Need a pairing for Friday&apos;s dinner, a thoughtful gift, or that wine you can&apos;t stop thinking about from holiday? Text him.</p>
+              <p>We&apos;ll store everything in our cellar and send it for free once you&apos;ve filled a case.</p>
             </div>
 
-            <SignupForm buttonText="TEXT DANIEL" />
-            <p className="font-serif font-semibold mt-3" style={{ fontSize: '0.88rem', color: TEXT_DARK }}>
+            <SignupForm buttonText="THIS WEEK'S WINE" />
+            <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_DARK }}>
               Free to join. You only pay for wines you order.
             </p>
-            <p className="font-serif italic text-sm mt-2" style={{ color: TEXT_FAINT }}>
+            <p className="font-serif text-sm mt-2" style={{ color: TEXT_FAINT }}>
               Already a member?{' '}
               <a href="/portal" className="underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: 'rgba(42,24,16,0.52)' }}>
                 Log in
