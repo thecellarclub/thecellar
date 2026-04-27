@@ -177,9 +177,9 @@ export default function HomePage() {
     <div style={{ background: PAGE_BG, color: TEXT_DARK, minHeight: '100vh' }}>
 
       {/* ── Hero: logo + headline + subheading + form + demo ────────────── */}
-      <section className="px-6 pt-10 md:pt-12 pb-10 md:pb-14">
+      <section className="px-6 pt-5 md:pt-6 pb-10 md:pb-14">
         {/* Logo — centred above the two-column grid */}
-        <div className="flex justify-center mb-5 md:mb-6">
+        <div className="flex justify-center mb-3 md:mb-4">
           <Image
             src="/logo.png"
             alt="The Cellar Club"
