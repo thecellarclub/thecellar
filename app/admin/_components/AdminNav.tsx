@@ -7,11 +7,12 @@ const links = [
   { href: '/admin', label: 'Dashboard', exact: true },
   { href: '/admin/customers', label: 'Customers', exact: false },
   { href: '/admin/wines', label: 'Wines', exact: false },
-  { href: '/admin/send', label: 'Send text', exact: false },
-  { href: '/admin/texts', label: 'Text history', exact: false },
+  { href: '/admin/send', label: 'Send offer', exact: false },
+  { href: '/admin/texts', label: 'Offer history', exact: false },
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
   { href: '/admin/requests', label: 'Requests', exact: false },
+  { href: '/admin/message', label: 'Send message', exact: false },
   { href: '/admin/concierge', label: 'Concierge', exact: false },
 ]
 

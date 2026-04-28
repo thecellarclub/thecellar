@@ -105,17 +105,28 @@ export default function RequestsMobileCard({ request }: { request: MobileRequest
         )}
       </div>
 
-      {/* Action */}
-      {request.status !== 'resolved' && (
-        <button
-          onClick={handleResolve}
-          disabled={loading}
-          className="w-full bg-green-50 text-green-700 border border-green-200 font-medium text-sm rounded flex items-center justify-center transition-colors hover:bg-green-100 disabled:opacity-50"
-          style={{ minHeight: '44px' }}
-        >
-          {loading ? 'Marking resolved…' : '✓ Mark resolved'}
-        </button>
-      )}
+      {/* Actions */}
+      <div className="flex gap-2">
+        {request.customerPhone && (
+          <a
+            href={`/admin/message?phone=${encodeURIComponent(request.customerPhone)}`}
+            className="flex-1 bg-blue-50 text-blue-700 border border-blue-200 font-medium text-sm rounded flex items-center justify-center transition-colors hover:bg-blue-100"
+            style={{ minHeight: '44px' }}
+          >
+            Reply
+          </a>
+        )}
+        {request.status !== 'resolved' && (
+          <button
+            onClick={handleResolve}
+            disabled={loading}
+            className="flex-1 bg-green-50 text-green-700 border border-green-200 font-medium text-sm rounded flex items-center justify-center transition-colors hover:bg-green-100 disabled:opacity-50"
+            style={{ minHeight: '44px' }}
+          >
+            {loading ? 'Marking resolved…' : '✓ Mark resolved'}
+          </button>
+        )}
+      </div>
 
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>

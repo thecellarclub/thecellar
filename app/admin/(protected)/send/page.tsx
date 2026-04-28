@@ -23,7 +23,7 @@ export default async function SendPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">Send text blast</h1>
+      <h1 className="text-xl font-semibold text-gray-900 mb-6">Send offer</h1>
 
       {activeWines.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">

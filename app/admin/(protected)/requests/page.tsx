@@ -126,7 +126,17 @@ export default async function RequestsPage() {
                     {formatDateTime(r.created_at)}
                   </td>
                   <td className="px-4 py-3 border-b border-gray-100">
-                    <ResolveButton requestId={r.id} currentStatus={r.status} />
+                    <div className="flex items-center gap-2">
+                      {r.customers?.phone && (
+                        <a
+                          href={`/admin/message?phone=${encodeURIComponent(r.customers.phone)}`}
+                          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        >
+                          Reply
+                        </a>
+                      )}
+                      <ResolveButton requestId={r.id} currentStatus={r.status} />
+                    </div>
                   </td>
                 </tr>
               ))

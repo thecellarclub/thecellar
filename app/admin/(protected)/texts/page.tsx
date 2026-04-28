@@ -19,12 +19,12 @@ export default async function TextsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Text history</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Offer history</h1>
         <Link
           href="/admin/send"
           className="bg-gray-900 text-white text-sm px-4 py-2 rounded hover:bg-gray-700"
         >
-          Send new blast
+          Send new offer
         </Link>
       </div>
 
