@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendSms(
         session.phone,
-        `Welcome, ${session.firstName}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply with a number (of bottles).\n\nI'll store them in the cellar until you fill a case of 12, then deliver free.\n\nAnd if you've got a question or request, text me anytime.`
+        `Welcome, ${session.firstName}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply how many bottles.\n\nI'll store them in the cellar until you fill a case of 12, then deliver free.\n\nAnd if you've got a question or request, text me anytime.`
       )
     } catch (err) {
       console.error('[complete] welcome SMS failed', err)
