@@ -19,10 +19,12 @@ const spectral = Spectral({
   display: 'swap',
 })
 
+const DESCRIPTION =
+  'A direct line to Daniel — ex-sommelier at the 2-Michelin-star Raby Hunt. Hand-picked wines by text, at direct-import prices. Free cellar storage. Free case delivery.'
+
 export const metadata: Metadata = {
   title: 'The Cellar Club',
-  description:
-    'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
+  description: DESCRIPTION,
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '192x192', type: 'image/png' },
@@ -32,18 +34,25 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'The Cellar Club',
-    description:
-      'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
+    description: DESCRIPTION,
     url: 'https://thecellar.club',
     siteName: 'The Cellar Club',
     locale: 'en_GB',
     type: 'website',
+    images: [
+      {
+        url: 'https://thecellar.club/logo.png',
+        width: 892,
+        height: 672,
+        alt: 'The Cellar Club',
+      },
+    ],
   },
   twitter: {
     card: 'summary',
     title: 'The Cellar Club',
-    description:
-      'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
+    description: DESCRIPTION,
+    images: ['https://thecellar.club/logo.png'],
   },
 }
 
