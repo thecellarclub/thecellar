@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendSms(
         normalisedPhone,
-        `Welcome to The Cellar Club, ${firstName.trim()}! Save this number so you know it's us.\n\nDaniel will send two hand-picked offers each week. If you fancy one, just tell us how many bottles.\n\nWe'll store it all until you've filled a case of 12 — then deliver it to you for free.`
+        `Welcome, ${firstName.trim()}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply how many bottles.\n\nI'll store them in the cellar until you fill a case of 12, then deliver free.\n\nAnd if you've got a question or request, text me anytime.`
       )
     } catch (err) {
       console.error('[save-details] welcome SMS failed', err)
