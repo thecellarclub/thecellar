@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
 import Stripe from 'stripe'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { notifyAdmin } from '@/lib/resend'
@@ -65,7 +65,7 @@ async function sendSms(to: string, body: string): Promise<void> {
   await twilioClient.messages.create({
     to,
     from: process.env.TWILIO_PHONE_NUMBER!,
-    body,
+    body: sanitiseGsm7(body),
   })
 }
 
@@ -112,7 +112,7 @@ async function handleCellar(
     .is('shipped_at', null) as { data: CellarRow[] | null }
 
   if (!rows || rows.length === 0) {
-    await sendSms(from, `Your cellar's empty right now — keep an eye out for our next drop.`)
+    await sendSms(from, `Your cellar is empty right now - keep an eye out for our next drop.`)
     return twimlOk()
   }
 
@@ -139,7 +139,7 @@ async function handleShip(
   const total = Number(totals?.total_bottles ?? 0)
 
   if (total === 0) {
-    await sendSms(from, `Your cellar's empty right now — keep an eye out for our next drop.`)
+    await sendSms(from, `Your cellar is empty right now - keep an eye out for our next drop.`)
     return twimlOk()
   }
 
@@ -166,14 +166,14 @@ async function handleShip(
     const addr = addrCust?.default_address as Record<string, string> | null
     if (addr?.line1) {
       const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
-      await sendSms(from, `You've got a shipment ready — ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+      await sendSms(from, `You have a shipment ready - ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
     } else {
-      await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
+      await sendSms(from, `Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
     }
     return twimlOk()
   }
 
-  // Ship in full cases of 12 only — leave any remainder in the cellar
+  // Ship in full cases of 12 only - leave any remainder in the cellar
   const bottlesToShip = Math.floor(total / 12) * 12
 
   // Fetch unshipped, unlinked rows oldest-first to determine which get shipped
@@ -237,9 +237,9 @@ async function handleShip(
   const addr = addrCust?.default_address as Record<string, string> | null
   if (addr?.line1) {
     const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
-    await sendSms(from, `Your case is ready to ship — ${bottlesToShip} bottles to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+    await sendSms(from, `Your case is ready to ship - ${bottlesToShip} bottles to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
   } else {
-    await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${token}`)
+    await sendSms(from, `Confirm your delivery address at ${APP_URL}/ship?token=${token}`)
   }
   return twimlOk()
 }
@@ -284,9 +284,9 @@ async function handleShipConfirm(
     const addr = addrCust?.default_address as Record<string, string> | null
     if (addr?.line1) {
       const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
-      await sendSms(from, `You've got a shipment ready — ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+      await sendSms(from, `You have a shipment ready - ${existing.bottle_count} bottle${existing.bottle_count === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
     } else {
-      await sendSms(from, `Brilliant! Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
+      await sendSms(from, `Confirm your delivery address at ${APP_URL}/ship?token=${existing.token}`)
     }
     return twimlOk()
   }
@@ -445,7 +445,7 @@ async function handleShipConfirm(
 
     if (error || !newShipment) {
       console.error('[twilio/inbound] shipment insert error (ship confirm)', error)
-      await sendSms(from, `Something went wrong saving your shipment. Your payment was taken — please contact us.`)
+      await sendSms(from, `Something went wrong saving your shipment. Your payment was taken - please contact us.`)
       return twimlOk()
     }
 
@@ -458,9 +458,9 @@ async function handleShipConfirm(
     const addr = addrCust?.default_address as Record<string, string> | null
     if (addr?.line1) {
       const addrLine = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean).join(', ')
-      await sendSms(from, `Payment taken — we'll ship your ${bottlesToShipEarly} bottle${bottlesToShipEarly === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
+      await sendSms(from, `Payment taken - we will ship your ${bottlesToShipEarly} bottle${bottlesToShipEarly === 1 ? '' : 's'} to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`)
     } else {
-      await sendSms(from, `Payment taken — confirm your delivery address at ${APP_URL}/ship?token=${token}`)
+      await sendSms(from, `Payment taken - confirm your delivery address at ${APP_URL}/ship?token=${token}`)
     }
     return twimlOk()
   }
@@ -555,7 +555,7 @@ async function handleStatus(
 
   await sendSms(
     from,
-    `${tierName} member · ${spendFormatted} spent this year\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (free shipping at ${threshold}).${progressLine}`
+    `${tierName} member - ${spendFormatted} spent this year\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (free shipping at ${threshold}).${progressLine}`
   )
   return twimlOk()
 }
@@ -647,7 +647,7 @@ async function handlePendingOrder(
   if (qty > MAX_BOTTLES) {
     await sendSms(
       from,
-      `We cap orders at ${MAX_BOTTLES} bottles per text — reply ${MAX_BOTTLES} if you'd like the maximum.`
+      `We cap orders at ${MAX_BOTTLES} bottles per text - reply ${MAX_BOTTLES} if you would like the maximum.`
     )
     return twimlOk()
   }
@@ -703,7 +703,7 @@ async function handlePendingOrder(
 
   await sendSms(
     from,
-    `Got it — ${qty} bottle${qty !== 1 ? 's' : ''} of ${wine.name} (£${(totalPence / 100).toFixed(2)}). Reply YES to confirm your order. This offer expires in 10 minutes.`
+    `Got it - ${qty} bottle${qty !== 1 ? 's' : ''} of ${wine.name} (£${(totalPence / 100).toFixed(2)}). Reply YES to confirm your order. This offer expires in 10 minutes.`
   )
   return twimlOk()
 }
@@ -830,7 +830,7 @@ async function handleYes(
     await sb.from('orders').update({ order_status: 'cancelled', stripe_charge_status: 'failed' }).eq('id', order.id)
     const { data: wineForPm } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
     if (wineForPm) await sb.from('wines').update({ stock_bottles: wineForPm.stock_bottles + order.quantity }).eq('id', order.wine_id)
-    await sendSms(from, `We don't have a payment card on file. Add one at ${APP_URL}/billing?token=${billingToken} or update your details at ${APP_URL}/portal. Reply YES once done.`)
+    await sendSms(from, `We don't have a payment card on file. Add one at ${APP_URL}/billing?token=${billingToken} then reply YES once done.`)
     return twimlOk()
   }
 
@@ -919,7 +919,7 @@ async function handleYes(
       const { data: wine } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
       if (wine) await sb.from('wines').update({ stock_bottles: wine.stock_bottles + order.quantity }).eq('id', order.wine_id)
 
-      await sendSms(from, `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} — you can also add a backup card in your account at ${APP_URL}/portal. Reply YES once updated.`)
+      await sendSms(from, `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} then reply YES once done.`)
       return twimlOk()
     }
 
@@ -1009,7 +1009,7 @@ async function handleOffer(
   const w = activeText.wines
 
   if (!w.stock_bottles || w.stock_bottles <= 0) {
-    await sendSms(from, `Sorry — that one sold out. We'll be in touch with the next drop.`)
+    await sendSms(from, `Sorry, that one sold out. We will be in touch with the next drop.`)
     return twimlOk()
   }
 
@@ -1020,7 +1020,7 @@ async function handleOffer(
 
   await sendSms(
     from,
-    `This week's offer: ${vintage}${w.name}${origin ? ` (${origin})` : ''} — ${price} per bottle.${desc}\n\nReply with how many bottles you'd like.`
+    `This week's offer: ${vintage}${w.name}${origin ? ` (${origin})` : ''} - ${price} per bottle.${desc}\n\nReply with how many bottles you'd like.`
   )
   await sb.from('customers').update({ sms_awaiting: 'offer' }).eq('id', customer.id)
   return twimlOk()
@@ -1075,7 +1075,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .maybeSingle() as { data: Customer | null }
 
     if (!customer) {
-      await sendSms(from, `A hearty welcome to the Cellar — well, hopefully.\n\nCall us old fashioned but it'd be nice to know your name — join us at ${APP_URL}/join\n\nThen we can enjoy sommelier selected wines at insider rates together.`)
+      await sendSms(from, `Hello! We don't recognise this number. If you'd like to join The Cellar Club, sign up at ${APP_URL}/join`)
       return twimlOk()
     }
 
@@ -1088,7 +1088,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (customer.sms_awaiting) {
       if (body === 'exit') {
         await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
-        await sendSms(from, `No problem. Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles\nOFFER — see this week's wine again\nSTATUS — your tier and progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`)
+        await sendSms(from, `No problem. Text OFFER, QUESTION or REQUEST any time, or visit your portal: ${APP_URL}/portal`)
         return twimlOk()
       }
 
@@ -1115,7 +1115,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           `New wine request from ${name}`,
           `Message: ${body}\nPhone: ${customer.phone}`
         )
-        await sendSms(from, `Got it — we'll look into it. Daniel will be in touch if we decide to run it as a drop.`)
+        await sendSms(from, `Got it - we will look into it. Daniel will be in touch if we decide to run it as a drop.`)
         return twimlOk()
       }
 
@@ -1139,7 +1139,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             `Message: ${body}\nPhone: ${customer.phone}`
           )
         }
-        await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
+        await sendSms(from, `Thanks - Daniel will get back to you shortly.`)
         return twimlOk()
       }
 
@@ -1175,7 +1175,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           `${name} replied to the offer but didn't reply with a number.\n\nMessage: ${rawMessage}\nWine: ${wineName}${priceStr ? ` (${priceStr})` : ''}\nPhone: ${customer.phone}\n\nThis is a potential missed order — please follow up.`
         )
 
-        await sendSms(from, `To order, just reply with a number — e.g. 2 for 2 bottles. We've passed your message to Daniel and he'll be in touch.`)
+        await sendSms(from, `To order, just reply with a number - e.g. 2 for 2 bottles. We have passed your message to Daniel and he will be in touch.`)
         return twimlOk()
       }
     }
@@ -1237,7 +1237,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .eq('id', customer.id)
       await sendSms(
         from,
-        `No problem — we'll hold your texts for ${weeks} week${weeks === 1 ? '' : 's'}. Text RESUME any time.`
+        `No problem - we will hold your texts for ${weeks} week${weeks === 1 ? '' : 's'}. Text RESUME any time.`
       )
       return twimlOk()
     }
@@ -1248,7 +1248,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .from('customers')
         .update({ texts_snoozed_until: null })
         .eq('id', customer.id)
-      await sendSms(from, `Welcome back — you'll start getting our drops again soon.`)
+      await sendSms(from, `Welcome back - you will start getting our drops again soon.`)
       return twimlOk()
     }
 
@@ -1260,17 +1260,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         await sb.from('special_requests').insert({ customer_id: customer.id, message, status: 'new' })
         const name = customer.first_name ?? customer.phone
         await notifyAdmin(`New wine request from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
-        await sendSms(from, `Got it — we'll look into it. Daniel will be in touch if we decide to run it as a drop.`)
+        await sendSms(from, `Got it - we will look into it. Daniel will be in touch if we decide to run it as a drop.`)
         return twimlOk()
       }
-      // Empty after 'request ' — fall through to bare-word handler below
+      // Empty after 'request ' - fall through to bare-word handler below
     }
 
     if (body === 'request') {
       await sb.from('customers').update({ sms_awaiting: 'request' }).eq('id', customer.id)
       await sendSms(
         from,
-        `What would you like us to feature? Tell us about it — e.g. 'something from Georgia' or 'Chateau Musar'.\n\nReply EXIT to go back.`
+        `What would you like us to feature? Tell us about it - e.g. 'something from Georgia' or 'Chateau Musar'.\n\nReply EXIT to go back.`
       )
       return twimlOk()
     }
@@ -1292,17 +1292,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         } else {
           await notifyAdmin(`New question from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
         }
-        await sendSms(from, `Thanks — Daniel will get back to you shortly.`)
+        await sendSms(from, `Thanks - Daniel will get back to you shortly.`)
         return twimlOk()
       }
-      // Empty after 'question ' — fall through to bare-word handler below
+      // Empty after 'question ' - fall through to bare-word handler below
     }
 
     if (body === 'question') {
       await sb.from('customers').update({ sms_awaiting: 'question' }).eq('id', customer.id)
       await sendSms(
         from,
-        `What's on your mind? Ask us anything — e.g. 'can you help me find a wine gift?' or 'how long does shipping take?'.\n\nReply EXIT to go back.`
+        `What's on your mind? Ask us anything - e.g. 'can you help me find a wine gift?' or 'how long does shipping take?'.\n\nReply EXIT to go back.`
       )
       return twimlOk()
     }
@@ -1345,7 +1345,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Anything else → menu ─────────────────────────────────────────────
     await sendSms(
       from,
-      `Hey! Here's what you can do:\n\nCELLAR — see what's in your cellar\nSHIP — send your bottles (free at 12, £15 before that)\nOFFER — see this week's wine again\nSTATUS — your tier and cellar progress\nACCOUNT — manage card, address and preferences\nREQUEST — suggest a wine for us to feature\nQUESTION — ask us anything\nSTOP — unsubscribe\n\nJust reply with one of the above.`
+      `OFFER: Daniel's latest wine\nQUESTION: ask anything\nREQUEST: something you'd like to see\n\nSee your cellar and update details: ${APP_URL}/portal`
     )
     return twimlOk()
   } catch (err) {

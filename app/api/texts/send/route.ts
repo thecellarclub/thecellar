@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { createServiceClient } from '@/lib/supabase'
 
 // POST /api/texts/send
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No active customers to send to' }, { status: 400 })
     }
 
-    const trimmedBody = messageBody.trim()
+    const trimmedBody = sanitiseGsm7(messageBody.trim())
 
     // ── Atomically set this as the one active offer ───────────────────────
     // 1. Deactivate all existing texts

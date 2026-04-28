@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireAdminSession } from '@/lib/adminAuth'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
@@ -60,7 +60,7 @@ export async function POST(
       const customer = shipment?.customers as unknown as { phone: string; first_name: string | null } | null
       if (customer?.phone) {
         const carrierPart = body.tracking_provider ? ` via ${body.tracking_provider}` : ''
-        const smsBody = `Great news — your Cellar Club bottles are on their way${carrierPart}! Track your order with number ${body.tracking_number}. Visit ${APP_URL}/portal if you have any questions.`
+        const smsBody = sanitiseGsm7(`Your Cellar Club bottles are on their way${carrierPart}! Tracking number: ${body.tracking_number}. Visit ${APP_URL}/portal if you have any questions.`)
         await twilioClient.messages.create({
           to: customer.phone,
           from: process.env.TWILIO_PHONE_NUMBER!,

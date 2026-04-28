@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 
 export async function POST(
   req: NextRequest,
@@ -119,7 +119,7 @@ export async function POST(
       await twilioClient.messages.create({
         to: customer.phone,
         from: process.env.TWILIO_PHONE_NUMBER!,
-        body: `Your refund of £${amountStr} is on its way — expect it back in 3–5 working days. Thanks for your patience.`,
+        body: sanitiseGsm7(`Your refund of £${amountStr} is on its way - expect it back in 3-5 working days. Thanks for your patience.`),
       }).catch((e) => console.error('SMS send failed after refund:', e))
     }
   }

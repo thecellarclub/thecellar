@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { normaliseUKPhone } from '@/lib/phone'
 
 export async function POST(req: NextRequest) {
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   await twilioClient.messages.create({
     to: normalised,
     from: process.env.TWILIO_PHONE_NUMBER!,
-    body: `Your Cellar Club login code is ${code}. It expires in 10 minutes.`,
+    body: sanitiseGsm7(`Your Cellar Club login code is ${code}. It expires in 10 minutes.`),
   })
 
   return NextResponse.json({ ok: true })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { normaliseUKPhone } from '@/lib/phone'
 import { isAllowed, getClientIp } from '@/lib/rateLimit'
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     // Send SMS
     try {
       await twilioClient.messages.create({
-        body: `Your The Cellar Club verification code is: ${code}`,
+        body: sanitiseGsm7(`Your The Cellar Club verification code is: ${code}`),
         from: process.env.TWILIO_PHONE_NUMBER,
         to: phone,
       })

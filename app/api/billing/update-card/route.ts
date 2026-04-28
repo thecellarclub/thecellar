@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 
 /**
  * POST /api/billing/update-card
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   // Send confirmation SMS
   await twilioClient.messages.create({
-    body: `Card updated — text us again to complete your order.`,
+    body: sanitiseGsm7(`Card updated - text us again to complete your order.`),
     from: process.env.TWILIO_PHONE_NUMBER!,
     to: customer.phone,
   })

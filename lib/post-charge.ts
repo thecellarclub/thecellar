@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { checkAndApplyTierUpgrade, deliveryThreshold } from '@/lib/tiers'
 
 interface PostChargeParams {
@@ -16,7 +16,7 @@ async function sendSms(to: string, body: string): Promise<void> {
   await twilioClient.messages.create({
     to,
     from: process.env.TWILIO_PHONE_NUMBER!,
-    body,
+    body: sanitiseGsm7(body),
   })
 }
 
@@ -103,7 +103,7 @@ export async function handlePostCharge({
 
     await sendSms(
       customerPhone,
-      `Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping — or reply SHIP any time to send what you have for £15.`
+      `Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £15.`
     )
   } else if (totalBottles === threshold) {
     // ── Scenario 2: exactly threshold bottles — case complete ─────────────────
@@ -150,7 +150,7 @@ export async function handlePostCharge({
       const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
       await sendSms(
         customerPhone,
-        `Your case is complete!\n\n${wineLines}\n\nWe'll ship to: ${addrLine}\n\nReply YES to confirm, or CHANGE to update your address.`
+        `Your case is complete!\n\n${wineLines}\n\nShipping to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`
       )
     } else {
       // No saved address — send the link now
@@ -251,7 +251,7 @@ export async function handlePostCharge({
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(
       customerPhone,
-      `Your case of 12 is ready to ship! Confirm your delivery address here: ${appUrl}/ship?token=${shipToken}\n\nYou still have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} in your cellar. Complete your next case by ${deadlineStr} for free shipping.`
+      `Your case of 12 is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.`
     )
   }
 }

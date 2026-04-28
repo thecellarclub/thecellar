@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { stripe } from '@/lib/stripe'
 import { getRollingSpend, tierFromSpend } from '@/lib/tiers'
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     await twilioClient.messages.create({
       to,
       from: process.env.TWILIO_PHONE_NUMBER!,
-      body,
+      body: sanitiseGsm7(body),
     })
   }
 
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
 
           await sendSms(
             customer.phone,
-            `Your 90-day case deadline has passed — we've started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged £15 for delivery. Please confirm your address: ${appUrl}/ship?token=${shipToken}`
+            `Your 90-day deadline has passed - we have started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged £15. Please confirm your address: ${appUrl}/ship?token=${shipToken}`
           )
 
           autoShipCount++
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Last call — your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send them for £15, or keep collecting for free at 12. After the deadline we'll ship automatically and charge £15.`
+        `Last call - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send for £15, or keep collecting (free at 12). After the deadline we will ship and charge £15 automatically.`
       )
 
       nudge2Count++
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Just a nudge — your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for £15.`
+        `Just a nudge - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for £15.`
       )
 
       nudge1Count++
@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
       }
       await sendSms(
         tc.phone,
-        `Your Cellar Club membership has moved to ${tierNames[qualifyingTier] ?? qualifyingTier} tier. Keep collecting to work your way back up — every bottle counts.`
+        `Your Cellar Club membership has moved to ${tierNames[qualifyingTier] ?? qualifyingTier} tier. Keep collecting to work your way back up - every bottle counts.`
       ).catch((e: unknown) => console.error('[cron] tier downgrade SMS failed:', e))
 
       tierDowngrades++

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { handlePostCharge } from '@/lib/post-charge'
 import { checkAndApplyTierUpgrade } from '@/lib/tiers'
 
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         .eq('id', order.customer_id)
 
       await twilioClient.messages.create({
-        body: `Card didn't go through on that one. Update your details at ${appUrl}/billing?token=${billingToken} and we'll get it sorted.`,
+        body: sanitiseGsm7(`Card didn't go through on that one. Update your details at ${appUrl}/billing?token=${billingToken} and we'll get it sorted.`),
         from: process.env.TWILIO_PHONE_NUMBER!,
         to: customer.phone,
       })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireAdminSession } from '@/lib/adminAuth'
-import { twilioClient } from '@/lib/twilio'
+import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 
 export async function POST(
   req: NextRequest,
@@ -40,7 +40,7 @@ export async function POST(
   // Send SMS
   try {
     await twilioClient.messages.create({
-      body: message,
+      body: sanitiseGsm7(message),
       from: process.env.TWILIO_PHONE_NUMBER,
       to: customer.phone,
     })
