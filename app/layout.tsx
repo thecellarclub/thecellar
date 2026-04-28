@@ -20,7 +20,7 @@ const spectral = Spectral({
 })
 
 const DESCRIPTION =
-  'A direct line to Daniel — ex-sommelier at the 2-Michelin-star Raby Hunt. Hand-picked wines by text, at direct-import prices. Free cellar storage. Free case delivery.'
+  'Sommelier selected wines by text, at direct import prices. Free cellar storage. Free delivery. A direct line to the former sommelier at the 2 Michelin Star Raby Hunt.'
 
 export const metadata: Metadata = {
   title: 'The Cellar Club - Text Your Personal Sommelier',
