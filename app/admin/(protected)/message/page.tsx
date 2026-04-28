@@ -7,7 +7,7 @@ import SendMessageForm from '@/app/admin/_components/SendMessageForm'
 export default async function SendMessagePage({
   searchParams,
 }: {
-  searchParams?: { phone?: string }
+  searchParams?: Promise<{ phone?: string }>
 }) {
   const session = await getServerSession(authOptions)
   if (!session) redirect('/admin/login')
@@ -19,7 +19,8 @@ export default async function SendMessagePage({
     .eq('active', true)
     .order('first_name')
 
-  const initialPhone = searchParams?.phone ?? ''
+  const params = await searchParams
+  const initialPhone = params?.phone ?? ''
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
