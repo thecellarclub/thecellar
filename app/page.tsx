@@ -22,6 +22,7 @@ function DecoratedHeading({ text }: { text: string }) {
   const words = text.split(' ')
   return (
     <h1
+      aria-label={text}
       className="font-serif uppercase leading-tight mb-5"
       style={{ color: TEXT_DARK, letterSpacing: '0.07em' }}
     >

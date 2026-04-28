@@ -30,6 +30,21 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-touch-icon.png',
   },
+  openGraph: {
+    title: 'The Cellar Club',
+    description:
+      'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
+    url: 'https://thecellar.club',
+    siteName: 'The Cellar Club',
+    locale: 'en_GB',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'The Cellar Club',
+    description:
+      'Hand-picked wines by text message. Reply to order. Free case delivery at 12 bottles.',
+  },
 }
 
 export default function RootLayout({
