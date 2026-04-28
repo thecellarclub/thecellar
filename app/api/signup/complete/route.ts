@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
+import { sendSms } from '@/lib/twilio'
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,16 @@ export async function POST(req: NextRequest) {
       .delete()
       .eq('phone', session.phone)
     if (progressError) console.error('[signup_progress] delete failed:', progressError.message)
+
+    // Send welcome SMS
+    try {
+      await sendSms(
+        session.phone,
+        `Welcome to The Cellar Club, ${session.firstName}! Save this number so you know it's us.\n\nDaniel sends hand-picked wine offers by text. Reply with how many bottles you'd like.\n\nWe store your bottles until you have a case of 12, then deliver free.`
+      )
+    } catch (err) {
+      console.error('[complete] welcome SMS failed', err)
+    }
 
     session.destroy()
 
