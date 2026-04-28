@@ -23,7 +23,7 @@ const DESCRIPTION =
   'A direct line to Daniel — ex-sommelier at the 2-Michelin-star Raby Hunt. Hand-picked wines by text, at direct-import prices. Free cellar storage. Free case delivery.'
 
 export const metadata: Metadata = {
-  title: 'The Cellar Club',
+  title: 'The Cellar Club - Text Your Personal Sommelier',
   description: DESCRIPTION,
   icons: {
     icon: [
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'The Cellar Club',
+    title: 'The Cellar Club - Text Your Personal Sommelier',
     description: DESCRIPTION,
     url: 'https://thecellar.club',
     siteName: 'The Cellar Club',
@@ -41,18 +41,18 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://thecellar.club/logo.png',
-        width: 892,
-        height: 672,
+        url: 'https://thecellar.club/og-image.png',
+        width: 1200,
+        height: 630,
         alt: 'The Cellar Club',
       },
     ],
   },
   twitter: {
-    card: 'summary',
-    title: 'The Cellar Club',
+    card: 'summary_large_image',
+    title: 'The Cellar Club - Text Your Personal Sommelier',
     description: DESCRIPTION,
-    images: ['https://thecellar.club/logo.png'],
+    images: ['https://thecellar.club/og-image.png'],
   },
 }
 
