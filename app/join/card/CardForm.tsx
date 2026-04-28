@@ -47,7 +47,7 @@ function CardFormInner() {
     setStep('processing')
 
     try {
-      // 1. Create SetupIntent on the server (reuses Stripe customer from Step 2)
+      // 1. Create Stripe customer + SetupIntent on the server
       const intentRes = await fetch('/api/signup/create-setup-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +94,7 @@ function CardFormInner() {
         return
       }
 
-      // 3. Save the payment method ID to session + customer row
+      // 3. Save the payment method ID to session
       const paymentMethodId =
         typeof setupIntent.payment_method === 'string'
           ? setupIntent.payment_method
@@ -123,9 +123,9 @@ function CardFormInner() {
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
           Step 3 of 4
         </p>
-        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Save your email and card</h2>
+        <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>You&apos;re almost in</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
-          We won&apos;t charge anything now. This just lets you reply to offers without typing in card details each time.
+          To complete your membership and be ready to order when Daniel texts, we need your card and a delivery address. You&apos;re only charged when you choose to buy.
         </p>
       </div>
 
@@ -145,7 +145,7 @@ function CardFormInner() {
             required
             disabled={loading}
             className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base disabled:opacity-60"
-            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
+            style={{ color: '#1C0E09', borderColor: 'rgba(42,24,16,0.18)' }}
           />
         </div>
 
@@ -176,17 +176,6 @@ function CardFormInner() {
           {step === 'processing' ? 'Setting up your account…' : 'Save card & continue'}
         </button>
       </form>
-
-      <div className="text-center mt-4">
-        <button
-          onClick={() => router.push('/join/confirmed?skipped=1')}
-          disabled={loading}
-          className="font-sans text-sm underline disabled:opacity-40"
-          style={{ color: 'rgba(42,24,16,0.45)' }}
-        >
-          Skip for now
-        </button>
-      </div>
     </div>
   )
 }
