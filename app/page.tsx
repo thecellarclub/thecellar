@@ -29,10 +29,10 @@ function DecoratedHeading({ text }: { text: string }) {
       {words.map((word, wi) => (
         <span key={wi}>
           {wi > 0 ? ' ' : ''}
-          <span style={{ fontSize: 'clamp(1.9rem, 4.2vw, 2.6rem)', fontWeight: 400 }}>
+          <span style={{ fontSize: 'clamp(2.15rem, 4.2vw, 2.6rem)', fontWeight: 400 }}>
             {word.slice(0, 1)}
           </span>
-          <span style={{ fontSize: 'clamp(1.5rem, 3.3vw, 2.1rem)', fontWeight: 400 }}>
+          <span style={{ fontSize: 'clamp(1.7rem, 3.3vw, 2.1rem)', fontWeight: 400 }}>
             {word.slice(1)}
           </span>
         </span>
@@ -200,7 +200,7 @@ export default function HomePage() {
 
             <div
               className="font-serif mb-7 space-y-3"
-              style={{ fontSize: 'clamp(1.05rem, 2vw, 1.15rem)', color: TEXT_DARK }}
+              style={{ fontSize: 'clamp(1.15rem, 2vw, 1.15rem)', color: TEXT_DARK }}
             >
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
               <p>Daniel texts you whenever he comes across a wine worth knowing. Like the sound of it? Reply how many bottles.</p>
