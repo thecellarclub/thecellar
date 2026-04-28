@@ -38,6 +38,7 @@ a:active,
   30% { transform: translateY(-4px); opacity: 0.9; }
 }
 
+/* Dark theme autofill (used outside the join flow) */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -49,6 +50,10 @@ input:-webkit-autofill:active {
 }
 
 /* Light theme autofill (join/sign-up flow uses #EDE8DF inputs with dark text) */
+.bg-\[\#EDE8DF\] input:-webkit-autofill,
+.bg-\[\#EDE8DF\] input:-webkit-autofill:hover,
+.bg-\[\#EDE8DF\] input:-webkit-autofill:focus,
+.bg-\[\#EDE8DF\] input:-webkit-autofill:active,
 input.bg-\[\#EDE8DF\]:-webkit-autofill,
 input.bg-\[\#EDE8DF\]:-webkit-autofill:hover,
 input.bg-\[\#EDE8DF\]:-webkit-autofill:focus,

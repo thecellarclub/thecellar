@@ -46,7 +46,7 @@ export default function VerifyPage() {
     return (
       <div className="bg-[#F5EFE6] border p-8 text-center" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
         <p className="font-sans mb-4" style={{ color: 'rgba(42,24,16,0.70)' }}>Too many incorrect attempts.</p>
-        <p className="font-sans text-sm mb-6" style={{ color: 'rgba(42,24,16,0.50)' }}>
+        <p className="font-sans text-sm mb-6" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Please wait a few minutes and{' '}
           <Link href="/join" className="underline underline-offset-2" style={{ color: '#9B1B30' }}>
             request a new code
@@ -85,7 +85,7 @@ export default function VerifyPage() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
             required
             className="w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors text-base tracking-widest text-center text-xl font-sans"
-            style={{ borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }}
+            style={{ color: '#1C0E09', borderColor: 'rgba(42,24,16,0.18)' }}
           />
         </div>
 
@@ -103,7 +103,7 @@ export default function VerifyPage() {
           {loading ? 'Verifying…' : 'Verify code'}
         </button>
 
-        <p className="text-center font-sans text-sm" style={{ color: 'rgba(42,24,16,0.40)' }}>
+        <p className="text-center font-sans text-sm" style={{ color: 'rgba(42,24,16,0.45)' }}>
           Didn&apos;t get a code?{' '}
           <Link href="/join" className="underline underline-offset-2" style={{ color: '#9B1B30' }}>
             Go back and resend
