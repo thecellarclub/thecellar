@@ -7,20 +7,20 @@ export const metadata: Metadata = {
 
 export default function PortalPage() {
   return (
-    <main className="min-h-screen bg-maroon flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: '#F5EFE6' }}>
       {/* Brand mark */}
       <div className="text-center mb-8">
-        <div className="font-serif text-cream">
-          <span className="block text-xs uppercase tracking-[0.3em] text-cream/60">the</span>
+        <div className="font-serif" style={{ color: '#1C0E09' }}>
+          <span className="block text-xs uppercase tracking-[0.3em]" style={{ color: 'rgba(42,24,16,0.45)' }}>the</span>
           <span className="block text-3xl uppercase tracking-[0.08em] leading-none">CELLAR</span>
-          <span className="block text-xs uppercase tracking-[0.3em] text-cream/60">club</span>
+          <span className="block text-xs uppercase tracking-[0.3em]" style={{ color: 'rgba(42,24,16,0.45)' }}>club</span>
         </div>
       </div>
 
-      <div className="w-full max-w-md bg-maroon-dark border border-cream/12 p-8">
+      <div className="w-full max-w-md border p-8" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
         <div className="mb-6">
-          <h2 className="font-serif text-2xl text-cream mb-1">My account</h2>
-          <p className="font-sans text-sm text-cream/55">
+          <h2 className="font-serif text-2xl mb-1" style={{ color: '#1C0E09' }}>My account</h2>
+          <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.55)' }}>
             Enter your phone number and we&apos;ll send you a login code.
           </p>
         </div>
@@ -28,7 +28,7 @@ export default function PortalPage() {
       </div>
 
       <footer className="mt-8 text-center">
-        <p className="font-sans text-cream/25 text-xs">CD WINES LTD · Company No. 15796479</p>
+        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.30)' }}>CD WINES LTD · Company No. 15796479</p>
       </footer>
     </main>
   )

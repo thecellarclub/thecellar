@@ -17,6 +17,7 @@ export default function PortalLoginForm() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [wrapperFocused, setWrapperFocused] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -51,11 +52,19 @@ export default function PortalLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="phone" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+        <label htmlFor="phone" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Mobile number
         </label>
-        <div className="flex items-stretch border border-cream/20 focus-within:border-cream/50 transition-colors">
-          <span className="flex items-center px-3 font-sans text-base text-cream/60 border-r border-cream/20 select-none bg-transparent whitespace-nowrap">
+        <div
+          className="flex items-stretch border transition-colors"
+          style={{ borderColor: wrapperFocused ? 'rgba(42,24,16,0.50)' : 'rgba(42,24,16,0.18)' }}
+          onFocus={() => setWrapperFocused(true)}
+          onBlur={() => setWrapperFocused(false)}
+        >
+          <span
+            className="flex items-center px-3 font-sans text-base select-none bg-transparent whitespace-nowrap border-r"
+            style={{ color: 'rgba(42,24,16,0.50)', borderColor: 'rgba(42,24,16,0.18)' }}
+          >
             +44
           </span>
           <input
@@ -66,13 +75,14 @@ export default function PortalLoginForm() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
-            className="flex-1 bg-maroon px-4 py-3 text-cream placeholder-cream/30 focus:outline-none font-sans text-base"
+            className="flex-1 px-4 py-3 focus:outline-none font-sans text-base"
+            style={{ background: '#EDE8DF', color: '#1C0E09' }}
           />
         </div>
       </div>
 
       {error && (
-        <p className="font-sans text-sm text-red-400 bg-red-950/30 border border-red-900/40 px-4 py-3">
+        <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
           {error}
         </p>
       )}

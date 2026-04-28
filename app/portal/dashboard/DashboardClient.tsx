@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -74,7 +74,7 @@ function CardPill({ card, label }: { card: Card; label: string }) {
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-0" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
       <div>
-        <p className="font-sans text-xs uppercase tracking-wide mb-0.5" style={{ color: 'rgba(42,24,16,0.45)' }}>{label}</p>
+        <p className="font-sans text-xs uppercase tracking-wide mb-0.5" style={{ color: 'rgba(42,24,16,0.65)' }}>{label}</p>
         <p className="font-sans text-sm capitalize" style={{ color: '#1C0E09' }}>
           {card.brand} ···· {card.last4}
         </p>
@@ -235,6 +235,18 @@ export default function DashboardClient({
   const [section, setSection] = useState<'overview' | 'address' | 'card'>('overview')
   const [cellarTab, setCellarTab] = useState<'cellar' | 'payments' | 'shipments'>('cellar')
   const [cardSaved, setCardSaved] = useState(false)
+  const [showSetupModal, setShowSetupModal] = useState(false)
+
+  useEffect(() => {
+    const missingCard = !primaryCard && !cardSaved
+    const missingAddress = !defaultAddress
+    if (missingCard || missingAddress) {
+      if (!sessionStorage.getItem('setup_modal_shown')) {
+        setShowSetupModal(true)
+        sessionStorage.setItem('setup_modal_shown', '1')
+      }
+    }
+  }, [])
 
   // Address form state
   const [line1, setLine1] = useState(defaultAddress?.line1 ?? '')
@@ -290,326 +302,407 @@ export default function DashboardClient({
   const inputStyle = { borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }
 
   return (
-    <main className="min-h-screen" style={{ background: '#F5EFE6' }}>
-      {/* Header */}
-      <div className="border-b px-6 py-4" style={{ background: '#F5EFE6', borderColor: 'rgba(42,24,16,0.12)' }}>
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-serif text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(42,24,16,0.50)' }}>
-            The Cellar Club
-          </span>
-          <button
-            onClick={handleLogout}
-            className="font-sans text-xs transition-colors"
-            style={{ color: 'rgba(42,24,16,0.40)' }}
+    <>
+      {/* First-login setup modal */}
+      {showSetupModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            background: 'rgba(18,6,8,0.55)',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '24rem',
+              width: '100%',
+              padding: '1.5rem',
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderTop: '4px solid #B45309',
+            }}
           >
-            Sign out
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-
-        {/* ── Setup prompts ─────────────────────────────────────────────── */}
-        {setupIncomplete && (
-          <div className="border-l-4 p-5" style={{ borderLeftColor: '#9B1B30', background: '#EDE8DF', borderTop: '1px solid rgba(42,24,16,0.12)', borderRight: '1px solid rgba(42,24,16,0.12)', borderBottom: '1px solid rgba(42,24,16,0.12)' }}>
-            <p className="font-serif text-lg mb-1" style={{ color: '#1C0E09' }}>
-              Finish setting up your account
-            </p>
-            <p className="font-sans text-sm mb-4" style={{ color: 'rgba(42,24,16,0.60)' }}>
-              You need these to order wine by text.
+            <div className="flex items-center gap-2 mb-3">
+              <span aria-hidden="true">⚠️</span>
+              <h2 className="font-serif text-xl" style={{ color: '#78350F' }}>Finish setting up your account</h2>
+            </div>
+            <p className="font-sans text-sm mb-5" style={{ color: '#92400E' }}>
+              Before you can order wine by text, you need to add a payment card and a delivery address. It only takes a minute.
             </p>
             <div className="space-y-3">
               {!hasCard && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#9B1B30' }}>
-                      <div className="w-2 h-2 rounded-full" style={{ background: '#9B1B30' }} />
-                    </div>
-                    <span className="font-sans text-sm" style={{ color: '#1C0E09' }}>Add a payment card</span>
-                  </div>
-                  <button
-                    onClick={() => setSection('card')}
-                    className="font-sans text-xs font-medium px-3 py-1.5 bg-rio text-cream transition-opacity hover:opacity-90"
-                  >
-                    Add card →
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setShowSetupModal(false); setSection('card') }}
+                  className="w-full font-sans text-sm font-medium px-4 py-3 text-white transition-opacity hover:opacity-90"
+                  style={{ background: '#B45309' }}
+                >
+                  Add a payment card →
+                </button>
               )}
               {!hasAddress && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#9B1B30' }}>
-                      <div className="w-2 h-2 rounded-full" style={{ background: '#9B1B30' }} />
-                    </div>
-                    <span className="font-sans text-sm" style={{ color: '#1C0E09' }}>Add a delivery address</span>
-                  </div>
-                  <button
-                    onClick={() => setSection('address')}
-                    className="font-sans text-xs font-medium px-3 py-1.5 bg-rio text-cream transition-opacity hover:opacity-90"
-                  >
-                    Add address →
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setShowSetupModal(false); setSection('address') }}
+                  className="w-full font-sans text-sm font-medium px-4 py-3 border transition-opacity hover:opacity-90"
+                  style={{ background: '#FEF3C7', color: '#78350F', borderColor: '#FDE68A' }}
+                >
+                  Add a delivery address →
+                </button>
               )}
             </div>
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setShowSetupModal(false)}
+                className="font-sans text-xs underline underline-offset-2"
+                style={{ color: 'rgba(120,53,15,0.55)' }}
+              >
+                I&apos;ll do this later
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Welcome */}
-        <div>
-          <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>My account</p>
-          <h1 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>
-            {firstName ? `Welcome back, ${firstName}.` : 'Welcome back.'}
-          </h1>
-          <p className="font-sans text-xs mt-1" style={{ color: 'rgba(42,24,16,0.40)' }}>{phone}</p>
+      <main className="min-h-screen" style={{ background: '#F5EFE6' }}>
+        {/* Header */}
+        <div className="border-b px-6 py-4" style={{ background: '#F5EFE6', borderColor: 'rgba(42,24,16,0.12)' }}>
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <span className="font-serif text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(42,24,16,0.50)' }}>
+              The Cellar Club
+            </span>
+            <button
+              onClick={handleLogout}
+              className="font-sans text-xs transition-colors"
+              style={{ color: 'rgba(42,24,16,0.40)' }}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
-        {/* Tier + cellar summary */}
-        <div className="p-5 border" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)', borderTop: `3px solid ${tierColor}` }}>
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Membership</p>
-              <p className="font-serif text-xl" style={{ color: '#1C0E09' }}>{tierLabel}</p>
-              {tierSince && (
-                <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
-                  Since {new Date(tierSince).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+        <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+
+          {/* ── Setup prompts ─────────────────────────────────────────────── */}
+          {setupIncomplete && (
+            <div
+              className="border-l-4 p-5"
+              style={{
+                borderLeftColor: '#B45309',
+                background: '#FFFBEB',
+                borderTop: '1px solid #FDE68A',
+                borderRight: '1px solid #FDE68A',
+                borderBottom: '1px solid #FDE68A',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span aria-hidden="true">⚠️</span>
+                <p className="font-serif text-lg" style={{ color: '#78350F' }}>
+                  Finish setting up your account
                 </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Cellar</p>
-              <p className="font-serif text-xl" style={{ color: '#1C0E09' }}>{bottles}</p>
-              <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
-                bottle{bottles !== 1 ? 's' : ''} · free ship at {threshold}
+              </div>
+              <p className="font-sans text-sm mb-4" style={{ color: '#92400E' }}>
+                You need a payment card and delivery address to order wine by text.
               </p>
+              <div className="space-y-3">
+                {!hasCard && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#B45309' }}>
+                        <div className="w-2 h-2 rounded-full" style={{ background: '#B45309' }} />
+                      </div>
+                      <span className="font-sans text-sm font-medium" style={{ color: '#78350F' }}>Add a payment card</span>
+                    </div>
+                    <button
+                      onClick={() => setSection('card')}
+                      className="font-sans text-xs font-medium px-3 py-1.5 text-cream transition-opacity hover:opacity-90"
+                      style={{ background: '#B45309' }}
+                    >
+                      Add card →
+                    </button>
+                  </div>
+                )}
+                {!hasAddress && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#B45309' }}>
+                        <div className="w-2 h-2 rounded-full" style={{ background: '#B45309' }} />
+                      </div>
+                      <span className="font-sans text-sm font-medium" style={{ color: '#78350F' }}>Add a delivery address</span>
+                    </div>
+                    <button
+                      onClick={() => setSection('address')}
+                      className="font-sans text-xs font-medium px-3 py-1.5 text-cream transition-opacity hover:opacity-90"
+                      style={{ background: '#B45309' }}
+                    >
+                      Add address →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+          )}
+
+          {/* Welcome */}
+          <div>
+            <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>My account</p>
+            <h1 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>
+              {firstName ? `Welcome back, ${firstName}.` : 'Welcome back.'}
+            </h1>
+            <p className="font-sans text-xs mt-1" style={{ color: 'rgba(42,24,16,0.40)' }}>{phone}</p>
           </div>
 
-          <TierProgress tier={tier} spendPence={rollingSpendPence} />
+          {/* Tier + cellar summary */}
+          <div className="p-5 border" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)', borderTop: `3px solid ${tierColor}` }}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Membership</p>
+                <p className="font-serif text-xl" style={{ color: '#1C0E09' }}>{tierLabel}</p>
+                {tierSince && (
+                  <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
+                    Since {new Date(tierSince).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Cellar</p>
+                <p className="font-serif text-xl" style={{ color: '#1C0E09' }}>{bottles}</p>
+                <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
+                  bottle{bottles !== 1 ? 's' : ''} · free ship at {threshold}
+                </p>
+              </div>
+            </div>
 
-          {/* Inner tab bar */}
-          <div className="flex gap-4 border-b mb-4 pt-3" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
-            {(['cellar', 'payments', 'shipments'] as const).map((t) => (
+            <TierProgress tier={tier} spendPence={rollingSpendPence} />
+
+            {/* Inner tab bar */}
+            <div className="flex gap-4 border-b mb-4 pt-3" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
+              {(['cellar', 'payments', 'shipments'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setCellarTab(t)}
+                  className="pb-2 font-sans text-xs uppercase tracking-wide border-b-2 -mb-px transition-colors"
+                  style={cellarTab === t
+                    ? { borderColor: '#9B1B30', color: '#1C0E09' }
+                    : { borderColor: 'transparent', color: 'rgba(42,24,16,0.40)' }
+                  }
+                >
+                  {t === 'cellar' ? 'Cellar' : t === 'payments' ? 'Payments' : 'Shipments'}
+                </button>
+              ))}
+            </div>
+
+            {cellarTab === 'cellar' && (
+              cellar.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {cellar.map((item, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-2">
+                      <span className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.75)' }}>{item.quantity}× {item.name}</span>
+                      <span className="font-sans text-xs shrink-0" style={{ color: 'rgba(42,24,16,0.40)' }}>
+                        £{(item.pricePence / 100).toFixed(0)}/bottle
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>Nothing in your cellar yet.</p>
+              )
+            )}
+
+            {cellarTab === 'payments' && (
+              <div className="space-y-2">
+                {payments.length === 0 ? (
+                  <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>No payments yet.</p>
+                ) : payments.map((p) => (
+                  <div key={p.id} className="flex items-start justify-between gap-2 py-2 border-b last:border-0" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
+                    <div className="min-w-0">
+                      <p className="font-sans text-sm truncate" style={{ color: 'rgba(42,24,16,0.80)' }}>{p.wineName}</p>
+                      {(p.wineVintage || p.wineRegion) && (
+                        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>
+                          {[p.wineVintage, p.wineRegion].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
+                        {new Date(p.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.80)' }}>£{(p.totalPence / 100).toFixed(2)}</p>
+                      <PaymentStatusBadge status={p.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {cellarTab === 'shipments' && (
+              <div className="space-y-2">
+                {shipments.length === 0 ? (
+                  <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>No shipments yet.</p>
+                ) : shipments.map((s) => (
+                  <div key={s.id} className="py-2 border-b last:border-0" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-sans text-sm capitalize" style={{ color: 'rgba(42,24,16,0.80)' }}>{s.status}</p>
+                        <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
+                          {new Date(s.dispatchedAt ?? s.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {s.trackingNumber ? (
+                          <p className="font-sans text-xs font-mono" style={{ color: 'rgba(42,24,16,0.50)' }}>
+                            {s.trackingProvider ? `${s.trackingProvider} ` : ''}{s.trackingNumber}
+                          </p>
+                        ) : (
+                          <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.30)' }}>No tracking</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Nav tabs */}
+          <div className="flex gap-3">
+            {(['overview', 'address', 'card'] as const).map((s) => (
               <button
-                key={t}
-                onClick={() => setCellarTab(t)}
-                className="pb-2 font-sans text-xs uppercase tracking-wide border-b-2 -mb-px transition-colors"
-                style={cellarTab === t
-                  ? { borderColor: '#9B1B30', color: '#1C0E09' }
-                  : { borderColor: 'transparent', color: 'rgba(42,24,16,0.40)' }
+                key={s}
+                onClick={() => setSection(s)}
+                className="font-sans text-xs uppercase tracking-wide px-4 py-2 border transition-colors"
+                style={section === s
+                  ? { background: '#9B1B30', borderColor: '#9B1B30', color: '#F5EFE6' }
+                  : { background: 'transparent', borderColor: 'rgba(42,24,16,0.20)', color: 'rgba(42,24,16,0.55)' }
                 }
               >
-                {t === 'cellar' ? 'Cellar' : t === 'payments' ? 'Payments' : 'Shipments'}
+                {s === 'overview' ? 'Overview' : s === 'address' ? 'Address' : 'Payment'}
               </button>
             ))}
           </div>
 
-          {cellarTab === 'cellar' && (
-            cellar.length > 0 ? (
-              <ul className="space-y-1.5">
-                {cellar.map((item, i) => (
-                  <li key={i} className="flex items-baseline justify-between gap-2">
-                    <span className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.75)' }}>{item.quantity}× {item.name}</span>
-                    <span className="font-sans text-xs shrink-0" style={{ color: 'rgba(42,24,16,0.40)' }}>
-                      £{(item.pricePence / 100).toFixed(0)}/bottle
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>Nothing in your cellar yet.</p>
-            )
-          )}
+          {/* Overview section */}
+          {section === 'overview' && (
+            <div className="space-y-4">
+              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.65)' }}>Delivery address</p>
+                {defaultAddress ? (
+                  <div className="font-sans text-sm space-y-0.5" style={{ color: '#1C0E09' }}>
+                    <p>{defaultAddress.line1}</p>
+                    {defaultAddress.line2 && <p>{defaultAddress.line2}</p>}
+                    <p>{defaultAddress.city}</p>
+                    <p>{defaultAddress.postcode}</p>
+                  </div>
+                ) : (
+                  <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.70)' }}>No address saved yet.</p>
+                )}
+                <button
+                  onClick={() => setSection('address')}
+                  className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
+                  style={{ color: 'rgba(42,24,16,0.70)' }}
+                >
+                  {defaultAddress ? 'Update address' : 'Add address'}
+                </button>
+              </div>
 
-          {cellarTab === 'payments' && (
-            <div className="space-y-2">
-              {payments.length === 0 ? (
-                <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>No payments yet.</p>
-              ) : payments.map((p) => (
-                <div key={p.id} className="flex items-start justify-between gap-2 py-2 border-b last:border-0" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
-                  <div className="min-w-0">
-                    <p className="font-sans text-sm truncate" style={{ color: 'rgba(42,24,16,0.80)' }}>{p.wineName}</p>
-                    {(p.wineVintage || p.wineRegion) && (
-                      <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>
-                        {[p.wineVintage, p.wineRegion].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
-                    <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
-                      {new Date(p.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.80)' }}>£{(p.totalPence / 100).toFixed(2)}</p>
-                    <PaymentStatusBadge status={p.status} />
-                  </div>
-                </div>
-              ))}
+              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.65)' }}>Payment cards</p>
+                {primaryCard ? (
+                  <CardPill card={primaryCard} label="Primary" />
+                ) : (
+                  <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.70)' }}>No card on file.</p>
+                )}
+                {backupCard && <CardPill card={backupCard} label="Backup" />}
+                <button
+                  onClick={() => setSection('card')}
+                  className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
+                  style={{ color: 'rgba(42,24,16,0.70)' }}
+                >
+                  Manage cards
+                </button>
+              </div>
             </div>
           )}
 
-          {cellarTab === 'shipments' && (
-            <div className="space-y-2">
-              {shipments.length === 0 ? (
-                <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.35)' }}>No shipments yet.</p>
-              ) : shipments.map((s) => (
-                <div key={s.id} className="py-2 border-b last:border-0" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-sans text-sm capitalize" style={{ color: 'rgba(42,24,16,0.80)' }}>{s.status}</p>
-                      <p className="font-sans text-xs mt-0.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
-                        {new Date(s.dispatchedAt ?? s.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      {s.trackingNumber ? (
-                        <p className="font-sans text-xs font-mono" style={{ color: 'rgba(42,24,16,0.50)' }}>
-                          {s.trackingProvider ? `${s.trackingProvider} ` : ''}{s.trackingNumber}
-                        </p>
-                      ) : (
-                        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.30)' }}>No tracking</p>
-                      )}
-                    </div>
-                  </div>
+          {/* Address section */}
+          {section === 'address' && (
+            <form onSubmit={handleAddressSubmit} className="space-y-4">
+              {[
+                { id: 'line1', label: 'Address line 1', value: line1, setter: setLine1, required: true, placeholder: 'House number and street' },
+                { id: 'line2', label: 'Address line 2 (optional)', value: line2, setter: setLine2, required: false, placeholder: 'Flat, apartment, etc.' },
+                { id: 'city', label: 'City', value: city, setter: setCity, required: true, placeholder: '' },
+                { id: 'postcode', label: 'Postcode', value: postcode, setter: setPostcode, required: true, placeholder: 'e.g. DH1 3AA' },
+              ].map(({ id, label, value, setter, required, placeholder }) => (
+                <div key={id}>
+                  <label htmlFor={id} className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
+                    {label}
+                  </label>
+                  <input
+                    id={id}
+                    type="text"
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    required={required}
+                    placeholder={placeholder}
+                    className={inputClass}
+                    style={inputStyle}
+                  />
                 </div>
               ))}
+
+              {addrMsg && (
+                <p className={`font-sans text-sm px-4 py-3 border ${addrMsg === 'Address saved.' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
+                  {addrMsg}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={addrLoading}
+                className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                {addrLoading ? 'Saving…' : 'Save address →'}
+              </button>
+            </form>
+          )}
+
+          {/* Card section */}
+          {section === 'card' && (
+            <div className="space-y-4">
+              {(primaryCard || cardSaved) ? (
+                <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                  <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.45)' }}>Your cards</p>
+                  {primaryCard && <CardPill card={primaryCard} label="Primary" />}
+                  {backupCard && (
+                    <>
+                      <CardPill card={backupCard} label="Backup" />
+                      <button
+                        onClick={handleSwapCards}
+                        className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
+                        style={{ color: 'rgba(42,24,16,0.50)' }}
+                      >
+                        Make backup card primary
+                      </button>
+                    </>
+                  )}
+                  {cardSaved && !primaryCard && (
+                    <p className="font-sans text-sm" style={{ color: '#2d6a4f' }}>Card saved — reload to see details.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                  <p className="font-sans text-xs uppercase tracking-wide mb-4" style={{ color: 'rgba(42,24,16,0.45)' }}>Add a payment card</p>
+                  <PortalCardForm onSuccess={() => { setCardSaved(true); router.refresh() }} />
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Nav tabs */}
-        <div className="flex gap-3">
-          {(['overview', 'address', 'card'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSection(s)}
-              className="font-sans text-xs uppercase tracking-wide px-4 py-2 border transition-colors"
-              style={section === s
-                ? { background: '#9B1B30', borderColor: '#9B1B30', color: '#F5EFE6' }
-                : { background: 'transparent', borderColor: 'rgba(42,24,16,0.20)', color: 'rgba(42,24,16,0.55)' }
-              }
-            >
-              {s === 'overview' ? 'Overview' : s === 'address' ? 'Address' : 'Payment'}
-            </button>
-          ))}
-        </div>
-
-        {/* Overview section */}
-        {section === 'overview' && (
-          <div className="space-y-4">
-            <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
-              <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.45)' }}>Delivery address</p>
-              {defaultAddress ? (
-                <div className="font-sans text-sm space-y-0.5" style={{ color: 'rgba(42,24,16,0.75)' }}>
-                  <p>{defaultAddress.line1}</p>
-                  {defaultAddress.line2 && <p>{defaultAddress.line2}</p>}
-                  <p>{defaultAddress.city}</p>
-                  <p>{defaultAddress.postcode}</p>
-                </div>
-              ) : (
-                <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.40)' }}>No address saved yet.</p>
-              )}
-              <button
-                onClick={() => setSection('address')}
-                className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
-                style={{ color: 'rgba(42,24,16,0.50)' }}
-              >
-                {defaultAddress ? 'Update address' : 'Add address'}
-              </button>
-            </div>
-
-            <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
-              <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.45)' }}>Payment cards</p>
-              {primaryCard ? (
-                <CardPill card={primaryCard} label="Primary" />
-              ) : (
-                <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.40)' }}>No card on file.</p>
-              )}
-              {backupCard && <CardPill card={backupCard} label="Backup" />}
-              <button
-                onClick={() => setSection('card')}
-                className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
-                style={{ color: 'rgba(42,24,16,0.50)' }}
-              >
-                Manage cards
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Address section */}
-        {section === 'address' && (
-          <form onSubmit={handleAddressSubmit} className="space-y-4">
-            {[
-              { id: 'line1', label: 'Address line 1', value: line1, setter: setLine1, required: true, placeholder: 'House number and street' },
-              { id: 'line2', label: 'Address line 2 (optional)', value: line2, setter: setLine2, required: false, placeholder: 'Flat, apartment, etc.' },
-              { id: 'city', label: 'City', value: city, setter: setCity, required: true, placeholder: '' },
-              { id: 'postcode', label: 'Postcode', value: postcode, setter: setPostcode, required: true, placeholder: 'e.g. DH1 3AA' },
-            ].map(({ id, label, value, setter, required, placeholder }) => (
-              <div key={id}>
-                <label htmlFor={id} className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
-                  {label}
-                </label>
-                <input
-                  id={id}
-                  type="text"
-                  value={value}
-                  onChange={(e) => setter(e.target.value)}
-                  required={required}
-                  placeholder={placeholder}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-            ))}
-
-            {addrMsg && (
-              <p className={`font-sans text-sm px-4 py-3 border ${addrMsg === 'Address saved.' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
-                {addrMsg}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={addrLoading}
-              className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              {addrLoading ? 'Saving…' : 'Save address →'}
-            </button>
-          </form>
-        )}
-
-        {/* Card section */}
-        {section === 'card' && (
-          <div className="space-y-4">
-            {(primaryCard || cardSaved) ? (
-              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
-                <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.45)' }}>Your cards</p>
-                {primaryCard && <CardPill card={primaryCard} label="Primary" />}
-                {backupCard && (
-                  <>
-                    <CardPill card={backupCard} label="Backup" />
-                    <button
-                      onClick={handleSwapCards}
-                      className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
-                      style={{ color: 'rgba(42,24,16,0.50)' }}
-                    >
-                      Make backup card primary
-                    </button>
-                  </>
-                )}
-                {cardSaved && !primaryCard && (
-                  <p className="font-sans text-sm" style={{ color: '#2d6a4f' }}>Card saved — reload to see details.</p>
-                )}
-              </div>
-            ) : (
-              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
-                <p className="font-sans text-xs uppercase tracking-wide mb-4" style={{ color: 'rgba(42,24,16,0.45)' }}>Add a payment card</p>
-                <PortalCardForm onSuccess={() => { setCardSaved(true); router.refresh() }} />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </main>
+      </main>
+    </>
   )
 }

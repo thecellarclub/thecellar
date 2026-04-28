@@ -61,7 +61,7 @@ export default function PortalVerifyForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="code" className="block font-sans text-xs text-cream/55 mb-1.5 uppercase tracking-wide">
+        <label htmlFor="code" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Login code
         </label>
         <input
@@ -75,12 +75,13 @@ export default function PortalVerifyForm() {
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
           required
           autoFocus
-          className="w-full bg-maroon border border-cream/20 px-4 py-3 text-cream placeholder-cream/30 focus:outline-none focus:border-cream/50 transition-colors font-sans text-base tracking-widest"
+          className="w-full px-4 py-3 focus:outline-none font-sans text-base tracking-widest border transition-colors"
+          style={{ background: '#EDE8DF', color: '#1C0E09', borderColor: 'rgba(42,24,16,0.18)' }}
         />
       </div>
 
       {error && (
-        <p className={`font-sans text-sm px-4 py-3 border ${error === 'New code sent.' ? 'text-green-400 bg-green-950/30 border-green-900/40' : 'text-red-400 bg-red-950/30 border-red-900/40'}`}>
+        <p className={`font-sans text-sm px-4 py-3 border ${error === 'New code sent.' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
           {error}
         </p>
       )}
@@ -93,9 +94,14 @@ export default function PortalVerifyForm() {
         {loading ? 'Verifying…' : 'Verify →'}
       </button>
 
-      <p className="font-sans text-xs text-cream/40 text-center">
+      <p className="font-sans text-xs text-center" style={{ color: 'rgba(42,24,16,0.45)' }}>
         Didn&apos;t get it?{' '}
-        <button type="button" onClick={handleResend} className="underline underline-offset-2 text-cream/60 hover:text-cream transition-colors">
+        <button
+          type="button"
+          onClick={handleResend}
+          className="underline underline-offset-2 transition-colors"
+          style={{ color: 'rgba(42,24,16,0.65)' }}
+        >
           Send a new code
         </button>
       </p>
