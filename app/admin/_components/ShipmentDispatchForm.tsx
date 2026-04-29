@@ -57,7 +57,7 @@ export default function ShipmentDispatchForm({
             value={carrier}
             onChange={(e) => setCarrier(e.target.value)}
             placeholder="e.g. Royal Mail, DPD"
-            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
           />
         </div>
         <div>
@@ -67,7 +67,7 @@ export default function ShipmentDispatchForm({
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             placeholder="Tracking number"
-            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400"
           />
         </div>
       </div>

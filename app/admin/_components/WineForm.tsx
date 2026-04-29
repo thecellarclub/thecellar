@@ -67,7 +67,7 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
   }
 
   const inputCls =
-    'w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400'
+    'w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400'
   const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
 
   return (

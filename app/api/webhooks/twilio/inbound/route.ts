@@ -1385,6 +1385,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const rawMessage = (params['Body'] ?? '').trim()
       const name = customer.first_name ?? customer.phone
 
+      // Only ack if the last message in the thread was outbound (Daniel replied)
+      // or there are no prior messages — avoids repeating the ack while Daniel is
+      // working on a reply.
+      const { data: lastMsg } = await sb
+        .from('concierge_messages')
+        .select('direction')
+        .eq('customer_id', customer.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const shouldAck = !lastMsg || lastMsg.direction === 'outbound'
+
       await sb.from('concierge_messages').insert({
         customer_id: customer.id,
         direction: 'inbound',
@@ -1412,7 +1424,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         `Message: ${rawMessage}\nPhone: ${customer.phone}`
       )
 
-      await sendSms(from, `Got it - Daniel will get back to you.`)
+      if (shouldAck) {
+        await sendSms(from, `Got it, Daniel will be in touch soon.`)
+      }
       return twimlOk()
     }
 

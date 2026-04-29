@@ -231,7 +231,7 @@ function MobileReplyInput({ customerId }: { customerId: string }) {
           placeholder="Reply..."
           rows={1}
           style={{ fontSize: '16px', minHeight: '44px' }}
-          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 max-h-28 overflow-y-auto"
+          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 resize-none text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 max-h-28 overflow-y-auto"
         />
         <button
           onClick={handleSend}
@@ -438,7 +438,7 @@ function DesktopReplyForm({ customerId }: { customerId: string }) {
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Type a reply..."
         rows={2}
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
+        className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
       />
       <div className="flex items-center gap-3">
         <button

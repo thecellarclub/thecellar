@@ -120,7 +120,7 @@ export default function SendMessageForm({ customers, initialPhone, onSuccess }: 
           }}
           onFocus={() => setShowDropdown(true)}
           onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
         />
         {showDropdown && results.length > 0 && (
           <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded shadow-md max-h-64 overflow-y-auto">
@@ -181,7 +181,7 @@ export default function SendMessageForm({ customers, initialPhone, onSuccess }: 
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
           placeholder="Type your message…"
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
         />
       </div>
 

@@ -66,7 +66,7 @@ export default function ShipmentActions({
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             placeholder="Tracking number"
-            className="border border-gray-300 rounded px-2 py-1 text-xs w-40 focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 placeholder:text-gray-500 w-40 focus:outline-none focus:ring-1 focus:ring-gray-400"
           />
           <button
             onClick={() => updateStatus('dispatched', trackingNumber)}
