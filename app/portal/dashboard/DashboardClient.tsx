@@ -236,6 +236,7 @@ export default function DashboardClient({
   const [cellarTab, setCellarTab] = useState<'cellar' | 'payments' | 'shipments'>('cellar')
   const [cardSaved, setCardSaved] = useState(false)
   const [showSetupModal, setShowSetupModal] = useState(false)
+  const [activeModal, setActiveModal] = useState<'address' | 'card' | null>(null)
 
   useEffect(() => {
     const missingCard = !primaryCard && !cardSaved
@@ -273,6 +274,7 @@ export default function DashboardClient({
       })
       if (res.ok) {
         setAddrMsg('Address saved.')
+        setActiveModal(null)
         router.refresh()
       } else {
         const d = await res.json()
@@ -301,9 +303,17 @@ export default function DashboardClient({
   const inputClass = 'w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-sm'
   const inputStyle = { borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }
 
+  // Shared address form fields (used in both the inline section and the modal)
+  const addressFields = [
+    { id: 'line1', label: 'Address line 1', value: line1, setter: setLine1, required: true, placeholder: 'House number and street' },
+    { id: 'line2', label: 'Address line 2 (optional)', value: line2, setter: setLine2, required: false, placeholder: 'Flat, apartment, etc.' },
+    { id: 'city', label: 'City', value: city, setter: setCity, required: true, placeholder: '' },
+    { id: 'postcode', label: 'Postcode', value: postcode, setter: setPostcode, required: true, placeholder: 'e.g. DH1 3AA' },
+  ]
+
   return (
     <>
-      {/* First-login setup modal */}
+      {/* ── First-login setup modal ─────────────────────────────────── */}
       {showSetupModal && (
         <div
           style={{
@@ -322,33 +332,32 @@ export default function DashboardClient({
               maxWidth: '24rem',
               width: '100%',
               padding: '1.5rem',
-              background: '#FFFBEB',
-              border: '1px solid #FDE68A',
-              borderTop: '4px solid #B45309',
+              background: '#F8F4EF',
+              border: '1px solid rgba(42,24,16,0.14)',
+              borderTop: '4px solid #9B1B30',
             }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span aria-hidden="true">⚠️</span>
-              <h2 className="font-serif text-xl" style={{ color: '#78350F' }}>Finish setting up your account</h2>
-            </div>
-            <p className="font-sans text-sm mb-5" style={{ color: '#92400E' }}>
+            <h2 className="font-serif text-xl mb-3" style={{ color: '#1C0E09' }}>
+              Finish setting up your account
+            </h2>
+            <p className="font-sans text-sm mb-5" style={{ color: 'rgba(42,24,16,0.70)' }}>
               Before you can order wine by text, you need to add a payment card and a delivery address. It only takes a minute.
             </p>
             <div className="space-y-3">
               {!hasCard && (
                 <button
-                  onClick={() => { setShowSetupModal(false); setSection('card') }}
-                  className="w-full font-sans text-sm font-medium px-4 py-3 text-white transition-opacity hover:opacity-90"
-                  style={{ background: '#B45309' }}
+                  onClick={() => { setShowSetupModal(false); setActiveModal('card') }}
+                  className="w-full font-sans text-sm font-medium px-4 py-3 transition-opacity hover:opacity-90"
+                  style={{ background: '#9B1B30', color: '#F0E6DC' }}
                 >
                   Add a payment card →
                 </button>
               )}
               {!hasAddress && (
                 <button
-                  onClick={() => { setShowSetupModal(false); setSection('address') }}
+                  onClick={() => { setShowSetupModal(false); setActiveModal('address') }}
                   className="w-full font-sans text-sm font-medium px-4 py-3 border transition-opacity hover:opacity-90"
-                  style={{ background: '#FEF3C7', color: '#78350F', borderColor: '#FDE68A' }}
+                  style={{ background: 'transparent', color: '#1C0E09', borderColor: 'rgba(42,24,16,0.20)' }}
                 >
                   Add a delivery address →
                 </button>
@@ -359,11 +368,65 @@ export default function DashboardClient({
                 type="button"
                 onClick={() => setShowSetupModal(false)}
                 className="font-sans text-xs underline underline-offset-2"
-                style={{ color: 'rgba(120,53,15,0.55)' }}
+                style={{ color: 'rgba(42,24,16,0.45)' }}
               >
                 I&apos;ll do this later
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Address modal ───────────────────────────────────────────── */}
+      {activeModal === 'address' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(18,6,8,0.60)' }}>
+          <div style={{ maxWidth: '26rem', width: '100%', background: '#F8F4EF', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <h2 className="font-serif text-xl" style={{ color: '#1C0E09' }}>Delivery address</h2>
+              <button onClick={() => setActiveModal(null)} className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.45)' }}>✕ Close</button>
+            </div>
+            <form onSubmit={handleAddressSubmit} className="space-y-4">
+              {addressFields.map(({ id, label, value, setter, required, placeholder }) => (
+                <div key={id}>
+                  <label htmlFor={`modal-${id}`} className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
+                    {label}
+                  </label>
+                  <input
+                    id={`modal-${id}`}
+                    type="text"
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    required={required}
+                    placeholder={placeholder}
+                    className={inputClass}
+                    style={inputStyle}
+                  />
+                </div>
+              ))}
+              {addrMsg && addrMsg !== 'Address saved.' && (
+                <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">{addrMsg}</p>
+              )}
+              <button
+                type="submit"
+                disabled={addrLoading}
+                className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                {addrLoading ? 'Saving…' : 'Save address →'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Card modal ──────────────────────────────────────────────── */}
+      {activeModal === 'card' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(18,6,8,0.60)' }}>
+          <div style={{ maxWidth: '26rem', width: '100%', background: '#F8F4EF', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <h2 className="font-serif text-xl" style={{ color: '#1C0E09' }}>Add a payment card</h2>
+              <button onClick={() => setActiveModal(null)} className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.45)' }}>✕ Close</button>
+            </div>
+            <PortalCardForm onSuccess={() => { setCardSaved(true); router.refresh(); setActiveModal(null) }} />
           </div>
         </div>
       )}
@@ -385,67 +448,49 @@ export default function DashboardClient({
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-
-          {/* ── Setup prompts ─────────────────────────────────────────────── */}
-          {setupIncomplete && (
-            <div
-              className="border-l-4 p-5"
-              style={{
-                borderLeftColor: '#B45309',
-                background: '#FFFBEB',
-                borderTop: '1px solid #FDE68A',
-                borderRight: '1px solid #FDE68A',
-                borderBottom: '1px solid #FDE68A',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span aria-hidden="true">⚠️</span>
-                <p className="font-serif text-lg" style={{ color: '#78350F' }}>
-                  Finish setting up your account
-                </p>
-              </div>
-              <p className="font-sans text-sm mb-4" style={{ color: '#92400E' }}>
-                You need a payment card and delivery address to order wine by text.
-              </p>
-              <div className="space-y-3">
-                {!hasCard && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#B45309' }}>
-                        <div className="w-2 h-2 rounded-full" style={{ background: '#B45309' }} />
-                      </div>
-                      <span className="font-sans text-sm font-medium" style={{ color: '#78350F' }}>Add a payment card</span>
-                    </div>
-                    <button
-                      onClick={() => setSection('card')}
-                      className="font-sans text-xs font-medium px-3 py-1.5 text-cream transition-opacity hover:opacity-90"
-                      style={{ background: '#B45309' }}
-                    >
-                      Add card →
-                    </button>
-                  </div>
-                )}
-                {!hasAddress && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#B45309' }}>
-                        <div className="w-2 h-2 rounded-full" style={{ background: '#B45309' }} />
-                      </div>
-                      <span className="font-sans text-sm font-medium" style={{ color: '#78350F' }}>Add a delivery address</span>
-                    </div>
-                    <button
-                      onClick={() => setSection('address')}
-                      className="font-sans text-xs font-medium px-3 py-1.5 text-cream transition-opacity hover:opacity-90"
-                      style={{ background: '#B45309' }}
-                    >
-                      Add address →
-                    </button>
-                  </div>
-                )}
-              </div>
+        {/* ── Sticky setup bar ────────────────────────────────────────── */}
+        {setupIncomplete && (
+          <div
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 40,
+              background: '#1C0E09',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              padding: '0.75rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+            }}
+          >
+            <p className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.80)' }}>
+              Add a {!hasCard && !hasAddress ? 'payment card and delivery address' : !hasCard ? 'payment card' : 'delivery address'} to start ordering by text.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+              {!hasCard && (
+                <button
+                  onClick={() => setActiveModal('card')}
+                  className="font-sans text-xs font-medium px-3 py-1.5 transition-opacity hover:opacity-90"
+                  style={{ background: '#9B1B30', color: '#F0E6DC' }}
+                >
+                  Add card
+                </button>
+              )}
+              {!hasAddress && (
+                <button
+                  onClick={() => setActiveModal('address')}
+                  className="font-sans text-xs font-medium px-3 py-1.5 border transition-opacity hover:opacity-90"
+                  style={{ borderColor: 'rgba(240,230,220,0.25)', color: 'rgba(240,230,220,0.80)', background: 'transparent' }}
+                >
+                  Add address
+                </button>
+              )}
             </div>
-          )}
+          </div>
+        )}
+
+        <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
           {/* Welcome */}
           <div>
@@ -457,7 +502,7 @@ export default function DashboardClient({
           </div>
 
           {/* Tier + cellar summary */}
-          <div className="p-5 border" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)', borderTop: `3px solid ${tierColor}` }}>
+          <div className="p-5 border" style={{ background: '#F8F4EF', borderColor: 'rgba(42,24,16,0.12)', borderTop: `3px solid ${tierColor}` }}>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Membership</p>
@@ -588,7 +633,7 @@ export default function DashboardClient({
           {/* Overview section */}
           {section === 'overview' && (
             <div className="space-y-4">
-              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+              <div className="border p-5" style={{ background: '#F8F4EF', borderColor: 'rgba(42,24,16,0.12)' }}>
                 <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.65)' }}>Delivery address</p>
                 {defaultAddress ? (
                   <div className="font-sans text-sm space-y-0.5" style={{ color: '#1C0E09' }}>
@@ -601,7 +646,7 @@ export default function DashboardClient({
                   <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.70)' }}>No address saved yet.</p>
                 )}
                 <button
-                  onClick={() => setSection('address')}
+                  onClick={() => setActiveModal('address')}
                   className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
                   style={{ color: 'rgba(42,24,16,0.70)' }}
                 >
@@ -609,7 +654,7 @@ export default function DashboardClient({
                 </button>
               </div>
 
-              <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+              <div className="border p-5" style={{ background: '#F8F4EF', borderColor: 'rgba(42,24,16,0.12)' }}>
                 <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.65)' }}>Payment cards</p>
                 {primaryCard ? (
                   <CardPill card={primaryCard} label="Primary" />
@@ -618,7 +663,7 @@ export default function DashboardClient({
                 )}
                 {backupCard && <CardPill card={backupCard} label="Backup" />}
                 <button
-                  onClick={() => setSection('card')}
+                  onClick={() => setActiveModal('card')}
                   className="mt-3 font-sans text-xs underline underline-offset-2 transition-colors"
                   style={{ color: 'rgba(42,24,16,0.70)' }}
                 >
@@ -628,15 +673,10 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* Address section */}
+          {/* Address section (tab nav) */}
           {section === 'address' && (
             <form onSubmit={handleAddressSubmit} className="space-y-4">
-              {[
-                { id: 'line1', label: 'Address line 1', value: line1, setter: setLine1, required: true, placeholder: 'House number and street' },
-                { id: 'line2', label: 'Address line 2 (optional)', value: line2, setter: setLine2, required: false, placeholder: 'Flat, apartment, etc.' },
-                { id: 'city', label: 'City', value: city, setter: setCity, required: true, placeholder: '' },
-                { id: 'postcode', label: 'Postcode', value: postcode, setter: setPostcode, required: true, placeholder: 'e.g. DH1 3AA' },
-              ].map(({ id, label, value, setter, required, placeholder }) => (
+              {addressFields.map(({ id, label, value, setter, required, placeholder }) => (
                 <div key={id}>
                   <label htmlFor={id} className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
                     {label}
@@ -670,11 +710,11 @@ export default function DashboardClient({
             </form>
           )}
 
-          {/* Card section */}
+          {/* Card section (tab nav) */}
           {section === 'card' && (
             <div className="space-y-4">
               {(primaryCard || cardSaved) ? (
-                <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                <div className="border p-5" style={{ background: '#F8F4EF', borderColor: 'rgba(42,24,16,0.12)' }}>
                   <p className="font-sans text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(42,24,16,0.45)' }}>Your cards</p>
                   {primaryCard && <CardPill card={primaryCard} label="Primary" />}
                   {backupCard && (
@@ -694,7 +734,7 @@ export default function DashboardClient({
                   )}
                 </div>
               ) : (
-                <div className="border p-5" style={{ background: '#EDE8DF', borderColor: 'rgba(42,24,16,0.12)' }}>
+                <div className="border p-5" style={{ background: '#F8F4EF', borderColor: 'rgba(42,24,16,0.12)' }}>
                   <p className="font-sans text-xs uppercase tracking-wide mb-4" style={{ color: 'rgba(42,24,16,0.45)' }}>Add a payment card</p>
                   <PortalCardForm onSuccess={() => { setCardSaved(true); router.refresh() }} />
                 </div>
