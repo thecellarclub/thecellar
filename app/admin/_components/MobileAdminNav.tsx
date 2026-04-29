@@ -13,11 +13,10 @@ const links = [
   { href: '/admin/texts', label: 'Text history', exact: false },
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
-  { href: '/admin/requests', label: 'Requests', exact: false },
-  { href: '/admin/concierge', label: 'Concierge', exact: false },
+  { href: '/admin/inbox', label: 'Inbox', exact: false },
 ]
 
-export default function MobileAdminNav() {
+export default function MobileAdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -35,7 +34,7 @@ export default function MobileAdminNav() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Open navigation"
-          className="flex items-center justify-center rounded hover:bg-gray-700 transition-colors"
+          className="relative flex items-center justify-center rounded hover:bg-gray-700 transition-colors"
           style={{ minWidth: '44px', minHeight: '44px' }}
         >
           <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
@@ -43,6 +42,11 @@ export default function MobileAdminNav() {
             <line x1="0" y1="8" x2="20" y2="8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             <line x1="0" y1="15" x2="20" y2="15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
+          {inboxCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1 min-w-[14px] h-3.5">
+              {inboxCount > 9 ? '9+' : inboxCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -86,14 +90,19 @@ export default function MobileAdminNav() {
                     key={href}
                     href={href}
                     onClick={() => setOpen(false)}
-                    className={`flex items-center px-3 rounded text-base font-medium transition-colors ${
+                    className={`flex items-center justify-between px-3 rounded text-base font-medium transition-colors ${
                       active
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
                     style={{ minHeight: '44px' }}
                   >
-                    {label}
+                    <span>{label}</span>
+                    {label === 'Inbox' && inboxCount > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1.5 py-0.5 min-w-[18px]">
+                        {inboxCount > 9 ? '9+' : inboxCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}

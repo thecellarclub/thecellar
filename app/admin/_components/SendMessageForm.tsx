@@ -7,11 +7,12 @@ type Customer = { id: string; first_name: string | null; phone: string | null }
 type Props = {
   customers: Customer[]
   initialPhone?: string
+  onSuccess?: (customerFound: boolean) => void
 }
 
 type Selected = { name: string | null; phone: string }
 
-export default function SendMessageForm({ customers, initialPhone }: Props) {
+export default function SendMessageForm({ customers, initialPhone, onSuccess }: Props) {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Selected | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -80,11 +81,18 @@ export default function SendMessageForm({ customers, initialPhone }: Props) {
     setSending(false)
 
     if (res.ok) {
+      const data = await res.json()
       const label = selected.name
         ? `${selected.name} (${selected.phone})`
         : selected.phone
-      setSuccess(`Message sent to ${label}`)
+      const customerFound = data?.customerFound !== false
+      if (customerFound) {
+        setSuccess(`Message sent to ${label}`)
+      } else {
+        setSuccess(`Message sent to ${label}. This number isn't a customer — the reply won't appear in the Inbox.`)
+      }
       setMessage('')
+      onSuccess?.(customerFound)
       successTimer.current = setTimeout(() => setSuccess(null), 5000)
     } else {
       const data = await res.json()

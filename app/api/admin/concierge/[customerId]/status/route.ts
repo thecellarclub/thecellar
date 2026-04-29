@@ -27,5 +27,13 @@ export async function PATCH(
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })
   }
 
+  if (body.status === 'closed') {
+    await sb
+      .from('special_requests')
+      .update({ status: 'resolved' })
+      .eq('customer_id', customerId)
+      .neq('status', 'resolved')
+  }
+
   return NextResponse.json({ ok: true })
 }

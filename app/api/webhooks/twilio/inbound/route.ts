@@ -1110,6 +1110,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           message: body,
           status: 'new',
         })
+        await sb.from('concierge_messages').insert({
+          customer_id: customer.id,
+          direction: 'inbound',
+          message: body,
+          category: 'special_request',
+          context: 'Special request',
+        })
+        if (customer.concierge_status !== 'open') {
+          await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+        }
         const name = customer.first_name ?? customer.phone
         await notifyAdmin(
           `New wine request from ${name}`,
@@ -1258,6 +1268,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const message = (params['Body'] ?? '').trim().slice(8).trim()
       if (message) {
         await sb.from('special_requests').insert({ customer_id: customer.id, message, status: 'new' })
+        await sb.from('concierge_messages').insert({
+          customer_id: customer.id,
+          direction: 'inbound',
+          message,
+          category: 'special_request',
+          context: 'Special request',
+        })
+        if (customer.concierge_status !== 'open') {
+          await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+        }
         const name = customer.first_name ?? customer.phone
         await notifyAdmin(`New wine request from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
         await sendSms(from, `Got it - we will look into it. Daniel will be in touch if we decide to run it as a drop.`)
@@ -1340,6 +1360,60 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const qty = parseInt(body, 10)
     if (!isNaN(qty) && qty > 0 && /^\d+$/.test(body)) {
       return await handlePendingOrder(from, customer, qty, sb)
+    }
+
+    // ── Continuation of any open thread ──────────────────────────────────
+    // If the customer has an open concierge OR open special request thread
+    // and the message didn't match any keyword above, treat it as a
+    // follow-up. Keeps live conversations from being dumped to the menu.
+    const conciergeOpen = customer.concierge_status === 'open'
+
+    let openRequest: { id: string } | null = null
+    if (!conciergeOpen) {
+      const { data: openReqData } = await sb
+        .from('special_requests')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .neq('status', 'resolved')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      openRequest = openReqData ?? null
+    }
+
+    if (conciergeOpen || openRequest) {
+      const rawMessage = (params['Body'] ?? '').trim()
+      const name = customer.first_name ?? customer.phone
+
+      await sb.from('concierge_messages').insert({
+        customer_id: customer.id,
+        direction: 'inbound',
+        message: rawMessage,
+        category: openRequest ? 'request_followup' : 'general',
+        context: openRequest ? `Re: special request` : null,
+      })
+
+      if (openRequest) {
+        await sb
+          .from('special_requests')
+          .update({ status: 'in_progress' })
+          .eq('id', openRequest.id)
+      }
+
+      if (!conciergeOpen) {
+        await sb
+          .from('customers')
+          .update({ concierge_status: 'open' })
+          .eq('id', customer.id)
+      }
+
+      await notifyAdmin(
+        `Inbox follow-up from ${name}`,
+        `Message: ${rawMessage}\nPhone: ${customer.phone}`
+      )
+
+      await sendSms(from, `Got it - Daniel will get back to you.`)
+      return twimlOk()
     }
 
     // ── Anything else → menu ─────────────────────────────────────────────

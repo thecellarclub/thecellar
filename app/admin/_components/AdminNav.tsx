@@ -11,12 +11,10 @@ const links = [
   { href: '/admin/texts', label: 'Offer history', exact: false },
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
-  { href: '/admin/requests', label: 'Requests', exact: false },
-  { href: '/admin/message', label: 'Send message', exact: false },
-  { href: '/admin/concierge', label: 'Concierge', exact: false },
+  { href: '/admin/inbox', label: 'Inbox', exact: false },
 ]
 
-export default function AdminNav() {
+export default function AdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
   const pathname = usePathname()
   return (
     <nav className='flex-1 px-2 py-3 space-y-0.5'>
@@ -29,9 +27,14 @@ export default function AdminNav() {
           <Link
             key={href}
             href={href}
-            className={'flex items-center px-3 py-2 rounded text-sm font-medium transition-colors ' + cls}
+            className={'flex items-center justify-between px-3 py-2 rounded text-sm font-medium transition-colors ' + cls}
           >
-            {label}
+            <span>{label}</span>
+            {label === 'Inbox' && inboxCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1.5 py-0.5 min-w-[18px]">
+                {inboxCount > 9 ? '9+' : inboxCount}
+              </span>
+            )}
           </Link>
         )
       })}
