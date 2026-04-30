@@ -89,7 +89,7 @@ function JoinPageInner() {
     <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
-          Step 1 of 4
+          Step 1 of 3
         </p>
         <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Your mobile number</h2>
       </div>
@@ -99,8 +99,8 @@ function JoinPageInner() {
           <label htmlFor="phone" className="block font-sans text-xs mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(42,24,16,0.55)' }}>
             UK mobile number
           </label>
-          <div className="flex items-stretch border transition-colors" style={{ borderColor: 'rgba(42,24,16,0.18)' }}>
-            <span className="flex items-center px-3 font-sans text-base border-r select-none bg-transparent whitespace-nowrap" style={{ color: 'rgba(42,24,16,0.60)', borderColor: 'rgba(42,24,16,0.18)' }}>
+          <div className="flex items-stretch transition-colors" style={{ border: '1.5px solid rgba(155,27,48,0.38)' }}>
+            <span className="flex items-center px-3 font-sans text-base border-r select-none bg-transparent whitespace-nowrap" style={{ color: 'rgba(42,24,16,0.60)', borderColor: 'rgba(155,27,48,0.25)' }}>
               +44
             </span>
             <input
