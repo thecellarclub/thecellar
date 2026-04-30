@@ -205,7 +205,7 @@ export default function HomePage() {
               <p>Meet Daniel — former sommelier at the 2-Michelin-star Raby Hunt.</p>
               <p>He&apos;ll text you the best wine he&apos;s drinking each week. If you fancy it, reply how many bottles.</p>
               <p>We&apos;ll store everything in our cellar and deliver for free once you&apos;ve filled a case.</p>
-              <p>And you can text Daniel anytime too. Dinner party pairings, present ideas, the lot.</p>
+              <p>You can text Daniel anytime too. Dinner party pairings, present ideas, the lot.</p>
             </div>
 
             <SignupForm buttonText="THIS WEEK'S WINE" />
@@ -239,7 +239,7 @@ export default function HomePage() {
                 style={{ fontSize: 'clamp(1.05rem, 2vw, 1.12rem)', color: TEXT_DARK }}
               >
                 <p>
-                  I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without sounding like a complete tw**, so let&apos;s forget the labels.
+                  I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without sounding like a tw**, so let&apos;s forget the labels.
                 </p>
 
                 <p>

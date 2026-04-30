@@ -198,9 +198,6 @@ export default function DetailsPage() {
                 <span className="text-red-600">*</span>
               </span>
             </label>
-            <p className="font-sans text-xs mt-1 ml-7" style={{ color: 'rgba(42,24,16,0.40)' }}>
-              Required — we sell alcohol and are legally required to verify your age.
-            </p>
           </div>
 
           {/* Marketing consent */}

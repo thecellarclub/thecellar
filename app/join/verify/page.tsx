@@ -60,9 +60,6 @@ export default function VerifyPage() {
   return (
     <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
-        <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
-          Step 1 of 4
-        </p>
         <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Check your messages</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
           Enter the 6-digit code we just sent to your phone.
