@@ -239,7 +239,7 @@ export default function HomePage() {
                 style={{ fontSize: 'clamp(1.05rem, 2vw, 1.12rem)', color: TEXT_DARK }}
               >
                 <p>
-                  I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without coming across like a complete tw**, so let&apos;s forget the labels.
+                  I&apos;ve worked in wine for twenty years — sommelier at the 2-star Raby Hunt, Rockcliffe Hall, all that jazz. I think it&apos;s hard to call yourself a sommelier out loud without sounding like a complete tw**, so let&apos;s forget the labels.
                 </p>
 
                 <p>
