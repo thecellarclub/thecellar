@@ -490,6 +490,27 @@ export default function DashboardClient({
           </div>
         )}
 
+        {/* Address reminder banner — shown when card is on file but no address yet */}
+        {hasCard && !hasAddress && (
+          <div
+            className="border-b px-6 py-4"
+            style={{ background: '#FDF6EE', borderColor: 'rgba(42,24,16,0.12)' }}
+          >
+            <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+              <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.75)' }}>
+                Add your delivery address so we can send your case the moment it&apos;s ready.
+              </p>
+              <button
+                onClick={() => setActiveModal('address')}
+                className="font-sans text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-80"
+                style={{ color: '#9B1B30' }}
+              >
+                Add address &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
           {/* Welcome */}

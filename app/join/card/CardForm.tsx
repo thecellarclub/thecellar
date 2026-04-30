@@ -108,7 +108,7 @@ function CardFormInner() {
         })
       }
 
-      router.push('/join/address')
+      router.push('/join/confirmed')
     } catch {
       setError('Something went wrong. Please try again.')
       setStep('form')
@@ -121,11 +121,11 @@ function CardFormInner() {
     <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
-          Step 3 of 4
+          Step 3 of 3
         </p>
         <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>You&apos;re almost in</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
-          To complete your membership and be ready to order when Daniel texts, we need your card and a delivery address. You&apos;re only charged when you choose to buy.
+          Add your card and you&apos;re done. You&apos;ll only be charged when you reply to one of Daniel&apos;s offers.
         </p>
       </div>
 

@@ -3,48 +3,6 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 
-function WelcomePanel({ firstName }: { firstName: string }) {
-  const router = useRouter()
-  return (
-    <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-14 h-14 mb-5" style={{ border: '1px solid rgba(42,24,16,0.20)' }}>
-          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'rgba(42,24,16,0.50)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-        </div>
-        <h2 className="font-serif text-2xl mb-2" style={{ color: '#1C0E09' }}>
-          Welcome to The Cellar Club, {firstName}.
-        </h2>
-        <p className="font-sans text-sm" style={{ color: 'rgba(42,24,16,0.65)' }}>
-          You&apos;re in. Check your phone — we just sent you a welcome text.
-        </p>
-      </div>
-
-      <p className="font-sans text-sm leading-relaxed mb-6" style={{ color: 'rgba(42,24,16,0.65)' }}>
-        To order when Daniel texts you, you&apos;ll need a card and delivery address on file. It takes about a minute — and once it&apos;s done, buying is as simple as texting back a number.
-      </p>
-
-      <button
-        onClick={() => router.push('/join/card')}
-        className="w-full bg-rio text-cream font-sans font-medium px-4 py-3 transition-opacity hover:opacity-90 mb-3"
-      >
-        Complete my membership &rarr;
-      </button>
-
-      <div className="text-center">
-        <button
-          onClick={() => router.push('/join/confirmed?skipped=1')}
-          className="font-sans text-sm underline"
-          style={{ color: 'rgba(42,24,16,0.35)' }}
-        >
-          I&apos;ll do it later
-        </button>
-      </div>
-    </div>
-  )
-}
-
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -64,8 +22,6 @@ export default function DetailsPage() {
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [welcomed, setWelcomed] = useState(false)
-  const [submittedFirstName, setSubmittedFirstName] = useState('')
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -106,17 +62,12 @@ export default function DetailsPage() {
         return
       }
 
-      setSubmittedFirstName(firstName.trim())
-      setWelcomed(true)
+      router.push('/join/card')
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
-  }
-
-  if (welcomed) {
-    return <WelcomePanel firstName={submittedFirstName} />
   }
 
   const inputClass = 'w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-base'
@@ -129,7 +80,7 @@ export default function DetailsPage() {
     <div className="bg-[#F5EFE6] border p-8" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
       <div className="mb-6">
         <p className="font-serif text-xs uppercase tracking-[0.3em] mb-1" style={{ color: '#9B1B30' }}>
-          Step 2 of 4
+          Step 2 of 3
         </p>
         <h2 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>A few more details</h2>
         <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>

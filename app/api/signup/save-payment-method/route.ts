@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
+import { sendSms } from '@/lib/twilio'
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Persist card + email onto the existing customer row created at Step 2
+    // Persist card + email onto the existing customer row created at Step 1
     const { error: updateError } = await supabase
       .from('customers')
       .update({
@@ -37,19 +38,27 @@ export async function POST(req: NextRequest) {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
 
-    // Persist card_complete step
-    const { error: progressError } = await supabase
-      .from('signup_progress')
-      .upsert(
-        {
-          phone: session.phone,
-          stripe_payment_method_id: paymentMethodId,
-          last_step: 'card_complete',
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'phone' }
-      )
-    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
+    // Send welcome SMS — idempotent: skip if cron already welcomed this customer
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('welcome_sent_at, first_name')
+      .eq('id', session.customerId)
+      .single()
+
+    if (customer && !customer.welcome_sent_at) {
+      try {
+        await sendSms(
+          session.phone!,
+          `Welcome, ${customer.first_name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply how many bottles. I'll store them in the cellar until you fill a case of 12, then deliver free.\n\nGot a question or request? Text me anytime.`
+        )
+        await supabase
+          .from('customers')
+          .update({ welcome_sent_at: new Date().toISOString(), welcome_pending_at: null })
+          .eq('id', session.customerId)
+      } catch (err) {
+        console.error('[save-payment-method] welcome SMS failed', err)
+      }
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

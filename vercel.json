@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/case-nudges",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/welcome-and-card-prompt",
+      "schedule": "0 * * * *"
     }
   ]
 }

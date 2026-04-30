@@ -54,14 +54,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if already a customer
+    // Only block fully signed-up customers (card on file). Partial rows from a
+    // previous abandoned Step 1 should not prevent re-sending a code.
     const { data: existing } = await supabase
       .from('customers')
-      .select('id')
+      .select('stripe_payment_method_id')
       .eq('phone', phone)
       .maybeSingle()
 
-    if (existing) {
+    if (existing?.stripe_payment_method_id) {
       return NextResponse.json(
         { error: 'looks_like_already_signed_up' },
         { status: 409 }
@@ -96,15 +97,6 @@ export async function POST(req: NextRequest) {
     session.phone = phone
     session.phoneVerified = false
     await session.save()
-
-    // Persist phone to signup_progress so we can recover drop-offs
-    const { error: progressError } = await supabase
-      .from('signup_progress')
-      .upsert(
-        { phone, last_step: 'phone', updated_at: new Date().toISOString() },
-        { onConflict: 'phone' }
-      )
-    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

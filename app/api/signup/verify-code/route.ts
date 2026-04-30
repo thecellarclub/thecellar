@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
+import { stripe } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -69,18 +70,41 @@ export async function POST(req: NextRequest) {
       .update({ used: true })
       .eq('id', record.id)
 
-    // Mark phone as verified in session
-    session.phoneVerified = true
-    await session.save()
+    // Create or reuse the customers row — idempotent on phone
+    const { data: existingCustomer } = await supabase
+      .from('customers')
+      .select('id, stripe_customer_id')
+      .eq('phone', session.phone)
+      .maybeSingle()
 
-    // Persist verified step
-    const { error: progressError } = await supabase
-      .from('signup_progress')
-      .upsert(
-        { phone: session.phone, last_step: 'verified', updated_at: new Date().toISOString() },
-        { onConflict: 'phone' }
-      )
-    if (progressError) console.error('[signup_progress] upsert failed:', progressError.message)
+    let customerId: string
+    let stripeCustomerId: string
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id
+      stripeCustomerId = existingCustomer.stripe_customer_id
+    } else {
+      const stripeCustomer = await stripe.customers.create({
+        phone: session.phone,
+        metadata: { signup_source: 'cellar_club_web' },
+      })
+      stripeCustomerId = stripeCustomer.id
+
+      const { data: newCustomer, error: insertError } = await supabase
+        .from('customers')
+        .insert({ phone: session.phone, stripe_customer_id: stripeCustomerId, active: true })
+        .select('id')
+        .single()
+
+      if (insertError) throw insertError
+      customerId = newCustomer.id
+    }
+
+    // Mark phone as verified in session and stash customer IDs
+    session.phoneVerified = true
+    session.customerId = customerId
+    session.stripeCustomerId = stripeCustomerId
+    await session.save()
 
     return NextResponse.json({ ok: true })
   } catch (err) {
