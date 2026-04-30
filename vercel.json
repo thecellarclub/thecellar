@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/welcome-and-card-prompt",
-      "schedule": "0 * * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
