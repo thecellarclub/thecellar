@@ -9,13 +9,14 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
-      color: '#F0E6DC',
+      color: '#1C0E09',
       fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
       fontSize: '16px',
-      '::placeholder': { color: 'rgba(240,230,220,0.3)' },
-      iconColor: '#F0E6DC',
+      '::placeholder': { color: 'rgba(42,24,16,0.35)' },
+      iconColor: '#1C0E09',
+      backgroundColor: '#EDE8DF',
     },
-    invalid: { color: '#f87171', iconColor: '#f87171' },
+    invalid: { color: '#9B1B30', iconColor: '#9B1B30' },
   },
 }
 
@@ -93,8 +94,8 @@ function BillingFormInner({ clientSecret, customerId, billingToken }: BillingFor
 
   if (done) {
     return (
-      <p className="font-sans text-cream/70 text-sm text-center">
-        All done — your card&apos;s saved. You&apos;re all set for when Daniel texts you next.
+      <p className="font-serif text-center" style={{ color: 'rgba(42,24,16,0.70)' }}>
+        All done — you&apos;re all set for when Daniel texts you next.
       </p>
     )
   }
@@ -102,17 +103,28 @@ function BillingFormInner({ clientSecret, customerId, billingToken }: BillingFor
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block font-sans text-xs text-cream/55 mb-1 uppercase tracking-wide">Card details</label>
-        <div className="bg-maroon border border-cream/20 px-4 py-3.5 focus-within:border-cream/50 transition-colors">
+        <label
+          className="block font-sans text-xs mb-1.5 uppercase tracking-wide"
+          style={{ color: 'rgba(42,24,16,0.55)' }}
+        >
+          Card details
+        </label>
+        <div
+          className="px-4 py-3.5 transition-colors"
+          style={{
+            background: '#EDE8DF',
+            border: '1.5px solid rgba(155,27,48,0.38)',
+          }}
+        >
           <CardElement options={CARD_ELEMENT_OPTIONS} />
         </div>
-        <p className="mt-1.5 font-sans text-xs text-cream/30">
+        <p className="mt-1.5 font-sans text-xs" style={{ color: 'rgba(42,24,16,0.38)' }}>
           Secured by Stripe. We never see your full card number.
         </p>
       </div>
 
       {error && (
-        <p className="font-sans text-sm text-red-400">
+        <p className="font-sans text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3">
           {error}
         </p>
       )}
@@ -120,9 +132,10 @@ function BillingFormInner({ clientSecret, customerId, billingToken }: BillingFor
       <button
         type="submit"
         disabled={loading || !stripe}
-        className="w-full bg-rio text-cream font-sans font-medium py-2.5 text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+        className="w-full font-sans font-medium py-3 text-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+        style={{ background: '#9B1B30', color: '#F0E6DC' }}
       >
-        {loading ? 'Updating your card…' : 'Update card'}
+        {loading ? 'Saving your card…' : 'Save card'}
       </button>
     </form>
   )

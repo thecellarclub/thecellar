@@ -5,7 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
 import { generateShortToken } from '@/lib/token'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecellarclub.co.uk'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecellar.club'
 const TOKEN_TTL_DAYS = 7
 
 export async function POST(req: NextRequest) {

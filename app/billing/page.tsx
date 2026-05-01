@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import BillingForm from './BillingForm'
@@ -5,9 +6,8 @@ import BillingForm from './BillingForm'
 /**
  * /billing?token=[token]
  *
- * Customer card update page. Sent via SMS when a payment fails.
- * Validates the billing token (1-hour TTL), creates a fresh SetupIntent,
- * and renders the card update form.
+ * Customer card-add page, reached via the /b/[token] short URL in SMS.
+ * Validates the billing token, creates a fresh SetupIntent, renders the form.
  */
 export default async function BillingPage({
   searchParams,
@@ -46,10 +46,12 @@ export default async function BillingPage({
 
   return (
     <Shell>
-      <h1 className="font-serif text-xl text-cream mb-1">Add your card</h1>
-      <p className="font-sans text-sm text-cream/50 mb-6">
-        Saved securely via Stripe. You&apos;ll only ever be charged when you reply to one of Daniel&apos;s texts.
-      </p>
+      <div className="mb-6">
+        <h1 className="font-serif text-2xl" style={{ color: '#1C0E09' }}>Add your card</h1>
+        <p className="font-sans text-sm mt-1" style={{ color: 'rgba(42,24,16,0.55)' }}>
+          Saved securely via Stripe. You&apos;ll only ever be charged when you reply to one of Daniel&apos;s texts.
+        </p>
+      </div>
       <BillingForm
         clientSecret={setupIntent.client_secret!}
         customerId={customer.id}
@@ -61,27 +63,36 @@ export default async function BillingPage({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-maroon flex flex-col items-center justify-center p-4">
-      {/* Brand mark */}
-      <div className="text-center mb-8">
-        <div className="font-serif text-cream">
-          <span className="block text-xs uppercase tracking-[0.3em] text-cream/60">the</span>
-          <span className="block text-3xl uppercase tracking-[0.08em] leading-none">CELLAR</span>
-          <span className="block text-xs uppercase tracking-[0.3em] text-cream/60">club</span>
-        </div>
+    <main className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: '#EDE8DF' }}>
+      {/* Logo */}
+      <div className="mb-8">
+        <Image
+          src="/logo.png"
+          alt="The Cellar Club"
+          width={880}
+          height={720}
+          priority
+          className="h-auto w-[140px]"
+          style={{ mixBlendMode: 'multiply' }}
+        />
       </div>
-      {/* Content card */}
-      <div className="w-full max-w-md bg-maroon-dark border border-cream/12 p-8">
+
+      {/* Card */}
+      <div
+        className="w-full max-w-md p-8"
+        style={{ background: '#F5EFE6', border: '1px solid rgba(42,24,16,0.12)' }}
+      >
         {children}
       </div>
+
       {/* Footer */}
       <footer className="mt-8 text-center space-y-1">
-        <p className="font-sans text-cream/25 text-xs">CD WINES LTD · Company No. 15796479</p>
-        <p className="font-sans text-cream/25 text-xs">Licensed under the Licensing Act 2003 · Licence No. DCCC/PLA0856</p>
-        <p className="font-sans text-cream/25 text-xs">We do not sell alcohol to anyone under 18. Please drink responsibly.</p>
+        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>CD WINES LTD · Company No. 15796479</p>
+        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>Licensed under the Licensing Act 2003 · Licence No. DCCC/PLA0856</p>
+        <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.32)' }}>We do not sell alcohol to anyone under 18. Please drink responsibly.</p>
         <div className="flex justify-center gap-4 mt-2">
-          <a href="/privacy" className="font-sans text-cream/30 hover:text-cream/60 text-xs underline underline-offset-2">Privacy</a>
-          <a href="/terms" className="font-sans text-cream/30 hover:text-cream/60 text-xs underline underline-offset-2">Terms</a>
+          <a href="/privacy" className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: 'rgba(42,24,16,0.38)' }}>Privacy</a>
+          <a href="/terms" className="font-sans text-xs underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: 'rgba(42,24,16,0.38)' }}>Terms</a>
         </div>
       </footer>
     </main>
@@ -91,7 +102,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 function ErrorPage({ message }: { message: string }) {
   return (
     <Shell>
-      <p className="font-sans text-cream/60 text-sm text-center">{message}</p>
+      <p className="font-sans text-sm text-center" style={{ color: 'rgba(42,24,16,0.55)' }}>{message}</p>
     </Shell>
   )
 }
