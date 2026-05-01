@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
-import { randomUUID } from 'crypto'
+import { generateShortToken } from '@/lib/token'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecellarclub.co.uk'
 const TOKEN_TTL_DAYS = 7
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
       // Customers without a card get a personalised add-card link
       if (!customer.stripe_payment_method_id) {
-        const token = randomUUID()
+        const token = generateShortToken()
         await sb
           .from('customers')
           .update({
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', customer.id)
 
-        message = `${body}\n\nAdd your card here so you're ready to order: ${SITE_URL}/billing?token=${token}`
+        message = `${body}\n\nAdd your card here so you're ready to order: ${SITE_URL}/b/${token}`
       }
 
       await sendSms(customer.phone, message)

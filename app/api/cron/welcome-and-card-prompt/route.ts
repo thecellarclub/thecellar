@@ -63,7 +63,8 @@ export async function GET(req: NextRequest) {
         })
       } else {
         // No card on file — mint a 24-hour billing token and send welcome B
-        const billingToken = crypto.randomUUID()
+        const { generateShortToken } = await import('@/lib/token')
+        const billingToken = generateShortToken()
         const billingTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
         await sb
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
           to: customer.phone,
           from: process.env.TWILIO_PHONE_NUMBER!,
           body: sanitiseGsm7(
-            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. Add a card here so you're ready to buy in one tap when an offer drops: ${appUrl}/billing?token=${billingToken}\n\nOr just reply OFFER any time and I'll send the latest.`
+            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. Add a card here so you're ready to buy in one tap when an offer drops: ${appUrl}/b/${billingToken}\n\nOr just reply OFFER any time and I'll send the latest.`
           ),
         })
       }
