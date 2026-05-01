@@ -94,7 +94,7 @@ function BillingFormInner({ clientSecret, customerId, billingToken }: BillingFor
   if (done) {
     return (
       <p className="font-sans text-cream/70 text-sm text-center">
-        All done — your card&apos;s been updated. Text us again to complete your order.
+        All done — your card&apos;s saved. You&apos;re all set for when Daniel texts you next.
       </p>
     )
   }

@@ -8,6 +8,7 @@ const links = [
   { href: '/admin/customers', label: 'Customers', exact: false },
   { href: '/admin/wines', label: 'Wines', exact: false },
   { href: '/admin/send', label: 'Send offer', exact: false },
+  { href: '/admin/broadcast', label: 'Broadcast', exact: false },
   { href: '/admin/texts', label: 'Offer history', exact: false },
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },

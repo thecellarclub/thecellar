@@ -46,9 +46,9 @@ export default async function BillingPage({
 
   return (
     <Shell>
-      <h1 className="font-serif text-xl text-cream mb-1">Update your card</h1>
+      <h1 className="font-serif text-xl text-cream mb-1">Add your card</h1>
       <p className="font-sans text-sm text-cream/50 mb-6">
-        Enter your new card details below and we&apos;ll retry your payment.
+        Saved securely via Stripe. You&apos;ll only ever be charged when you reply to one of Daniel&apos;s texts.
       </p>
       <BillingForm
         clientSecret={setupIntent.client_secret!}
