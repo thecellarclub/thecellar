@@ -40,8 +40,8 @@ export default async function SmsLogPage() {
       <p className="text-sm text-gray-500 mb-6">All inbound messages · last 500 rows</p>
 
       <SmsLogClientView
-        logs={(logs ?? []) as SmsLogRow[]}
-        failedOrders={(failedOrders ?? []) as FailedOrderRow[]}
+        logs={(logs ?? []) as unknown as SmsLogRow[]}
+        failedOrders={(failedOrders ?? []) as unknown as FailedOrderRow[]}
         summary={summary}
       />
     </div>
