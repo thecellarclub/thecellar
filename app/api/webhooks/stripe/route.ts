@@ -5,6 +5,13 @@ import { createServiceClient } from '@/lib/supabase'
 import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { handlePostCharge } from '@/lib/post-charge'
 import { checkAndApplyTierUpgrade } from '@/lib/tiers'
+import { notifyAdmin } from '@/lib/resend'
+import { generateShortToken } from '@/lib/token'
+import {
+  paymentFailedT0,
+  cardSavedOrderRecap,
+  cardSavedNoOrder,
+} from '@/lib/sms-templates'
 
 /**
  * POST /api/webhooks/stripe
@@ -12,16 +19,13 @@ import { checkAndApplyTierUpgrade } from '@/lib/tiers'
  * Handles async Stripe events. Raw body is read via req.text() — Next.js App Router
  * does not auto-parse bodies, so signature verification works without any config.
  *
- * payment_intent.succeeded     → guard on order_status, update order to 'confirmed',
- *                                 call handlePostCharge (inserts cellar + sends SMS).
- *                                 Stock was already decremented when the pending order
- *                                 was created — do NOT decrement again here.
+ * payment_intent.succeeded       → guard on order_status, update order to 'confirmed',
+ *                                   call handlePostCharge (inserts cellar + sends SMS).
+ * payment_intent.payment_failed  → move order to 'payment_failed' (stock stays reserved),
+ *                                   send paymentFailedT0 SMS, notifyAdmin.
+ * setup_intent.succeeded         → idempotent fallback for tab-close after card save.
  *
- * payment_intent.payment_failed → guard on order_status, update to 'cancelled',
- *                                  release reserved stock, SMS customer with /billing link.
- *
- * Both handlers are idempotent.
- * Unhandled event types → 200 (never error on events we don't care about).
+ * All handlers are idempotent.
  */
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -104,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order } = await sb
       .from('orders')
-      .select('id, customer_id, wine_id, quantity, stripe_charge_status, order_status')
+      .select('id, customer_id, wine_id, quantity, total_pence, stripe_charge_status, order_status')
       .eq('stripe_payment_intent_id', pi.id)
       .maybeSingle()
 
@@ -115,44 +119,127 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    // Update order to cancelled
+    // Move to payment_failed — stock stays reserved for the retry window
+    const now = new Date().toISOString()
     await sb
       .from('orders')
-      .update({ stripe_charge_status: 'failed', order_status: 'cancelled' })
+      .update({
+        stripe_charge_status: 'failed',
+        order_status: 'payment_failed',
+        payment_failed_at: now,
+        payment_failed_attempts: 1,
+        payment_failed_last_message_at: now,
+      })
       .eq('id', order.id)
-
-    // Release reserved stock
-    const { data: wine } = await sb
-      .from('wines')
-      .select('stock_bottles')
-      .eq('id', order.wine_id)
-      .maybeSingle()
-
-    if (wine) {
-      await sb
-        .from('wines')
-        .update({ stock_bottles: wine.stock_bottles + order.quantity })
-        .eq('id', order.wine_id)
-    }
 
     const { data: customer } = await sb
       .from('customers')
-      .select('phone')
+      .select('phone, first_name')
       .eq('id', order.customer_id)
       .maybeSingle()
 
+    const { data: wine } = await sb
+      .from('wines')
+      .select('name')
+      .eq('id', order.wine_id)
+      .maybeSingle()
+
     if (customer?.phone) {
-      const billingToken = crypto.randomUUID()
+      const billingToken = generateShortToken()
       await sb
         .from('customers')
         .update({
           billing_token: billingToken,
-          billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq('id', order.customer_id)
 
       await twilioClient.messages.create({
-        body: sanitiseGsm7(`Card didn't go through on that one. Update your details at ${appUrl}/billing?token=${billingToken} and we'll get it sorted.`),
+        body: sanitiseGsm7(paymentFailedT0(order.quantity, appUrl, billingToken)),
+        from: process.env.TWILIO_PHONE_NUMBER!,
+        to: customer.phone,
+      })
+
+      void notifyAdmin(
+        `Payment failed — ${customer.first_name ?? customer.phone} — ${order.quantity} x ${wine?.name ?? 'wine'}`,
+        `Customer: ${customer.first_name ?? ''} ${customer.phone}\nOrder: ${order.id}\nWine: ${wine?.name ?? ''}\nQty: ${order.quantity}\nTotal: £${(order.total_pence / 100).toFixed(2)}`,
+        'members@thecellar.club'
+      )
+    }
+
+  // ── setup_intent.succeeded ───────────────────────────────────────────────
+  // Fallback for when the browser tab is closed before /api/billing/update-card fires.
+  } else if (event.type === 'setup_intent.succeeded') {
+    const si = event.data.object as Stripe.SetupIntent
+
+    if (!si.customer || !si.payment_method) {
+      return NextResponse.json({ received: true })
+    }
+
+    const stripeCustomerId = typeof si.customer === 'string' ? si.customer : si.customer.id
+    const paymentMethodId = typeof si.payment_method === 'string' ? si.payment_method : si.payment_method.id
+
+    const { data: customer } = await sb
+      .from('customers')
+      .select('id, phone, stripe_payment_method_id')
+      .eq('stripe_customer_id', stripeCustomerId)
+      .maybeSingle()
+
+    if (!customer) {
+      // Orphan setup intent — no customer record found
+      void notifyAdmin(
+        'Orphan setup intent',
+        `setup_intent.succeeded fired but no customer found for stripe_customer_id=${stripeCustomerId}. SetupIntent: ${si.id}`,
+        'members@thecellar.club'
+      )
+      return NextResponse.json({ received: true })
+    }
+
+    // Gate: if update-card already ran (PM already set), skip to avoid double SMS
+    if (customer.stripe_payment_method_id) {
+      return NextResponse.json({ received: true })
+    }
+
+    // Run the same DB updates as /api/billing/update-card
+    await stripe.customers.update(stripeCustomerId, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    })
+
+    await sb
+      .from('customers')
+      .update({
+        stripe_payment_method_id: paymentMethodId,
+        billing_token: null,
+        billing_token_expires_at: null,
+      })
+      .eq('id', customer.id)
+
+    // Get last4 for the recap SMS
+    const pm = await stripe.paymentMethods.retrieve(paymentMethodId)
+    const last4 = pm.card?.last4 ?? '????'
+
+    // Look for a pending or failed order to recap
+    const { data: pendingOrder } = await sb
+      .from('orders')
+      .select('id, quantity, total_pence, wine_id, wines(name)')
+      .eq('customer_id', customer.id)
+      .in('order_status', ['awaiting_confirmation', 'payment_failed'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as { data: { id: string; quantity: number; total_pence: number; wine_id: string; wines: { name: string } | null } | null }
+
+    const smsBody = pendingOrder
+      ? cardSavedOrderRecap(
+          pendingOrder.quantity,
+          pendingOrder.wines?.name ?? 'your wine',
+          (pendingOrder.total_pence / 100).toFixed(2),
+          last4
+        )
+      : cardSavedNoOrder()
+
+    if (customer.phone) {
+      await twilioClient.messages.create({
+        body: sanitiseGsm7(smsBody),
         from: process.env.TWILIO_PHONE_NUMBER!,
         to: customer.phone,
       })

@@ -8,6 +8,14 @@ import { notifyAdmin } from '@/lib/resend'
 import { handlePostCharge } from '@/lib/post-charge'
 import { getRollingSpend, tierFromSpend, deliveryThreshold } from '@/lib/tiers'
 import { normaliseUKPhone } from '@/lib/phone'
+import { generateShortToken } from '@/lib/token'
+import { parseOrderReply } from '@/lib/parse-order-reply'
+import {
+  noCardCardLink,
+  cardSavedOrderRecap,
+  unparseableFallback,
+  paymentFailedT0,
+} from '@/lib/sms-templates'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -58,7 +66,6 @@ interface CellarRow {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
-const MAX_BOTTLES = parseInt(process.env.MAX_BOTTLES_PER_ORDER ?? '12', 10)
 
 /** Send an SMS reply via Twilio REST API (never TwiML <Message>) */
 async function sendSms(to: string, body: string): Promise<void> {
@@ -75,6 +82,32 @@ function twimlOk(): NextResponse {
     status: 200,
     headers: { 'Content-Type': 'text/xml' },
   })
+}
+
+/** Fire-and-forget write to sms_parse_log. Never throws. */
+async function logInbound(params: {
+  sb: ReturnType<typeof createServiceClient>
+  phone: string
+  raw: string
+  customerId?: string | null
+  parseKind: string
+  parseQuantity?: number | null
+  ambiguous?: boolean
+  matchedTextId?: string | null
+}): Promise<void> {
+  try {
+    await params.sb.from('sms_parse_log').insert({
+      customer_id: params.customerId ?? null,
+      inbound_phone: params.phone,
+      raw_message: params.raw,
+      parse_kind: params.parseKind,
+      parse_quantity: params.parseQuantity ?? null,
+      ambiguous: params.ambiguous ?? false,
+      matched_text_id: params.matchedTextId ?? null,
+    })
+  } catch (err) {
+    console.error('[sms_parse_log] insert failed', err)
+  }
 }
 
 /** Format a cellar wine list as "- 2x Wine Name (£X/bottle)" lines */
@@ -643,15 +676,6 @@ async function handlePendingOrder(
     return twimlOk()
   }
 
-  // Cap per-order quantity
-  if (qty > MAX_BOTTLES) {
-    await sendSms(
-      from,
-      `We cap orders at ${MAX_BOTTLES} bottles per text - reply ${MAX_BOTTLES} if you would like the maximum.`
-    )
-    return twimlOk()
-  }
-
   const totalPence = qty * wine.price_pence
 
   // Reserve stock
@@ -660,8 +684,10 @@ async function handlePendingOrder(
     .update({ stock_bottles: wine.stock_bottles - qty })
     .eq('id', wine.id)
 
-  // Create pending order (no Stripe charge yet)
-  const confirmationExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+  // No-card customers get a 24h window so they have time to add a card
+  const confirmationExpiresAt = customer.stripe_payment_method_id
+    ? new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
   const { error: orderErr } = await sb.from('orders').insert({
     customer_id: customer.id,
@@ -687,17 +713,18 @@ async function handlePendingOrder(
     return twimlOk()
   }
 
-  // If the customer has no saved card, send billing link instead of plain YES prompt
+  // If the customer has no saved card, send billing link — no YES instruction yet
   if (!customer.stripe_payment_method_id) {
-    const billingToken = crypto.randomUUID()
+    const billingToken = generateShortToken()
     await sb.from('customers').update({
       billing_token: billingToken,
-      billing_token_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', customer.id)
     await sendSms(
       from,
-      `Got it — ${qty} bottle${qty !== 1 ? 's' : ''} of ${wine.name} (£${(totalPence / 100).toFixed(2)}). We just need a card on file to confirm — add one at ${APP_URL}/billing?token=${billingToken} and reply YES. Expires in 10 minutes.`
+      noCardCardLink(qty, wine.name, (totalPence / 100).toFixed(2), APP_URL, billingToken)
     )
+    void logInbound({ sb, phone: from, raw: String(qty), customerId: customer.id, parseKind: 'quantity', parseQuantity: qty, matchedTextId: textId })
     return twimlOk()
   }
 
@@ -705,6 +732,7 @@ async function handlePendingOrder(
     from,
     `Got it - ${qty} bottle${qty !== 1 ? 's' : ''} of ${wine.name} (£${(totalPence / 100).toFixed(2)}). Reply YES to confirm your order. This offer expires in 10 minutes.`
   )
+  void logInbound({ sb, phone: from, raw: String(qty), customerId: customer.id, parseKind: 'quantity', parseQuantity: qty, matchedTextId: textId })
   return twimlOk()
 }
 
@@ -820,17 +848,15 @@ async function handleYes(
     .eq('id', order.wine_id)
     .maybeSingle()
 
-  // Guard: no PM in DB
+  // Guard: no PM in DB — send billing link (order stays pending, YES gate fires after card save)
   if (!customer.stripe_payment_method_id) {
-    const billingToken = crypto.randomUUID()
+    const billingToken = generateShortToken()
     await sb.from('customers').update({
       billing_token: billingToken,
-      billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', customer.id)
-    await sb.from('orders').update({ order_status: 'cancelled', stripe_charge_status: 'failed' }).eq('id', order.id)
-    const { data: wineForPm } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
-    if (wineForPm) await sb.from('wines').update({ stock_bottles: wineForPm.stock_bottles + order.quantity }).eq('id', order.wine_id)
-    await sendSms(from, `We don't have a payment card on file. Add one at ${APP_URL}/billing?token=${billingToken} then reply YES once done.`)
+    const totalPenceForPm = order.quantity * order.price_pence
+    await sendSms(from, noCardCardLink(order.quantity, wine?.name ?? 'your wine', (totalPenceForPm / 100).toFixed(2), APP_URL, billingToken))
     return twimlOk()
   }
 
@@ -867,28 +893,28 @@ async function handleYes(
         return twimlOk()
       }
 
-      // Card declined
+      // Card declined — move to payment_failed (stock stays reserved for the retry window)
+      const now = new Date().toISOString()
       await sb.from('orders').update({
         stripe_payment_intent_id: pi?.id ?? '',
         stripe_charge_status: 'failed',
-        order_status: 'cancelled',
+        order_status: 'payment_failed',
+        payment_failed_at: now,
+        payment_failed_attempts: 1,
+        payment_failed_last_message_at: now,
       }).eq('id', order.id)
 
-      // Release reserved stock
-      await sb
-        .from('wines')
-        .update({ stock_bottles: (wine?.stock_bottles ?? 0) + order.quantity })
-        .eq('id', order.wine_id)
-
-      const billingToken = crypto.randomUUID()
+      const billingToken = generateShortToken()
       await sb.from('customers').update({
         billing_token: billingToken,
-        billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       }).eq('id', customer.id)
 
-      await sendSms(
-        from,
-        `Your payment didn't go through. Update your card at ${APP_URL}/billing?token=${billingToken} and reply YES again to try.`
+      await sendSms(from, paymentFailedT0(order.quantity, APP_URL, billingToken))
+      void notifyAdmin(
+        `Payment failed — ${customer.first_name ?? customer.phone} — ${order.quantity} x ${wine?.name ?? 'wine'}`,
+        `Customer: ${customer.first_name ?? ''} ${customer.phone}\nOrder: ${order.id}\nWine: ${wine?.name ?? ''}\nQty: ${order.quantity}\nTotal: £${(order.total_pence / 100).toFixed(2)}`,
+        'members@thecellar.club'
       )
       return twimlOk()
     }
@@ -908,18 +934,28 @@ async function handleYes(
       stripeErr?.type === 'invalid_request_error'
 
     if (isInvalidPM) {
-      const billingToken = crypto.randomUUID()
+      const billingToken = generateShortToken()
+      const now = new Date().toISOString()
       await sb.from('customers').update({
         billing_token: billingToken,
-        billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         stripe_payment_method_id: null,
       }).eq('id', customer.id)
 
-      await sb.from('orders').update({ order_status: 'cancelled', stripe_charge_status: 'failed' }).eq('id', order.id)
-      const { data: wine } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
-      if (wine) await sb.from('wines').update({ stock_bottles: wine.stock_bottles + order.quantity }).eq('id', order.wine_id)
+      await sb.from('orders').update({
+        order_status: 'payment_failed',
+        stripe_charge_status: 'failed',
+        payment_failed_at: now,
+        payment_failed_attempts: 1,
+        payment_failed_last_message_at: now,
+      }).eq('id', order.id)
 
-      await sendSms(from, `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} then reply YES once done.`)
+      await sendSms(from, paymentFailedT0(order.quantity, APP_URL, billingToken))
+      void notifyAdmin(
+        `Payment failed — ${customer.first_name ?? customer.phone} — ${order.quantity} x ${wine?.name ?? 'wine'}`,
+        `Customer: ${customer.first_name ?? ''} ${customer.phone}\nOrder: ${order.id}\nQty: ${order.quantity}\nTotal: £${(order.total_pence / 100).toFixed(2)}\nReason: invalid payment method`,
+        'members@thecellar.club'
+      )
       return twimlOk()
     }
 
@@ -1062,7 +1098,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return twimlOk()
   }
   // Trim and lowercase for consistent keyword matching
-  const body = (params['Body'] ?? '').trim().toLowerCase()
+  const rawBody = (params['Body'] ?? '').trim()
+  const body = rawBody.toLowerCase()
 
   const sb = createServiceClient()
 
@@ -1348,18 +1385,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // ── OFFER ─────────────────────────────────────────────────────────────
     if (body === 'offer') {
+      void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:offer' })
       return await handleOffer(from, customer, sb)
     }
 
     // ── YES → charge pending order ────────────────────────────────────────
     if (body === 'yes') {
+      void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:yes' })
       return await handleYes(from, customer, sb)
     }
 
-    // ── POSITIVE INTEGER → pending order ─────────────────────────────────
-    const qty = parseInt(body, 10)
-    if (!isNaN(qty) && qty > 0 && /^\d+$/.test(body)) {
-      return await handlePendingOrder(from, customer, qty, sb)
+    // ── QUANTITY REPLY → pending order ────────────────────────────────────
+    const parseResult = parseOrderReply(rawBody)
+    if (parseResult.kind === 'quantity') {
+      void logInbound({
+        sb, phone: from, raw: rawBody, customerId: customer.id,
+        parseKind: 'quantity', parseQuantity: parseResult.quantity,
+        ambiguous: parseResult.ambiguous ?? false,
+      })
+      return await handlePendingOrder(from, customer, parseResult.quantity, sb)
+    }
+    if (parseResult.kind === 'unparseable') {
+      void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'unparseable' })
+      await sendSms(from, unparseableFallback())
+      return twimlOk()
     }
 
     // ── Continuation of any open thread ──────────────────────────────────

@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
+import { cardSavedOrderRecap, cardSavedNoOrder } from '@/lib/sms-templates'
 
 /**
  * POST /api/billing/update-card
  *
  * Token-based (no auth required). Called by BillingForm after Stripe SetupIntent
  * succeeds. Attaches the new payment method to the Stripe customer, sets it as
- * the default, clears the billing token on the customer row, and sends a
- * confirmation SMS.
+ * the default, clears the billing token on the customer row, and sends either:
+ *   - cardSavedOrderRecap (if a pending/failed order exists) — customer replies YES
+ *   - cardSavedNoOrder (no pending order)
  *
  * Body: { billingToken: string, paymentMethodId: string }
  */
@@ -61,6 +63,10 @@ export async function POST(req: NextRequest) {
     invoice_settings: { default_payment_method: paymentMethodId },
   })
 
+  // Get last4 from the payment method
+  const pm = await stripe.paymentMethods.retrieve(paymentMethodId)
+  const last4 = pm.card?.last4 ?? '????'
+
   // Update Supabase — save new PM, clear billing token
   await sb
     .from('customers')
@@ -71,9 +77,27 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', customer.id)
 
-  // Send confirmation SMS
+  // Look for a pending or failed order to recap
+  const { data: pendingOrder } = await sb
+    .from('orders')
+    .select('id, quantity, price_pence, total_pence, wine_id, wines(name)')
+    .eq('customer_id', customer.id)
+    .in('order_status', ['awaiting_confirmation', 'payment_failed'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle() as { data: { id: string; quantity: number; price_pence: number; total_pence: number; wine_id: string; wines: { name: string } | null } | null }
+
+  const smsBody = pendingOrder
+    ? cardSavedOrderRecap(
+        pendingOrder.quantity,
+        pendingOrder.wines?.name ?? 'your wine',
+        (pendingOrder.total_pence / 100).toFixed(2),
+        last4
+      )
+    : cardSavedNoOrder()
+
   await twilioClient.messages.create({
-    body: sanitiseGsm7(`Card updated - text us again to complete your order.`),
+    body: sanitiseGsm7(smsBody),
     from: process.env.TWILIO_PHONE_NUMBER!,
     to: customer.phone,
   })
