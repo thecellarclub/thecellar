@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response
 
   const body = await req.json()
-  const { name, producer, region, country, vintage, description, price_pounds, stock_bottles } = body
+  const { name, producer, region, country, vintage, description, price_pounds, stock_bottles,
+          image_url, retail_price_pounds, website_description, slug } = body
 
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   if (!price_pounds || isNaN(parseFloat(price_pounds))) {
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
   }
 
   const price_pence = Math.round(parseFloat(price_pounds) * 100)
+  const retail_price_pence = retail_price_pounds && !isNaN(parseFloat(retail_price_pounds))
+    ? Math.round(parseFloat(retail_price_pounds) * 100)
+    : null
 
   const sb = createServiceClient()
   const { data, error } = await sb
@@ -46,6 +50,10 @@ export async function POST(req: NextRequest) {
       price_pence,
       stock_bottles: parseInt(stock_bottles),
       active: true,
+      image_url: image_url?.trim() || null,
+      retail_price_pence,
+      website_description: website_description?.trim() || null,
+      slug: slug?.trim() || null,
     })
     .select('id')
     .single()

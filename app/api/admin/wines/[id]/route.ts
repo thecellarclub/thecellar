@@ -26,6 +26,14 @@ export async function PATCH(
   }
   if (body.stock_bottles !== undefined) updates.stock_bottles = parseInt(body.stock_bottles)
   if (typeof body.active === 'boolean') updates.active = body.active
+  if (body.image_url !== undefined) updates.image_url = body.image_url?.trim() || null
+  if (body.retail_price_pounds !== undefined) {
+    updates.retail_price_pence = body.retail_price_pounds && !isNaN(parseFloat(body.retail_price_pounds))
+      ? Math.round(parseFloat(body.retail_price_pounds) * 100)
+      : null
+  }
+  if (body.website_description !== undefined) updates.website_description = body.website_description?.trim() || null
+  if (body.slug !== undefined) updates.slug = body.slug?.trim() || null
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })

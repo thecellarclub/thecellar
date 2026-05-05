@@ -14,7 +14,7 @@ export default async function WinesPage() {
   const sb = createServiceClient()
   const { data: wines } = await sb
     .from('wines')
-    .select('id, name, producer, region, country, vintage, price_pence, stock_bottles, active')
+    .select('id, name, producer, region, country, vintage, price_pence, stock_bottles, active, slug')
     .order('created_at', { ascending: false })
 
   return (
@@ -31,7 +31,7 @@ export default async function WinesPage() {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              {['Name', 'Region', 'Price', 'Stock', 'Status', ''].map((h) => (
+              {['Name', 'Region', 'Price', 'Stock', 'Status', 'Page', ''].map((h) => (
                 <th key={h} className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200 px-4 py-2 bg-gray-50">{h}</th>
               ))}
             </tr>
@@ -39,7 +39,7 @@ export default async function WinesPage() {
           <tbody>
             {(wines ?? []).length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No wines yet — add one above</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No wines yet — add one above</td>
               </tr>
             ) : (
               (wines ?? []).map((w) => (
@@ -57,6 +57,13 @@ export default async function WinesPage() {
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <ToggleWineActive wineId={w.id} active={w.active} />
+                  </td>
+                  <td className="px-4 py-2.5 border-b border-gray-100">
+                    {w.slug ? (
+                      <Link href={`/wine/${w.slug}`} target="_blank" className="text-xs text-gray-500 hover:text-gray-900 hover:underline">View ↗</Link>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <Link href={`/admin/wines/${w.id}`} className="text-xs text-gray-500 hover:text-gray-900 hover:underline">Edit</Link>

@@ -41,6 +41,10 @@ export default async function WineEditPage({
             description: wine.description ?? '',
             price_pounds: (wine.price_pence / 100).toFixed(2),
             stock_bottles: wine.stock_bottles.toString(),
+            image_url: wine.image_url ?? '',
+            retail_price_pounds: wine.retail_price_pence ? (wine.retail_price_pence / 100).toFixed(2) : '',
+            website_description: wine.website_description ?? '',
+            slug: wine.slug ?? '',
           }}
         />
       </div>

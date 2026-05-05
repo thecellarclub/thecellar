@@ -16,8 +16,22 @@ interface WineFormProps {
     description?: string
     price_pounds?: string
     stock_bottles?: string
+    image_url?: string
+    retail_price_pounds?: string
+    website_description?: string
+    slug?: string
   }
   onClose?: () => void
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFormProps) {
@@ -31,6 +45,10 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
     description: initial.description ?? '',
     price_pounds: initial.price_pounds ?? '',
     stock_bottles: initial.stock_bottles ?? '',
+    image_url: initial.image_url ?? '',
+    retail_price_pounds: initial.retail_price_pounds ?? '',
+    website_description: initial.website_description ?? '',
+    slug: initial.slug ?? '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +56,13 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [field]: e.target.value }))
+  }
+
+  function autoSlug() {
+    if (form.slug) return
+    const base = slugify(form.name)
+    const suffix = form.vintage ? `-${form.vintage}` : ''
+    if (base) setForm((f) => ({ ...f, slug: base + suffix }))
   }
 
   async function submit(e: React.FormEvent) {
@@ -76,7 +101,7 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Name *</label>
-          <input required value={form.name} onChange={set('name')} className={inputCls} />
+          <input required value={form.name} onChange={set('name')} onBlur={autoSlug} className={inputCls} />
         </div>
         <div>
           <label className={labelCls}>Producer</label>
@@ -92,7 +117,7 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
         </div>
         <div>
           <label className={labelCls}>Vintage</label>
-          <input type="number" value={form.vintage} onChange={set('vintage')} className={inputCls} placeholder="e.g. 2022" />
+          <input type="number" value={form.vintage} onChange={set('vintage')} onBlur={autoSlug} className={inputCls} placeholder="e.g. 2022" />
         </div>
         <div>
           <label className={labelCls}>Price (£) *</label>
@@ -132,6 +157,57 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
         />
         <p className="text-xs text-gray-500 mt-1">This is appended to the offer template — total SMS length may vary.</p>
       </div>
+
+      {/* ── Wine page section ─────────────────────────────────────────── */}
+      <div className="pt-3 border-t border-gray-200">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Wine page</p>
+        <div className="space-y-3">
+          <div>
+            <label className={labelCls}>Page URL slug</label>
+            <input
+              value={form.slug}
+              onChange={set('slug')}
+              className={inputCls}
+              placeholder="e.g. chablis-premier-cru-2022"
+            />
+            {form.slug && (
+              <p className="text-xs text-gray-400 mt-1">thecellar.club/wine/{form.slug}</p>
+            )}
+          </div>
+          <div>
+            <label className={labelCls}>Image URL</label>
+            <input
+              value={form.image_url}
+              onChange={set('image_url')}
+              className={inputCls}
+              placeholder="https://..."
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Retail price (£)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.retail_price_pounds}
+              onChange={set('retail_price_pounds')}
+              className={inputCls}
+              placeholder="e.g. 18.99"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Website description (shown on wine page)</label>
+            <textarea
+              value={form.website_description}
+              onChange={set('website_description')}
+              rows={5}
+              className={inputCls}
+              placeholder="Tasting notes, food pairings, producer story..."
+            />
+          </div>
+        </div>
+      </div>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
