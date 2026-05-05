@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
+
+declare global {
+  interface Window { gtag?: (...args: unknown[]) => void }
+}
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -108,6 +112,7 @@ function CardFormInner() {
         })
       }
 
+      window.gtag?.('event', 'conversion', { send_to: 'AW-18128381564/YAaxCM__9qccEPzMpMRD' })
       router.push('/join/confirmed')
     } catch {
       setError('Something went wrong. Please try again.')
