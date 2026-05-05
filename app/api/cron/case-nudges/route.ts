@@ -25,6 +25,25 @@ export async function GET(req: NextRequest) {
   const now = new Date()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
+  // ── Expire stale awaiting_confirmation orders ─────────────────────────────
+  // Covers both broadcast and manual-offer orders whose window has closed but
+  // the customer never interacted again (so handleYes never cleaned them up).
+  let expiredOrderCount = 0
+  const { data: staleOrders } = await sb
+    .from('orders')
+    .select('id, wine_id, quantity')
+    .eq('order_status', 'awaiting_confirmation')
+    .lt('confirmation_expires_at', now.toISOString())
+
+  for (const stale of staleOrders ?? []) {
+    await sb.from('orders').update({ order_status: 'expired' }).eq('id', stale.id)
+    const { data: wine } = await sb.from('wines').select('stock_bottles').eq('id', stale.wine_id).maybeSingle()
+    if (wine) {
+      await sb.from('wines').update({ stock_bottles: wine.stock_bottles + stale.quantity }).eq('id', stale.wine_id)
+    }
+    expiredOrderCount++
+  }
+
   // Fetch all active customers with a running case timer
   const { data: customers } = await sb
     .from('customers')
@@ -219,6 +238,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    expiredOrders: expiredOrderCount,
     processed: (customers ?? []).length,
     nudge1: nudge1Count,
     nudge2: nudge2Count,

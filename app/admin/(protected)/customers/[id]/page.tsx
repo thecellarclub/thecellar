@@ -6,6 +6,7 @@ import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
 import DeactivateButton from '../../../_components/DeactivateButton'
 import RefundButton from '../../../_components/RefundButton'
 import AddBottlesForm from '../../../_components/AddBottlesForm'
+import SendOfferForm from '../../../_components/SendOfferForm'
 import Link from 'next/link'
 
 type WineDetail = {
@@ -116,7 +117,7 @@ export default async function CustomerDetailPage({
       .select('id, quantity, added_at, shipped_at, shipment_id, order_id, wines(name, producer, region, country, vintage, price_pence)')
       .eq('customer_id', id)
       .order('added_at', { ascending: false }),
-    sb.from('wines').select('id, name').eq('active', true).order('name'),
+    sb.from('wines').select('id, name, price_pence, stock_bottles').eq('active', true).order('name'),
     sb
       .from('shipments')
       .select('id, status, tracking_number, tracking_provider, created_at, dispatched_at')
@@ -370,7 +371,18 @@ export default async function CustomerDetailPage({
         </div>
       </div>
 
-      {/* ── Section 4: Admin tools ──────────────────────────────────────────────── */}
+      {/* ── Section 4: Send Offer ───────────────────────────────────────────────── */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Send offer</p>
+        <SendOfferForm
+          customerId={id}
+          customerName={customer.first_name ?? customer.phone}
+          hasCard={!!customer.stripe_payment_method_id}
+          wines={(activeWines ?? []) as { id: string; name: string; price_pence: number; stock_bottles: number }[]}
+        />
+      </div>
+
+      {/* ── Section 5: Admin tools ──────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Admin tools</p>
         <div className="flex items-center gap-4">

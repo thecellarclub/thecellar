@@ -658,13 +658,22 @@ async function handlePendingOrder(
     .maybeSingle()
 
   if (pendingOrder) {
-    const totalPence = pendingOrder.quantity * wine.price_pence
-    await sendSms(
-      from,
-      `You already have a pending order for ${pendingOrder.quantity} bottle${pendingOrder.quantity !== 1 ? 's' : ''} (£${(totalPence / 100).toFixed(2)}). Reply YES to confirm it.`,
-      { trigger: 'offer_reply', customerId: customer.id }
-    )
-    return twimlOk()
+    if (pendingOrder.quantity === qty) {
+      // Same quantity — just re-prompt
+      const totalPence = pendingOrder.quantity * wine.price_pence
+      await sendSms(
+        from,
+        `You have a pending order for ${pendingOrder.quantity} bottle${pendingOrder.quantity !== 1 ? 's' : ''} (£${(totalPence / 100).toFixed(2)}). Reply YES to confirm it, or NO to cancel.`,
+        { trigger: 'offer_reply', customerId: customer.id }
+      )
+      return twimlOk()
+    }
+
+    // Different quantity — cancel the old order and create a fresh one below
+    await sb.from('wines').update({ stock_bottles: wine.stock_bottles + pendingOrder.quantity }).eq('id', wine.id)
+    await sb.from('orders').update({ order_status: 'cancelled' }).eq('id', pendingOrder.id)
+    // Refresh stock count so the new order sees the restored total
+    wine.stock_bottles = wine.stock_bottles + pendingOrder.quantity
   }
 
   // Check for existing confirmed order
@@ -1429,6 +1438,36 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return await handleYes(from, customer, sb)
     }
 
+    // ── NO / CANCEL → cancel pending order ───────────────────────────────
+    if (body === 'no' || body === 'cancel') {
+      void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:no' })
+
+      const { data: latestTextForNo } = await sb
+        .from('texts')
+        .select('id, wine_id, wines(stock_bottles)')
+        .eq('is_active', true)
+        .maybeSingle() as { data: { id: string; wine_id: string; wines: { stock_bottles: number } } | null }
+
+      if (latestTextForNo) {
+        const { data: pendingToCancel } = await sb
+          .from('orders')
+          .select('id, quantity')
+          .eq('customer_id', customer.id)
+          .eq('text_id', latestTextForNo.id)
+          .eq('order_status', 'awaiting_confirmation')
+          .maybeSingle()
+
+        if (pendingToCancel) {
+          await sb.from('wines').update({ stock_bottles: latestTextForNo.wines.stock_bottles + pendingToCancel.quantity }).eq('id', latestTextForNo.wine_id)
+          await sb.from('orders').update({ order_status: 'cancelled' }).eq('id', pendingToCancel.id)
+          await sendSms(from, `No problem — your order's been cancelled. Reply with a number if you change your mind.`, { trigger: 'keyword:no', customerId: customer.id })
+          return twimlOk()
+        }
+      }
+
+      // No pending order to cancel — fall through to quantity parse / menu
+    }
+
     // ── QUANTITY REPLY → pending order ────────────────────────────────────
     const parseResult = parseOrderReply(rawBody)
     if (parseResult.kind === 'quantity') {
@@ -1441,7 +1480,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     if (parseResult.kind === 'unparseable') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'unparseable' })
-      await sendSms(from, unparseableFallback(), { trigger: 'unparseable', customerId: customer.id })
+
+      // Check if there's a pending order so we can hint about cancelling
+      const { data: latestTextForUnparseable } = await sb
+        .from('texts')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle()
+
+      let hasPendingOrder = false
+      if (latestTextForUnparseable) {
+        const { data: pendingCheck } = await sb
+          .from('orders')
+          .select('id')
+          .eq('customer_id', customer.id)
+          .eq('text_id', latestTextForUnparseable.id)
+          .eq('order_status', 'awaiting_confirmation')
+          .maybeSingle()
+        hasPendingOrder = !!pendingCheck
+      }
+
+      const fallbackMsg = hasPendingOrder
+        ? `Didn't catch that. Reply YES to confirm your order, NO to cancel it, or a different number to change the quantity.`
+        : unparseableFallback()
+
+      await sendSms(from, fallbackMsg, { trigger: 'unparseable', customerId: customer.id })
       return twimlOk()
     }
 
