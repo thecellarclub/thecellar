@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import SmsCharCounter from './SmsCharCounter'
 
 type Customer = { id: string; first_name: string | null; phone: string | null }
 
@@ -100,10 +101,6 @@ export default function SendMessageForm({ customers, initialPhone, onSuccess }: 
     }
   }
 
-  const charCount = message.length
-  const overLimit = charCount > 160
-  const nearLimit = charCount > 155
-
   return (
     <div className="space-y-5">
       {/* Search */}
@@ -151,14 +148,14 @@ export default function SendMessageForm({ customers, initialPhone, onSuccess }: 
             </div>
             <button
               onClick={clearSelection}
-              className="text-gray-400 hover:text-gray-600 text-lg leading-none ml-2"
+              className="text-gray-500 hover:text-gray-600 text-lg leading-none ml-2"
               aria-label="Clear selection"
             >
               ×
             </button>
           </div>
         ) : (
-          <div className="border border-dashed border-gray-300 rounded px-3 py-2 text-sm text-gray-400">
+          <div className="border border-dashed border-gray-300 rounded px-3 py-2 text-sm text-gray-500">
             No recipient selected
           </div>
         )}
@@ -168,13 +165,7 @@ export default function SendMessageForm({ customers, initialPhone, onSuccess }: 
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-gray-700">Message</label>
-          <span
-            className={`text-xs font-mono ${
-              overLimit ? 'text-red-600 font-bold' : nearLimit ? 'text-amber-600' : 'text-gray-400'
-            }`}
-          >
-            {charCount} / 160
-          </span>
+          <SmsCharCounter value={message} />
         </div>
         <textarea
           value={message}

@@ -96,7 +96,7 @@ export default async function TextDetailPage({
       <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Message</p>
         <p className="text-sm whitespace-pre-wrap text-gray-900">{text.body}</p>
-        <p className="text-xs text-gray-400 mt-2">{text.body.length} characters</p>
+        <p className="text-xs text-gray-500 mt-2">{text.body.length} characters</p>
       </div>
 
       {/* Orders table */}
@@ -126,7 +126,7 @@ export default async function TextDetailPage({
             <tbody>
               {(orders ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                     No orders for this blast
                   </td>
                 </tr>
@@ -146,7 +146,7 @@ export default async function TextDetailPage({
                         ) : (
                           '—'
                         )}{' '}
-                        <span className="text-gray-400 text-xs">{customer?.phone}</span>
+                        <span className="text-gray-500 text-xs">{customer?.phone}</span>
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{o.quantity}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{penceToGbp(o.total_pence)}</td>

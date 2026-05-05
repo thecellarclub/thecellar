@@ -13,7 +13,7 @@ export default function WineFormPanel() {
         className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
       >
         <span>+ Add new wine</span>
-        <span className="text-gray-400">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-500">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="px-4 pb-4 border-t border-gray-100 pt-4">

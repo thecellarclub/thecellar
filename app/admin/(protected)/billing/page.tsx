@@ -44,7 +44,7 @@ export default async function BillingPage() {
       </div>
 
       {(orders ?? []).length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400">
+        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-500">
           <p className="text-lg mb-1">✓</p>
           <p className="text-sm">No billing issues — all payments are up to date.</p>
         </div>
@@ -89,7 +89,7 @@ export default async function BillingPage() {
                           '—'
                         )}
                         <br />
-                        <span className="text-gray-400 text-xs">{customer?.phone}</span>
+                        <span className="text-gray-500 text-xs">{customer?.phone}</span>
                         {customer?.stripe_customer_id && (
                           <>
                             <br />

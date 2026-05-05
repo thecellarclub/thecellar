@@ -39,7 +39,7 @@ export default function ShipmentActions({
   }
 
   if (status === 'delivered') {
-    return <span className="text-xs text-gray-400">Delivered</span>
+    return <span className="text-xs text-gray-500">Delivered</span>
   }
 
   if (status === 'dispatched') {
@@ -77,7 +77,7 @@ export default function ShipmentActions({
           </button>
           <button
             onClick={() => setShowTrackingInput(false)}
-            className="text-xs text-gray-400 hover:text-gray-600"
+            className="text-xs text-gray-500 hover:text-gray-600"
           >
             Cancel
           </button>

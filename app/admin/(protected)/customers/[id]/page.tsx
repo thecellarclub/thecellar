@@ -163,7 +163,7 @@ export default async function CustomerDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <Link href="/admin/customers" className="text-xs text-gray-400 hover:text-gray-600 mb-2 block">← Customers</Link>
+          <Link href="/admin/customers" className="text-xs text-gray-500 hover:text-gray-600 mb-2 block">← Customers</Link>
           <h1 className="text-xl font-semibold text-gray-900">{customer.first_name ?? 'Unknown'}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{customer.email} · {customer.phone}</p>
         </div>
@@ -206,7 +206,7 @@ export default async function CustomerDetailPage({
           <p className="font-medium">
             {replyRate !== null ? `${replyRate}%` : '—'}
             {offersReceived > 0 && (
-              <span className="text-xs text-gray-400 font-normal ml-1">
+              <span className="text-xs text-gray-500 font-normal ml-1">
                 ({succeededOrders.length}/{offersReceived})
               </span>
             )}
@@ -228,7 +228,7 @@ export default async function CustomerDetailPage({
             </thead>
             <tbody>
               {unshipped.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Cellar empty</td></tr>
+                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-500">Cellar empty</td></tr>
               ) : (
                 unshipped.map((c) => {
                   const wine = c.wines
@@ -242,7 +242,7 @@ export default async function CustomerDetailPage({
                           </p>
                         )}
                         {wine?.price_pence ? (
-                          <p className="text-xs text-gray-400">£{(wine.price_pence / 100).toFixed(0)}/bottle</p>
+                          <p className="text-xs text-gray-500">£{(wine.price_pence / 100).toFixed(0)}/bottle</p>
                         ) : null}
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{c.quantity}</td>
@@ -278,7 +278,7 @@ export default async function CustomerDetailPage({
       <div className="bg-white rounded-lg border border-gray-200">
         <SectionHead title="Shipped" count={shipmentRows.length} />
         {shipmentRows.length === 0 ? (
-          <p className="px-4 py-6 text-center text-gray-400 text-sm">No shipments yet</p>
+          <p className="px-4 py-6 text-center text-gray-500 text-sm">No shipments yet</p>
         ) : (
           <div className="divide-y divide-gray-100">
             {shipmentRows.map((ship) => {
@@ -294,7 +294,7 @@ export default async function CustomerDetailPage({
                         {ship.tracking_provider ? `${ship.tracking_provider} · ` : ''}{ship.tracking_number}
                       </span>
                     ) : (
-                      <span className="text-xs text-gray-400">No tracking</span>
+                      <span className="text-xs text-gray-500">No tracking</span>
                     )}
                     <Link href={`/admin/shipments/${ship.id}`} className="text-xs text-blue-600 hover:underline ml-auto">
                       View shipment →
@@ -306,17 +306,17 @@ export default async function CustomerDetailPage({
                         const wine = c.wines
                         return (
                           <li key={c.id} className="text-sm text-gray-700 flex items-baseline gap-2">
-                            <span className="text-gray-400 text-xs shrink-0">{c.quantity}×</span>
+                            <span className="text-gray-500 text-xs shrink-0">{c.quantity}×</span>
                             <span>{wine?.name ?? '—'}</span>
                             {(wine?.producer || wine?.region || wine?.vintage) && (
-                              <span className="text-xs text-gray-400">{[wine?.producer, wine?.region, wine?.vintage].filter(Boolean).join(' · ')}</span>
+                              <span className="text-xs text-gray-500">{[wine?.producer, wine?.region, wine?.vintage].filter(Boolean).join(' · ')}</span>
                             )}
                           </li>
                         )
                       })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-gray-400 pl-1">No bottle records linked</p>
+                    <p className="text-xs text-gray-500 pl-1">No bottle records linked</p>
                   )}
                 </div>
               )
@@ -339,7 +339,7 @@ export default async function CustomerDetailPage({
             </thead>
             <tbody>
               {orderRows.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No payments</td></tr>
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">No payments</td></tr>
               ) : (
                 orderRows.map((o) => {
                   const wine = o.wines

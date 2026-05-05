@@ -1,4 +1,5 @@
 import twilio from 'twilio'
+import { createServiceClient } from '@/lib/supabase'
 
 export const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
@@ -23,22 +24,41 @@ const GSM7_EXTENDED = new Set('{}\\[~]|€^')
 export function sanitiseGsm7(text: string): string {
   return text
     // Common typographic replacements
-    .replace(/[\u2014\u2013\u2012]/g, '-')   // em dash, en dash, figure dash -> hyphen
-    .replace(/[\u2018\u2019]/g, "'")          // curly single quotes -> apostrophe
-    .replace(/[\u201C\u201D]/g, '"')          // curly double quotes -> straight quote
-    .replace(/\u00B7|\u2022|\u2027/g, '.')   // middle dot, bullet -> full stop
-    .replace(/\u2026/g, '...')               // ellipsis -> three dots
-    .replace(/\u00A0/g, ' ')                 // non-breaking space -> space
+    .replace(/[—–‒]/g, '-')   // em dash, en dash, figure dash -> hyphen
+    .replace(/[‘’]/g, "'")          // curly single quotes -> apostrophe
+    .replace(/[“”]/g, '"')          // curly double quotes -> straight quote
+    .replace(/·|•|‧/g, '.')   // middle dot, bullet -> full stop
+    .replace(/…/g, '...')               // ellipsis -> three dots
+    .replace(/ /g, ' ')                 // non-breaking space -> space
     // Strip any remaining non-GSM-7 characters
     .split('')
     .filter(ch => GSM7_BASIC.has(ch) || GSM7_EXTENDED.has(ch))
     .join('')
 }
 
-export async function sendSms(to: string, body: string) {
-  return twilioClient.messages.create({
+export async function sendSms(
+  to: string,
+  body: string,
+  opts?: { trigger?: string; customerId?: string }
+): Promise<void> {
+  const sanitized = sanitiseGsm7(body)
+  const msg = await twilioClient.messages.create({
     to,
     from: process.env.TWILIO_PHONE_NUMBER!,
-    body: sanitiseGsm7(body),
+    body: sanitized,
   })
+  // Fire-and-forget log — never throws
+  try {
+    const sb = createServiceClient()
+    await sb.from('sms_messages').insert({
+      phone: to,
+      direction: 'outbound',
+      body: sanitized,
+      customer_id: opts?.customerId ?? null,
+      twilio_sid: msg.sid,
+      trigger: opts?.trigger ?? null,
+    })
+  } catch (err) {
+    console.error('[sms_messages] outbound log failed', err)
+  }
 }

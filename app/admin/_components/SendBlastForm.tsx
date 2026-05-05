@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import SmsCharCounter from './SmsCharCounter'
 
 interface Wine {
   id: string
@@ -41,10 +42,6 @@ export default function SendBlastForm({
     const wine = wines.find((w) => w.id === id)
     if (wine) setBody(buildTemplate(wine))
   }
-
-  const charCount = body.length
-  const overLimit = charCount > 160
-  const nearLimit = charCount > 155
 
   async function confirmSend() {
     setSending(true)
@@ -92,15 +89,7 @@ export default function SendBlastForm({
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-gray-700">Message</label>
-          <span
-            className={`text-xs font-mono ${
-              overLimit ? 'text-red-600 font-bold' : nearLimit ? 'text-amber-600' : 'text-gray-400'
-            }`}
-          >
-            {charCount} / 160
-            {overLimit && ' — over 1 SMS segment!'}
-            {nearLimit && !overLimit && ' — near limit'}
-          </span>
+          <SmsCharCounter value={body} />
         </div>
         <textarea
           value={body}

@@ -168,7 +168,7 @@ function MobileThreadDetail({
         </button>
         <div className="flex-1 min-w-0 pl-1">
           <p className="font-semibold text-sm leading-tight truncate">{thread.firstName ?? 'Unknown'}</p>
-          <p className="text-xs text-gray-400 truncate">{thread.phone ?? '---'}</p>
+          <p className="text-xs text-gray-500 truncate">{thread.phone ?? '---'}</p>
         </div>
         <div className="pr-2">
           <CloseButton customerId={thread.customerId} status={thread.status} onToggle={onStatusChange} />
@@ -189,8 +189,8 @@ function MobileThreadDetail({
                   <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mb-1.5">Purchase query</span>
                 )}
                 <p className="text-sm leading-relaxed">{msg.message}</p>
-                {msg.context && <p className="text-xs text-gray-400 mt-1 italic">{msg.context}</p>}
-                <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-400'}`}>{timeAgo(msg.created_at)}</p>
+                {msg.context && <p className="text-xs text-gray-500 mt-1 italic">{msg.context}</p>}
+                <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-500'}`}>{timeAgo(msg.created_at)}</p>
               </div>
             </div>
           )
@@ -218,7 +218,7 @@ function MobileThreadList({
   const hiddenCount = threads.filter((t) => t.status === 'closed').length
 
   if (threads.length === 0) {
-    return <div className="p-8 text-center text-gray-400 text-sm">No concierge messages yet</div>
+    return <div className="p-8 text-center text-gray-500 text-sm">No concierge messages yet</div>
   }
 
   return (
@@ -249,9 +249,9 @@ function MobileThreadList({
               <div className="flex items-baseline justify-between gap-2 mb-0.5">
                 <p className={`text-sm truncate ${unanswered ? 'font-bold text-gray-900' : 'font-medium text-gray-800'}`}>
                   {thread.firstName ?? thread.phone ?? 'Unknown'}
-                  {closed && <span className="ml-1.5 text-xs font-normal text-gray-400">(closed)</span>}
+                  {closed && <span className="ml-1.5 text-xs font-normal text-gray-500">(closed)</span>}
                 </p>
-                {lastMsg && <span className="text-xs text-gray-400 shrink-0">{timeAgo(lastMsg.created_at)}</span>}
+                {lastMsg && <span className="text-xs text-gray-500 shrink-0">{timeAgo(lastMsg.created_at)}</span>}
               </div>
               {lastMsg && (
                 <p className="text-xs text-gray-500 truncate leading-relaxed">
@@ -262,14 +262,14 @@ function MobileThreadList({
                 <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mt-1">Purchase query</span>
               )}
             </div>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-gray-400" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-gray-500" aria-hidden="true">
               <path d="M5 3 L9 7 L5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         )
       })}
       {!showClosed && hiddenCount > 0 && (
-        <div className="px-4 py-3 text-xs text-gray-400 text-center">
+        <div className="px-4 py-3 text-xs text-gray-500 text-center">
           {hiddenCount} closed thread{hiddenCount !== 1 ? 's' : ''} hidden
         </div>
       )}
@@ -400,7 +400,7 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
 
           <div className="overflow-y-auto flex-1">
             {desktopVisible.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 text-sm">No open threads</div>
+              <div className="p-8 text-center text-gray-500 text-sm">No open threads</div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {desktopVisible.map((thread) => {
@@ -430,7 +430,7 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
                           <p className={`text-sm truncate ${unanswered ? 'font-bold text-gray-900' : 'font-medium text-gray-800'}`}>
                             {thread.firstName ?? thread.phone ?? 'Unknown'}
                           </p>
-                          {lastMsg && <span className="text-xs text-gray-400 shrink-0">{timeAgo(lastMsg.created_at)}</span>}
+                          {lastMsg && <span className="text-xs text-gray-500 shrink-0">{timeAgo(lastMsg.created_at)}</span>}
                         </div>
                         {lastMsg && (
                           <p className="text-xs text-gray-500 truncate">
@@ -449,7 +449,7 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
               </div>
             )}
             {!showClosed && hiddenCount > 0 && (
-              <p className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100 text-center">
+              <p className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 text-center">
                 {hiddenCount} closed hidden
               </p>
             )}
@@ -498,7 +498,7 @@ export default function ConciergeClientView({ threads: initialThreads }: { threa
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
               Select a conversation to view messages
             </div>
           )}

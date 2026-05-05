@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import SmsCharCounter from './SmsCharCounter'
 
 interface Props {
   withCard: number
@@ -16,9 +17,6 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
   const [error, setError] = useState<string | null>(null)
 
   const total = withCard + withoutCard
-  const charCount = body.length
-  const overLimit = charCount > 160
-  const nearLimit = charCount > 140
 
   async function confirmSend() {
     setSending(true)
@@ -80,15 +78,7 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-gray-700">Message</label>
-          <span
-            className={`text-xs font-mono ${
-              overLimit ? 'text-red-600 font-bold' : nearLimit ? 'text-amber-600' : 'text-gray-400'
-            }`}
-          >
-            {charCount} chars
-            {overLimit && ' — will send as 2 SMS segments'}
-            {nearLimit && !overLimit && ' — near 1 segment limit'}
-          </span>
+          <SmsCharCounter value={body} />
         </div>
         <textarea
           value={body}

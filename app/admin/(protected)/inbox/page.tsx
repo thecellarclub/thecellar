@@ -109,7 +109,7 @@ export default async function InboxPage() {
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <h1 className="text-xl font-semibold text-gray-900 mb-1">
         Inbox{' '}
-        <span className="text-gray-400 font-normal text-base">
+        <span className="text-gray-500 font-normal text-base">
           ({threads.length} conversation{threads.length !== 1 ? 's' : ''})
         </span>
       </h1>

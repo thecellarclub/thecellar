@@ -71,7 +71,7 @@ export default async function ShipmentsPage() {
             <tbody>
               {(shipments ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                     No shipments yet
                   </td>
                 </tr>
@@ -116,10 +116,10 @@ export default async function ShipmentsPage() {
                       <td className="px-4 py-3 border-b border-gray-100">
                         <StatusBadge status={s.status} />
                         {s.dispatched_at && (
-                          <p className="text-xs text-gray-400 mt-1">Sent {formatDate(s.dispatched_at)}</p>
+                          <p className="text-xs text-gray-500 mt-1">Sent {formatDate(s.dispatched_at)}</p>
                         )}
                         {s.delivered_at && (
-                          <p className="text-xs text-gray-400 mt-1">Delivered {formatDate(s.delivered_at)}</p>
+                          <p className="text-xs text-gray-500 mt-1">Delivered {formatDate(s.delivered_at)}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600 font-mono">

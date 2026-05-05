@@ -46,7 +46,7 @@ export default async function TextsPage() {
             <tbody>
               {(texts ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                     No texts sent yet
                   </td>
                 </tr>

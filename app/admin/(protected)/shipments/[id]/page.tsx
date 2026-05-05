@@ -64,7 +64,7 @@ export default async function ShipmentDetailPage({
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <Link href="/admin/shipments" className="text-xs text-gray-400 hover:text-gray-600 mb-2 block">← Shipments</Link>
+        <Link href="/admin/shipments" className="text-xs text-gray-500 hover:text-gray-600 mb-2 block">← Shipments</Link>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold text-gray-900">Shipment</h1>
           <StatusBadge status={shipment.status} />
@@ -165,7 +165,7 @@ export default async function ShipmentDetailPage({
             <tbody>
               {(cellarRows ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
                     No cellar rows linked to this shipment
                   </td>
                 </tr>

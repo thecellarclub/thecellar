@@ -20,7 +20,7 @@ export default async function WinesPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <h1 className="text-xl font-semibold text-gray-900">
-        Wine library <span className="text-gray-400 font-normal text-base">({wines?.length ?? 0})</span>
+        Wine library <span className="text-gray-500 font-normal text-base">({wines?.length ?? 0})</span>
       </h1>
 
       {/* Add wine form */}
@@ -39,14 +39,14 @@ export default async function WinesPage() {
           <tbody>
             {(wines ?? []).length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">No wines yet — add one above</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No wines yet — add one above</td>
               </tr>
             ) : (
               (wines ?? []).map((w) => (
                 <tr key={w.id} className={`hover:bg-gray-50 ${!w.active ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-2.5 border-b border-gray-100 font-medium">
                     {w.name}
-                    {w.vintage && <span className="text-gray-400 text-xs ml-1">{w.vintage}</span>}
+                    {w.vintage && <span className="text-gray-500 text-xs ml-1">{w.vintage}</span>}
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600">
                     {[w.region, w.country].filter(Boolean).join(', ') || '—'}

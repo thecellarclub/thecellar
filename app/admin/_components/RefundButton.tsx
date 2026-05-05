@@ -87,7 +87,7 @@ export default function RefundButton({ cellarId, customerId, maxQuantity, wineNa
         className="w-16 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-400"
         disabled={loading}
       />
-      <span className="text-xs text-gray-400">/ {maxQuantity}</span>
+      <span className="text-xs text-gray-500">/ {maxQuantity}</span>
       <button
         onClick={handleRefund}
         disabled={loading}

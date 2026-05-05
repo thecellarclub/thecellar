@@ -49,7 +49,7 @@ export default function AddBottlesForm({ customerId, wines }: Props) {
   }
 
   if (wines.length === 0) {
-    return <p className="text-sm text-gray-400 px-4 py-3">No active wines available to add.</p>
+    return <p className="text-sm text-gray-500 px-4 py-3">No active wines available to add.</p>
   }
 
   return (

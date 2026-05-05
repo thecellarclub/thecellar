@@ -82,7 +82,7 @@ export default function RequestsMobileCard({ request }: { request: MobileRequest
           >
             {request.status.replace('_', ' ')}
           </span>
-          <span className="text-xs text-gray-400">{timeAgo(request.created_at)}</span>
+          <span className="text-xs text-gray-500">{timeAgo(request.created_at)}</span>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function RequestsMobileCard({ request }: { request: MobileRequest
         {isLong && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="text-xs text-gray-400 underline mt-1 hover:text-gray-600 transition-colors"
+            className="text-xs text-gray-500 underline mt-1 hover:text-gray-600 transition-colors"
           >
             {expanded ? 'Show less' : 'Show more'}
           </button>

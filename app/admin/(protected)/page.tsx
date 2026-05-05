@@ -65,7 +65,7 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((s) => (
           <div key={s.label} className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{s.label}</p>
+            <p className="text-xs text-gray-700 uppercase tracking-wide font-medium">{s.label}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1 truncate">{s.value}</p>
           </div>
         ))}
@@ -91,7 +91,7 @@ export default async function AdminDashboard() {
             <tbody>
               {(recentOrders ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">No orders yet</td>
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500 text-sm">No orders yet</td>
                 </tr>
               ) : (
                 (recentOrders ?? []).map((o) => {
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
                   return (
                     <tr key={o.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2.5 border-b border-gray-100">
-                        {customer?.first_name ?? '—'} <span className="text-gray-400 text-xs">{customer?.phone}</span>
+                        {customer?.first_name ?? '—'} <span className="text-gray-500 text-xs">{customer?.phone}</span>
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{wine?.name ?? '—'}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{o.quantity}</td>

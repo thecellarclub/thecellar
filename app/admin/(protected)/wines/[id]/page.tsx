@@ -26,7 +26,7 @@ export default async function WineEditPage({
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <Link href="/admin/wines" className="text-xs text-gray-400 hover:text-gray-600 mb-4 block">← Wine library</Link>
+      <Link href="/admin/wines" className="text-xs text-gray-500 hover:text-gray-600 mb-4 block">← Wine library</Link>
       <h1 className="text-xl font-semibold text-gray-900 mb-6">Edit: {wine.name}</h1>
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <WineForm

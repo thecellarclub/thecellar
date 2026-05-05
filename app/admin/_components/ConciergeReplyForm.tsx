@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import SmsCharCounter from './SmsCharCounter'
 
 export default function ConciergeReplyForm({ customerId }: { customerId: string }) {
   const router = useRouter()
@@ -42,15 +43,18 @@ export default function ConciergeReplyForm({ customerId }: { customerId: string 
         rows={2}
         className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
       />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSend}
-          disabled={loading || !message.trim()}
-          className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50"
-        >
-          {loading ? 'Sending…' : 'Send SMS'}
-        </button>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSend}
+            disabled={loading || !message.trim()}
+            className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+          >
+            {loading ? 'Sending…' : 'Send SMS'}
+          </button>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+        </div>
+        <SmsCharCounter value={message} />
       </div>
     </div>
   )

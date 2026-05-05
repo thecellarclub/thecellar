@@ -27,7 +27,7 @@ export default async function CustomersPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-xl font-semibold text-gray-900 mb-6">
-        Customers <span className="text-gray-400 font-normal text-base">({customers?.length ?? 0})</span>
+        Customers <span className="text-gray-500 font-normal text-base">({customers?.length ?? 0})</span>
       </h1>
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
@@ -44,7 +44,7 @@ export default async function CustomersPage() {
           <tbody>
             {(customers ?? []).length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">No customers yet</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No customers yet</td>
               </tr>
             ) : (
               (customers ?? []).map((c) => (
@@ -58,7 +58,7 @@ export default async function CustomersPage() {
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600">{c.email}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <span className="font-medium">{totalsMap.get(c.id) ?? 0}</span>
-                    <span className="text-gray-400 text-xs ml-1">bottles</span>
+                    <span className="text-gray-500 text-xs ml-1">bottles</span>
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs">{formatDate(c.subscribed_at)}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">

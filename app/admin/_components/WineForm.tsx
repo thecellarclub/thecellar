@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import SmsCharCounter from './SmsCharCounter'
 
 interface WineFormProps {
   mode: 'add' | 'edit'
@@ -119,13 +120,17 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
         </div>
       </div>
       <div>
-        <label className={labelCls}>Description (used in SMS)</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelCls}>Description (used in SMS)</label>
+          <SmsCharCounter value={form.description} />
+        </div>
         <textarea
           value={form.description}
           onChange={set('description')}
           rows={3}
           className={inputCls}
         />
+        <p className="text-xs text-gray-500 mt-1">This is appended to the offer template — total SMS length may vary.</p>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-2">
