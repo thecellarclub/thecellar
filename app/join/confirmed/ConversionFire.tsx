@@ -10,7 +10,7 @@ declare global {
 export default function ConversionFire() {
   useEffect(() => {
     window.gtag?.('event', 'conversion', {
-      send_to: 'AW-17764225252/SoKhCIivrZ4cEOSh0pZC',
+      send_to: 'AW-18128381564/SoKhCIivrZ4cEOSh0pZC',
     })
   }, [])
   return null

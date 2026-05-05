@@ -64,7 +64,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <Script
-        src="https://www.googletagmanager.com/gtag/js?id=AW-17764225252"
+        src="https://www.googletagmanager.com/gtag/js?id=AW-18128381564"
         strategy="afterInteractive"
       />
       <Script id="google-ads-init" strategy="afterInteractive">
@@ -72,7 +72,7 @@ export default function RootLayout({
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'AW-17764225252');
+          gtag('config', 'AW-18128381564');
         `}
       </Script>
       <body className={`${cormorant.variable} ${spectral.variable} font-sans antialiased bg-maroon text-cream`}>
