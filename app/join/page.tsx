@@ -54,7 +54,7 @@ function JoinPageInner() {
       }
 
       window.gtag?.('event', 'conversion', {
-        send_to: 'AW-18128381564/SoKhCIivrZ4cEOSh0pZC',
+        send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD',
       })
       router.push('/join/verify')
     } catch {
