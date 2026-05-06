@@ -34,6 +34,8 @@ type OrderRow = {
   price_pence: number
   total_pence: number
   stripe_charge_status: string
+  order_status: string
+  confirmation_expires_at: string | null
   created_at: string
   wine_id: string
   wines: { name: string } | null
@@ -109,7 +111,7 @@ export default async function CustomerDetailPage({
     sb.from('customers').select('*').eq('id', id).maybeSingle(),
     sb
       .from('orders')
-      .select('id, quantity, price_pence, total_pence, stripe_charge_status, created_at, wine_id, wines(name)')
+      .select('id, quantity, price_pence, total_pence, stripe_charge_status, order_status, confirmation_expires_at, created_at, wine_id, wines(name)')
       .eq('customer_id', id)
       .order('created_at', { ascending: false }),
     sb
@@ -345,12 +347,17 @@ export default async function CustomerDetailPage({
                 orderRows.map((o) => {
                   const wine = o.wines
                   const cellarEntry = cellarByOrderId.get(o.id)
+                  const isStaleAwaitingConfirmation =
+                    o.order_status === 'awaiting_confirmation' &&
+                    o.confirmation_expires_at !== null &&
+                    new Date() > new Date(o.confirmation_expires_at)
+                  const displayStatus = isStaleAwaitingConfirmation ? 'expired' : o.stripe_charge_status
                   return (
                     <tr key={o.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-900">{wine?.name ?? '—'}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{o.quantity}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{penceToGbp(o.total_pence)}</td>
-                      <td className="px-4 py-2.5 border-b border-gray-100"><StatusBadge status={o.stripe_charge_status} /></td>
+                      <td className="px-4 py-2.5 border-b border-gray-100"><StatusBadge status={displayStatus} /></td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">{formatDateTime(o.created_at)}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">
                         {o.stripe_charge_status === 'succeeded' && cellarEntry && (

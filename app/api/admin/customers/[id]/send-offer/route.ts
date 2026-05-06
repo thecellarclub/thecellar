@@ -75,9 +75,7 @@ export async function POST(
     .eq('id', wine.id)
 
   const hasCard = !!customer.stripe_payment_method_id
-  const expiresAt = hasCard
-    ? new Date(Date.now() + 10 * 60 * 1000).toISOString()
-    : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
   const { data: order, error: orderErr } = await sb
     .from('orders')
@@ -103,18 +101,20 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
   }
 
+  await sb.from('customers').update({ sms_awaiting: 'offer' }).eq('id', customer.id)
+
   const totalStr = `£${(totalPence / 100).toFixed(2)}`
   let smsBody: string
 
   if (hasCard) {
-    smsBody = `I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Reply YES to confirm.`
+    smsBody = `Daniel here - I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Reply YES to confirm.`
   } else {
     const billingToken = generateShortToken()
     await sb.from('customers').update({
       billing_token: billingToken,
       billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', id)
-    smsBody = `I've set aside ${quantity} x ${wine.name} for you (${totalStr}). First please add your card at ${APP_URL}/b/${billingToken}`
+    smsBody = `Daniel here - I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Add your card at ${APP_URL}/b/${billingToken} then reply YES to confirm.`
   }
 
   await sendSms(customer.phone, smsBody, { trigger: 'admin_manual_offer', customerId: customer.id })

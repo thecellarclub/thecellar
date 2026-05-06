@@ -715,7 +715,7 @@ async function handlePendingOrder(
 
   // No-card customers get a 24h window so they have time to add a card
   const confirmationExpiresAt = customer.stripe_payment_method_id
-    ? new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    ? new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
     : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
   const { error: orderErr } = await sb.from('orders').insert({
@@ -835,7 +835,7 @@ async function handleYes(
   // ── Find the most recent pending order for this customer ──────────────────
   const { data: order } = await sb
     .from('orders')
-    .select('id, wine_id, quantity, price_pence, total_pence, confirmation_expires_at, auth_token')
+    .select('id, wine_id, quantity, price_pence, total_pence, confirmation_expires_at, auth_token, text_id')
     .eq('customer_id', customer.id)
     .eq('order_status', 'awaiting_confirmation')
     .order('created_at', { ascending: false })
@@ -850,7 +850,7 @@ async function handleYes(
   // Check expiry
   if (new Date() > new Date(order.confirmation_expires_at)) {
     // Release reserved stock
-    const { data: wine } = await sb
+    const { data: expiredWineStock } = await sb
       .from('wines')
       .select('stock_bottles')
       .eq('id', order.wine_id)
@@ -858,7 +858,7 @@ async function handleYes(
 
     await sb
       .from('wines')
-      .update({ stock_bottles: (wine?.stock_bottles ?? 0) + order.quantity })
+      .update({ stock_bottles: (expiredWineStock?.stock_bottles ?? 0) + order.quantity })
       .eq('id', order.wine_id)
 
     await sb
@@ -866,7 +866,33 @@ async function handleYes(
       .update({ order_status: 'expired' })
       .eq('id', order.id)
 
-    await sendSms(from, `Sorry, your order expired. Reply with a number to place a new one.`, { trigger: 'keyword:yes', customerId: customer.id })
+    if (!order.text_id) {
+      // Manual offer expired — don't tell them to "reply with a number"
+      await sendSms(from, `Sorry, that offer has expired. I'll follow up with a new one shortly.`, { trigger: 'keyword:yes', customerId: customer.id })
+
+      const { data: expiredWine } = await sb.from('wines').select('name').eq('id', order.wine_id).maybeSingle()
+      const name = customer.first_name ?? customer.phone
+      const wineName = expiredWine?.name ?? 'unknown wine'
+
+      await sb.from('concierge_messages').insert({
+        customer_id: customer.id,
+        direction: 'inbound',
+        message: `Tried to confirm expired manual offer (${order.quantity} x ${wineName})`,
+        category: 'purchase_query',
+        context: `Expired manual offer: ${wineName}`,
+      })
+
+      if (customer.concierge_status === 'closed') {
+        await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+      }
+
+      void notifyAdmin(
+        `Expired manual offer - ${name}`,
+        `${name} replied YES to a manual offer that has expired.\n\nWine: ${order.quantity} x ${wineName}\nPhone: ${customer.phone}\n\nRe-send via the customer page if still available.`
+      )
+    } else {
+      await sendSms(from, `Sorry, your order expired. Reply with a number to place a new one.`, { trigger: 'keyword:yes', customerId: customer.id })
+    }
     return twimlOk()
   }
 
@@ -1166,6 +1192,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       // If awaiting offer and customer replies with a parseable quantity, skip straight to order
       if (customer.sms_awaiting === 'offer') {
+        if (body === 'yes') {
+          await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
+          return await handleYes(from, customer, sb)
+        }
+
         const parseResult = parseOrderReply(rawBody)
         if (parseResult.kind === 'quantity') {
           await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
