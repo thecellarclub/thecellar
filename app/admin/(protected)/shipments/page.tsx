@@ -28,7 +28,7 @@ export default async function ShipmentsPage() {
 
   const { data: shipments, error: shipmentsError } = await sb
     .from('shipments')
-    .select('id, status, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
+    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
     .order('created_at', { ascending: false })
 
   if (shipmentsError) {
@@ -111,9 +111,14 @@ export default async function ShipmentsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-gray-600 text-xs">
-                        {addressParts.length > 0 ? addressParts.join(', ') : '—'}
+                        {(s as unknown as { type?: string }).type === 'collection'
+                          ? '—'
+                          : addressParts.length > 0 ? addressParts.join(', ') : '—'}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">
+                        {(s as unknown as { type?: string }).type === 'collection' && (
+                          <span className="text-xs font-medium text-gray-700 block mb-1">Collected in person</span>
+                        )}
                         <StatusBadge status={s.status} />
                         {s.dispatched_at && (
                           <p className="text-xs text-gray-500 mt-1">Sent {formatDate(s.dispatched_at)}</p>

@@ -19,9 +19,9 @@ interface Props {
 
 function buildPreview(qty: number, wineName: string, totalStr: string, hasCard: boolean): string {
   if (hasCard) {
-    return `Daniel here - I've set aside ${qty} x ${wineName} for you (${totalStr}). Reply YES to confirm.`
+    return `I've set aside ${qty} x ${wineName} for you (${totalStr}). Reply YES to confirm.`
   }
-  return `Daniel here - I've set aside ${qty} x ${wineName} for you (${totalStr}). Add your card at thecellar.club/b/aBcDeFgH then reply YES to confirm.`
+  return `I've set aside ${qty} x ${wineName} for you (${totalStr}). Add your card at thecellar.club/b/aBcDeFgH then reply YES to confirm.`
 }
 
 function smsSegments(text: string): { chars: number; segments: number } {

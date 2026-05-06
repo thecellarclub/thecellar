@@ -167,7 +167,7 @@ export default async function WinePage({ params }: { params: Promise<{ slug: str
                     Retail price
                   </span>
                   <span
-                    className="font-serif text-base line-through"
+                    className="font-serif text-base"
                     style={{ color: TEXT_FAINT }}
                   >
                     {formatPrice(wine.retail_price_pence)}

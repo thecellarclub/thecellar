@@ -107,14 +107,14 @@ export async function POST(
   let smsBody: string
 
   if (hasCard) {
-    smsBody = `Daniel here - I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Reply YES to confirm.`
+    smsBody = `I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Reply YES to confirm.`
   } else {
     const billingToken = generateShortToken()
     await sb.from('customers').update({
       billing_token: billingToken,
       billing_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     }).eq('id', id)
-    smsBody = `Daniel here - I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Add your card at ${APP_URL}/b/${billingToken} then reply YES to confirm.`
+    smsBody = `I've set aside ${quantity} x ${wine.name} for you (${totalStr}). Add your card at ${APP_URL}/b/${billingToken} then reply YES to confirm.`
   }
 
   await sendSms(customer.phone, smsBody, { trigger: 'admin_manual_offer', customerId: customer.id })

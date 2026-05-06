@@ -5,8 +5,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
 import DeactivateButton from '../../../_components/DeactivateButton'
 import RefundButton from '../../../_components/RefundButton'
-import AddBottlesForm from '../../../_components/AddBottlesForm'
 import SendOfferForm from '../../../_components/SendOfferForm'
+import CollectCellarForm from '../../../_components/CollectCellarForm'
 import Link from 'next/link'
 
 type WineDetail = {
@@ -44,6 +44,7 @@ type OrderRow = {
 type ShipmentRow = {
   id: string
   status: string
+  type: string | null
   tracking_number: string | null
   tracking_provider: string | null
   created_at: string
@@ -122,7 +123,7 @@ export default async function CustomerDetailPage({
     sb.from('wines').select('id, name, price_pence, stock_bottles').eq('active', true).order('name'),
     sb
       .from('shipments')
-      .select('id, status, tracking_number, tracking_provider, created_at, dispatched_at')
+      .select('id, status, type, tracking_number, tracking_provider, created_at, dispatched_at')
       .eq('customer_id', id)
       .order('created_at', { ascending: false }),
   ])
@@ -220,61 +221,7 @@ export default async function CustomerDetailPage({
       {/* ── Section 1: Current Cellar ───────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200">
         <SectionHead title="Current Cellar" count={`${unshipped.length} entries · ${unshippedBottles} unshipped`} />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr>
-                {['Wine', 'Qty', 'Added', ''].map((h, i) => (
-                  <th key={i} className="text-left text-xs font-medium text-gray-600 uppercase tracking-wide border-b border-gray-200 px-4 py-2 bg-gray-50">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {unshipped.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-500">Cellar empty</td></tr>
-              ) : (
-                unshipped.map((c) => {
-                  const wine = c.wines
-                  return (
-                    <tr key={c.id} className="hover:bg-gray-50 align-top">
-                      <td className="px-4 py-2.5 border-b border-gray-100">
-                        <p className="font-medium text-gray-900">{wine?.name ?? '—'}</p>
-                        {(wine?.producer || wine?.region || wine?.vintage) && (
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {[wine?.producer, wine?.region, wine?.vintage].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                        {wine?.price_pence ? (
-                          <p className="text-xs text-gray-500">£{(wine.price_pence / 100).toFixed(0)}/bottle</p>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{c.quantity}</td>
-                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">{formatDateTime(c.added_at)}</td>
-                      <td className="px-4 py-2.5 border-b border-gray-100">
-                        {c.order_id && cellarByOrderId.has(c.order_id) && (
-                          <RefundButton
-                            cellarId={c.id}
-                            customerId={id}
-                            maxQuantity={c.quantity}
-                            wineName={wine?.name ?? 'Unknown wine'}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Manually add bottles */}
-        <div className="border-t border-gray-200">
-          <div className="px-4 pt-3 pb-1">
-            <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Manually add bottles</h3>
-          </div>
-          <AddBottlesForm customerId={id} wines={activeWines ?? []} />
-        </div>
+        <CollectCellarForm customerId={id} entries={unshipped} />
       </div>
 
       {/* ── Section 2: Shipped ──────────────────────────────────────────────────── */}
@@ -290,14 +237,19 @@ export default async function CustomerDetailPage({
               return (
                 <div key={ship.id} className="px-4 py-4">
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    {ship.type === 'collection' ? (
+                      <span className="text-xs font-medium text-gray-700">Collected in person</span>
+                    ) : null}
                     <ShipStatusBadge status={ship.status} />
                     <span className="text-xs text-gray-600">{formatDate(date)}</span>
-                    {ship.tracking_number ? (
-                      <span className="text-xs text-gray-500 font-mono">
-                        {ship.tracking_provider ? `${ship.tracking_provider} · ` : ''}{ship.tracking_number}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-500">No tracking</span>
+                    {ship.type !== 'collection' && (
+                      ship.tracking_number ? (
+                        <span className="text-xs text-gray-500 font-mono">
+                          {ship.tracking_provider ? `${ship.tracking_provider} · ` : ''}{ship.tracking_number}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">No tracking</span>
+                      )
                     )}
                     <Link href={`/admin/shipments/${ship.id}`} className="text-xs text-blue-600 hover:underline ml-auto">
                       View shipment →

@@ -7,6 +7,7 @@ import SignOutButton from './SignOutButton'
 
 const links = [
   { href: '/admin', label: 'Dashboard', exact: true },
+  { href: '/admin/orders', label: 'Orders', exact: false },
   { href: '/admin/customers', label: 'Customers', exact: false },
   { href: '/admin/wines', label: 'Wines', exact: false },
   { href: '/admin/send', label: 'Send text', exact: false },
