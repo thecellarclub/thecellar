@@ -9,6 +9,11 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
 }
 
+/** Ordinal date without year for SMS e.g. "4th August", "22nd March" */
+export function ordinalDate(date: Date): string {
+  return `${ordinal(date.getDate())} ${date.toLocaleDateString('en-GB', { month: 'long' })}`
+}
+
 /** Short date e.g. "2nd August 2026" */
 export function formatDate(iso: string): string {
   const d = new Date(iso)

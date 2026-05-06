@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
 import { checkAndApplyTierUpgrade, deliveryThreshold } from '@/lib/tiers'
+import { ordinalDate } from '@/lib/format'
 
 interface PostChargeParams {
   orderId: string
@@ -88,10 +89,7 @@ export async function handlePostCharge({
 
     const deadline = new Date(caseStartedAt)
     deadline.setDate(deadline.getDate() + 90)
-    const deadlineStr = deadline.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-    })
+    const deadlineStr = ordinalDate(deadline)
 
     await sendSms(
       customerPhone,
@@ -238,10 +236,7 @@ export async function handlePostCharge({
     const remainingBottles = totalBottles - threshold
     const deadline = new Date(now)
     deadline.setDate(deadline.getDate() + 90)
-    const deadlineStr = deadline.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-    })
+    const deadlineStr = ordinalDate(deadline)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(

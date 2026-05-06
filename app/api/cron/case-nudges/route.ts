@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
 import { stripe } from '@/lib/stripe'
 import { getRollingSpend, tierFromSpend } from '@/lib/tiers'
+import { ordinalDate } from '@/lib/format'
 
 /**
  * GET /api/cron/case-nudges
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     const deadline = new Date(caseStart)
     deadline.setDate(deadline.getDate() + 90)
-    const deadlineStr = deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+    const deadlineStr = ordinalDate(deadline)
 
     if (daysSinceCase >= 104 && customer.case_nudge_2_sent_at) {
       // ── Auto-ship: charge £15 and create pending shipment ─────────────────
