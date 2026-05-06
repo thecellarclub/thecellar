@@ -1242,7 +1242,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             `Message: ${body}\nPhone: ${customer.phone}`
           )
         }
-        await sendSms(from, `Thanks - Daniel will get back to you shortly.`, { trigger: 'keyword:question', customerId: customer.id })
+        await sendSms(from, `Got it — I'll get back to you shortly.`, { trigger: 'keyword:question', customerId: customer.id })
         return twimlOk()
       }
 
@@ -1400,7 +1400,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         } else {
           await notifyAdmin(`New question from ${name}`, `Message: ${message}\nPhone: ${customer.phone}`)
         }
-        await sendSms(from, `Thanks - Daniel will get back to you shortly.`, { trigger: 'keyword:question', customerId: customer.id })
+        await sendSms(from, `Got it — I'll get back to you shortly.`, { trigger: 'keyword:question', customerId: customer.id })
         return twimlOk()
       }
       // Empty after 'question ' - fall through to bare-word handler below
@@ -1566,7 +1566,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
 
       if (shouldAck) {
-        await sendSms(from, `Got it, Daniel will be in touch soon.`, { trigger: 'concierge:ack', customerId: customer.id })
+        await sendSms(from, `Got it — I'll be in touch soon.`, { trigger: 'concierge:ack', customerId: customer.id })
       }
       return twimlOk()
     }

@@ -141,13 +141,13 @@ export default function OrdersClientView({ orders }: { orders: Order[] }) {
                     o.order_status === 'awaiting_confirmation' || o.order_status === 'expired'
                   return (
                     <tr key={o.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs whitespace-nowrap">
                         {formatDateTime(o.created_at)}
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100">
                         <span className="font-medium text-gray-900">{o.customers?.first_name ?? '—'}</span>
                         {o.customers?.phone && (
-                          <span className="block text-xs text-gray-500">{o.customers.phone}</span>
+                          <span className="block text-xs text-gray-600">{o.customers.phone}</span>
                         )}
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{o.wines?.name ?? '—'}</td>

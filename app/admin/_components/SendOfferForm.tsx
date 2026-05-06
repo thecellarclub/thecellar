@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import SmsCharCounter from './SmsCharCounter'
 
 interface Wine {
   id: string
@@ -24,16 +25,6 @@ function buildPreview(qty: number, wineName: string, totalStr: string, hasCard: 
   return `I've set aside ${qty} x ${wineName} for you (${totalStr}). Add your card at thecellar.club/b/aBcDeFgH then reply YES to confirm.`
 }
 
-function smsSegments(text: string): { chars: number; segments: number } {
-  // Rough GSM-7 count — extended chars ({}\\[~]|€^) cost 2 units each
-  const extended = new Set(['{', '}', '\\', '[', '~', ']', '|', '€', '^'])
-  let units = 0
-  for (const ch of text) {
-    units += extended.has(ch) ? 2 : 1
-  }
-  const segments = units <= 160 ? 1 : Math.ceil(units / 153)
-  return { chars: units, segments }
-}
 
 export default function SendOfferForm({ customerId, customerName, hasCard, wines }: Props) {
   const router = useRouter()
@@ -54,8 +45,6 @@ export default function SendOfferForm({ customerId, customerName, hasCard, wines
   const preview = selectedWine
     ? buildPreview(quantity, selectedWine.name, totalStr, hasCard)
     : ''
-  const { chars, segments } = smsSegments(preview)
-
   function handleWineChange(id: string) {
     setWineId(id)
     setQuantity(1)
@@ -140,7 +129,7 @@ export default function SendOfferForm({ customerId, customerName, hasCard, wines
           <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 text-xs text-gray-700 leading-relaxed whitespace-pre-wrap font-mono">
             {preview}
           </div>
-          <p className="text-xs text-gray-400 mt-1">{chars} chars · {segments} segment{segments !== 1 ? 's' : ''}</p>
+          <SmsCharCounter value={preview} className="mt-1" />
         </div>
       )}
 

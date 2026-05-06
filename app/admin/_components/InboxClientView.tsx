@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDateTime } from '@/lib/format'
 import SendMessageForm from './SendMessageForm'
+import SmsCharCounter from './SmsCharCounter'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,12 +60,12 @@ function SmsContextStrip({ msgs }: { msgs: SmsContextMsg[] }) {
   if (msgs.length === 0) return null
   return (
     <div className="space-y-2 mb-4">
-      <p className="text-xs text-gray-400 text-center">— SMS before this thread —</p>
+      <p className="text-xs text-gray-600 text-center">— SMS before this thread —</p>
       {msgs.map((sms) => (
         <div key={sms.id} className={`flex ${sms.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
           <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-xs opacity-50 ${sms.direction === 'outbound' ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-600'}`}>
             <p className="leading-relaxed">{sms.body}</p>
-            <p className="text-gray-400 mt-0.5">{formatDateTime(sms.created_at)}</p>
+            <p className="text-gray-600 mt-0.5">{formatDateTime(sms.created_at)}</p>
           </div>
         </div>
       ))}
@@ -250,6 +251,7 @@ function MobileReplyInput({ customerId }: { customerId: string }) {
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 px-3 py-3">
       {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      <SmsCharCounter value={message} className="text-xs mb-1.5" />
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -469,6 +471,7 @@ function DesktopReplyForm({ customerId }: { customerId: string }) {
         rows={2}
         className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
       />
+      <SmsCharCounter value={message} className="text-xs" />
       <div className="flex items-center gap-3">
         <button
           onClick={handleSend}

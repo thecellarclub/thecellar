@@ -100,13 +100,13 @@ export default async function AdminDashboard() {
                   return (
                     <tr key={o.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2.5 border-b border-gray-100">
-                        {customer?.first_name ?? '—'} <span className="text-gray-500 text-xs">{customer?.phone}</span>
+                        {customer?.first_name ?? '—'} <span className="text-gray-600 text-xs">{customer?.phone}</span>
                       </td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{wine?.name ?? '—'}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{o.quantity}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">{penceToGbp(o.total_pence)}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100"><StatusBadge status={o.stripe_charge_status} /></td>
-                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs">{formatDateTime(o.created_at)}</td>
+                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs">{formatDateTime(o.created_at)}</td>
                     </tr>
                   )
                 })

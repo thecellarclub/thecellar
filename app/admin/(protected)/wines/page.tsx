@@ -62,7 +62,7 @@ export default async function WinesPage() {
                     {w.slug ? (
                       <Link href={`/wine/${w.slug}`} target="_blank" className="text-xs text-gray-500 hover:text-gray-900 hover:underline">View ↗</Link>
                     ) : (
-                      <span className="text-xs text-gray-300">—</span>
+                      <span className="text-xs text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">

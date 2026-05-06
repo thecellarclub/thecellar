@@ -171,7 +171,7 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
               placeholder="e.g. chablis-premier-cru-2022"
             />
             {form.slug && (
-              <p className="text-xs text-gray-400 mt-1">thecellar.club/wine/{form.slug}</p>
+              <p className="text-xs text-gray-600 mt-1">thecellar.club/wine/{form.slug}</p>
             )}
           </div>
           <div>

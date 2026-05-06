@@ -106,7 +106,7 @@ export default async function ShipmentsPage() {
                         {c && (
                           <>
                             <br />
-                            <span className="text-gray-500 text-xs">{c.phone}</span>
+                            <span className="text-gray-600 text-xs">{c.phone}</span>
                           </>
                         )}
                       </td>
@@ -121,16 +121,16 @@ export default async function ShipmentsPage() {
                         )}
                         <StatusBadge status={s.status} />
                         {s.dispatched_at && (
-                          <p className="text-xs text-gray-500 mt-1">Sent {formatDate(s.dispatched_at)}</p>
+                          <p className="text-xs text-gray-600 mt-1">Sent {formatDate(s.dispatched_at)}</p>
                         )}
                         {s.delivered_at && (
-                          <p className="text-xs text-gray-500 mt-1">Delivered {formatDate(s.delivered_at)}</p>
+                          <p className="text-xs text-gray-600 mt-1">Delivered {formatDate(s.delivered_at)}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600 font-mono">
                         {s.tracking_number ?? '—'}
                       </td>
-                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-500 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600 whitespace-nowrap">
                         {formatDate(s.created_at)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">

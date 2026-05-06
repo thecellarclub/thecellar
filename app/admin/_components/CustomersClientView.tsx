@@ -110,9 +110,9 @@ export default function CustomersClientView({
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600">{c.email}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <span className="font-medium">{totalsMap.get(c.id) ?? 0}</span>
-                    <span className="text-gray-500 text-xs ml-1">bottles</span>
+                    <span className="text-gray-600 text-xs ml-1">bottles</span>
                   </td>
-                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs">{formatDate(c.subscribed_at)}</td>
+                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs">{formatDate(c.subscribed_at)}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 capitalize text-xs">{c.tier ?? 'bailey'}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${c.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

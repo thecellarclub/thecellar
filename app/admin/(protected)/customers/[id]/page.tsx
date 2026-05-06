@@ -169,7 +169,7 @@ export default async function CustomerDetailPage({
         <div>
           <Link href="/admin/customers" className="text-xs text-gray-500 hover:text-gray-600 mb-2 block">← Customers</Link>
           <h1 className="text-xl font-semibold text-gray-900">{customer.first_name ?? 'Unknown'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{customer.email} · {customer.phone}</p>
+          <p className="text-sm text-gray-600 mt-0.5">{customer.email} · {customer.phone}</p>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ export default async function CustomerDetailPage({
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{o.quantity}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{penceToGbp(o.total_pence)}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100"><StatusBadge status={displayStatus} /></td>
-                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-500 text-xs whitespace-nowrap">{formatDateTime(o.created_at)}</td>
+                      <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs whitespace-nowrap">{formatDateTime(o.created_at)}</td>
                       <td className="px-4 py-2.5 border-b border-gray-100">
                         {o.stripe_charge_status === 'succeeded' && cellarEntry && (
                           <RefundButton
