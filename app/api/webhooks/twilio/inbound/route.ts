@@ -675,20 +675,6 @@ async function handlePendingOrder(
     wine.stock_bottles = wine.stock_bottles + pendingOrder.quantity
   }
 
-  // Check for existing confirmed order
-  const { data: confirmedOrder } = await sb
-    .from('orders')
-    .select('id')
-    .eq('customer_id', customer.id)
-    .eq('text_id', textId)
-    .eq('order_status', 'confirmed')
-    .maybeSingle()
-
-  if (confirmedOrder) {
-    await sendSms(from, `You've already ordered from this offer! Your bottles are safely in the cellar.`, { trigger: 'offer_reply', customerId: customer.id })
-    return twimlOk()
-  }
-
   // Stock check
   if (wine.stock_bottles < qty) {
     const n = wine.stock_bottles
