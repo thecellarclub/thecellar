@@ -13,7 +13,6 @@ import { parseOrderReply } from '@/lib/parse-order-reply'
 import {
   noCardCardLink,
   cardSavedOrderRecap,
-  unparseableFallback,
   paymentFailedT0,
 } from '@/lib/sms-templates'
 
@@ -1293,7 +1292,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           `${name} replied to the offer but didn't reply with a number.\n\nMessage: ${rawMessage}\nWine: ${wineName}${priceStr ? ` (${priceStr})` : ''}\nPhone: ${customer.phone}\n\nThis is a potential missed order — please follow up.`
         )
 
-        await sendSms(from, `Didn't catch that — just reply with a number (e.g. "2") to order. If you need something else, text QUESTION and I'll get back to you.`, { trigger: 'offer_unparseable', customerId: customer.id })
         return twimlOk()
       }
     }
@@ -1512,30 +1510,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (parseResult.kind === 'unparseable') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'unparseable' })
 
-      // Check if there's a pending order so we can hint about cancelling
-      const { data: latestTextForUnparseable } = await sb
-        .from('texts')
-        .select('id')
-        .eq('is_active', true)
-        .maybeSingle()
+      const rawMessage = (params['Body'] ?? '').trim()
+      const name = customer.first_name ?? customer.phone
 
-      let hasPendingOrder = false
-      if (latestTextForUnparseable) {
-        const { data: pendingCheck } = await sb
-          .from('orders')
-          .select('id')
-          .eq('customer_id', customer.id)
-          .eq('text_id', latestTextForUnparseable.id)
-          .eq('order_status', 'awaiting_confirmation')
-          .maybeSingle()
-        hasPendingOrder = !!pendingCheck
+      await sb.from('concierge_messages').insert({
+        customer_id: customer.id,
+        direction: 'inbound',
+        message: rawMessage,
+        category: 'general',
+      })
+
+      if (customer.concierge_status === 'closed') {
+        await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
       }
 
-      const fallbackMsg = hasPendingOrder
-        ? `Didn't catch that. Reply YES to confirm your order, NO to cancel it, or a different number to change the quantity.`
-        : unparseableFallback()
+      await notifyAdmin(
+        `Message from ${name}`,
+        `${name} sent a message that needs a human reply.\n\nMessage: ${rawMessage}\nPhone: ${customer.phone}`
+      )
 
-      await sendSms(from, fallbackMsg, { trigger: 'unparseable', customerId: customer.id })
       return twimlOk()
     }
 
