@@ -17,6 +17,13 @@ export type InboxMsg = {
   context?: string
 }
 
+export type SmsContextMsg = {
+  id: string
+  direction: 'inbound' | 'outbound'
+  body: string
+  created_at: string
+}
+
 export type InboxThread = {
   customerId: string
   firstName: string | null
@@ -24,6 +31,7 @@ export type InboxThread = {
   status: 'open' | 'closed'
   messages: InboxMsg[]
   openRequest: { id: string; message: string; status: string } | null
+  smsContext: SmsContextMsg[]
 }
 
 type Customer = { id: string; first_name: string | null; phone: string | null }
@@ -43,6 +51,26 @@ function timeAgo(dateStr: string): string {
 function isUnanswered(thread: InboxThread): boolean {
   const last = thread.messages[thread.messages.length - 1]
   return thread.status === 'open' && last?.direction === 'inbound'
+}
+
+// ─── SMS context strip ────────────────────────────────────────────────────────
+
+function SmsContextStrip({ msgs }: { msgs: SmsContextMsg[] }) {
+  if (msgs.length === 0) return null
+  return (
+    <div className="space-y-2 mb-4">
+      <p className="text-xs text-gray-400 text-center">— SMS before this thread —</p>
+      {msgs.map((sms) => (
+        <div key={sms.id} className={`flex ${sms.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-xs opacity-50 ${sms.direction === 'outbound' ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-600'}`}>
+            <p className="leading-relaxed">{sms.body}</p>
+            <p className="text-gray-400 mt-0.5">{formatDateTime(sms.created_at)}</p>
+          </div>
+        </div>
+      ))}
+      <div className="border-t border-dashed border-gray-200" />
+    </div>
+  )
 }
 
 // ─── Close / Reopen button ────────────────────────────────────────────────────
@@ -294,6 +322,7 @@ function MobileThreadDetail({
       )}
 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
+        <SmsContextStrip msgs={thread.smsContext} />
         {thread.messages.map((msg) => {
           const isOut = msg.direction === 'outbound'
           const isPurchaseQuery = msg.category === 'purchase_query'
@@ -642,6 +671,7 @@ export default function InboxClientView({
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                <SmsContextStrip msgs={selectedThread.smsContext} />
                 {selectedThread.messages.map((msg) => {
                   const isOutbound = msg.direction === 'outbound'
                   const isPurchaseQuery = msg.category === 'purchase_query'

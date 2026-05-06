@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
-import InboxClientView, { type InboxThread } from '@/app/admin/_components/InboxClientView'
+import InboxClientView, { type InboxThread, type SmsContextMsg } from '@/app/admin/_components/InboxClientView'
 
 type ConciergeMessage = {
   id: string
@@ -75,6 +75,7 @@ export default async function InboxPage() {
         status: (msg.customers?.concierge_status ?? 'open') as 'open' | 'closed',
         messages: [],
         openRequest: requestByCustomer.get(cid) ?? null,
+        smsContext: [],
       })
     }
     threadMap.get(cid)!.messages.push({
@@ -86,6 +87,38 @@ export default async function InboxPage() {
       category: msg.category ?? undefined,
       context: msg.context ?? undefined,
     })
+  }
+
+  // Fetch SMS context: last 3 sms_messages per customer before each thread's first message
+  const customerIds = Array.from(threadMap.keys())
+  if (customerIds.length > 0) {
+    const { data: smsRows } = await sb
+      .from('sms_messages')
+      .select('id, customer_id, direction, body, created_at')
+      .in('customer_id', customerIds)
+      .order('created_at', { ascending: false })
+      .limit(600)
+
+    const contextAcc = new Map<string, SmsContextMsg[]>()
+    for (const row of (smsRows ?? []) as { id: string; customer_id: string; direction: string; body: string; created_at: string }[]) {
+      const thread = threadMap.get(row.customer_id)
+      if (!thread) continue
+      const firstAt = thread.messages[0]?.created_at
+      if (!firstAt || row.created_at >= firstAt) continue
+      const existing = contextAcc.get(row.customer_id) ?? []
+      if (existing.length < 3) {
+        contextAcc.set(row.customer_id, [...existing, {
+          id: row.id,
+          direction: row.direction as 'inbound' | 'outbound',
+          body: row.body,
+          created_at: row.created_at,
+        }])
+      }
+    }
+    // Reverse to chronological order and attach to threads
+    for (const [cid, msgs] of contextAcc) {
+      threadMap.get(cid)!.smsContext = [...msgs].reverse()
+    }
   }
 
   // Sort: unreplied open first, then replied open, then closed (newest first within groups)

@@ -1273,7 +1273,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const context = `Re: ${wineName}${priceStr ? ` (${priceStr})` : ''}`
 
         const rawMessage = (params['Body'] ?? '').trim()
-        const name = customer.first_name ?? customer.phone
 
         await sb.from('concierge_messages').insert({
           customer_id: customer.id,
@@ -1286,11 +1285,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         if (customer.concierge_status === 'closed') {
           await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
         }
-
-        await notifyAdmin(
-          `Purchase query from ${name} — re: ${wineName}`,
-          `${name} replied to the offer but didn't reply with a number.\n\nMessage: ${rawMessage}\nWine: ${wineName}${priceStr ? ` (${priceStr})` : ''}\nPhone: ${customer.phone}\n\nThis is a potential missed order — please follow up.`
-        )
 
         return twimlOk()
       }
@@ -1511,7 +1505,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'unparseable' })
 
       const rawMessage = (params['Body'] ?? '').trim()
-      const name = customer.first_name ?? customer.phone
 
       await sb.from('concierge_messages').insert({
         customer_id: customer.id,
@@ -1523,11 +1516,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       if (customer.concierge_status === 'closed') {
         await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
       }
-
-      await notifyAdmin(
-        `Message from ${name}`,
-        `${name} sent a message that needs a human reply.\n\nMessage: ${rawMessage}\nPhone: ${customer.phone}`
-      )
 
       return twimlOk()
     }
