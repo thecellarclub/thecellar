@@ -22,6 +22,9 @@ export function parseOrderReply(input: string): ParseResult {
   const lower = input.trim().toLowerCase()
   if (!lower) return { kind: 'unparseable', raw }
 
+  // Reject anything longer than 5 words — it's a human message, not a quantity
+  if (lower.split(/\s+/).length > 5) return { kind: 'unparseable', raw }
+
   // Step 5: negation guard — reject if negation present and no positive phrasing
   if (NEGATION.test(lower) && !POSITIVE.test(lower)) {
     return { kind: 'unparseable', raw }
