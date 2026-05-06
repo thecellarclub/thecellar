@@ -1585,12 +1585,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return twimlOk()
     }
 
-    // ── Anything else → menu ─────────────────────────────────────────────
-    await sendSms(
-      from,
-      `OFFER — see my latest wine\nQUESTION — ask me anything\nREQUEST — something you'd like to see\n\nManage your account: ${APP_URL}/portal`,
-      { trigger: 'menu', customerId: customer.id }
+    // ── Anything else → inbox + email, no SMS ────────────────────────────
+    const name = customer.first_name ?? customer.phone
+
+    await sb.from('concierge_messages').insert({
+      customer_id: customer.id,
+      direction: 'inbound',
+      message: rawBody,
+      category: 'general',
+    })
+
+    if (customer.concierge_status === 'closed') {
+      await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+    }
+
+    await notifyAdmin(
+      `Message from ${name}`,
+      `${name} sent an unrecognised message.\n\nMessage: ${rawBody}\nPhone: ${customer.phone}`
     )
+
     return twimlOk()
   } catch (err) {
     console.error('[twilio/inbound] unexpected error', err)

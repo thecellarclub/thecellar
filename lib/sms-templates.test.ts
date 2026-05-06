@@ -5,7 +5,6 @@ import {
   paymentFailedT0,
   paymentFailedNudge,
   paymentFailedCancelled,
-  unparseableFallback,
 } from './sms-templates'
 
 // Worst-case variable values per spec
@@ -41,7 +40,4 @@ describe('SMS templates ≤160 GSM-7 chars at worst-case variable lengths', () =
     expect(paymentFailedCancelled().length).toBeLessThanOrEqual(160)
   })
 
-  test('unparseableFallback', () => {
-    expect(unparseableFallback().length).toBeLessThanOrEqual(160)
-  })
 })

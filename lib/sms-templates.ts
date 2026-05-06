@@ -32,8 +32,3 @@ export function paymentFailedNudge(n: number, appUrl: string, token: string): st
 export function paymentFailedCancelled(): string {
   return `Couldn't charge your card so I cancelled your order. Reply OFFER to try again.`
 }
-
-/** Sent when an inbound SMS can't be parsed as a quantity or keyword. */
-export function unparseableFallback(): string {
-  return `Sorry, didn't catch that. Reply with a number (e.g. 2) to order. For anything else, reply QUESTION followed by your message.`
-}
