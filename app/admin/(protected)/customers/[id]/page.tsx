@@ -7,6 +7,7 @@ import DeactivateButton from '../../../_components/DeactivateButton'
 import RefundButton from '../../../_components/RefundButton'
 import SendOfferForm from '../../../_components/SendOfferForm'
 import CollectCellarForm from '../../../_components/CollectCellarForm'
+import CancelOrderButton from '../../../_components/CancelOrderButton'
 import Link from 'next/link'
 
 type WineDetail = {
@@ -317,6 +318,13 @@ export default async function CustomerDetailPage({
                             cellarId={cellarEntry.id}
                             customerId={id}
                             maxQuantity={cellarEntry.quantity}
+                            wineName={wine?.name ?? 'Unknown wine'}
+                          />
+                        )}
+                        {o.order_status === 'awaiting_confirmation' && (
+                          <CancelOrderButton
+                            orderId={o.id}
+                            customerId={id}
                             wineName={wine?.name ?? 'Unknown wine'}
                           />
                         )}

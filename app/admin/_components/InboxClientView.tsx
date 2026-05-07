@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { formatDateTime } from '@/lib/format'
 import SendMessageForm from './SendMessageForm'
 import SmsCharCounter from './SmsCharCounter'
@@ -309,7 +310,7 @@ function MobileThreadDetail({
           <span className="text-sm">Back</span>
         </button>
         <div className="flex-1 min-w-0 pl-1">
-          <p className="font-semibold text-sm leading-tight truncate">{thread.firstName ?? 'Unknown'}</p>
+          <Link href={`/admin/customers/${thread.customerId}`} className="font-semibold text-sm leading-tight truncate hover:underline block">{thread.firstName ?? 'Unknown'}</Link>
           <p className="text-xs text-gray-500 truncate">{thread.phone ?? '---'}</p>
         </div>
         <div className="pr-2">
@@ -656,7 +657,7 @@ export default function InboxClientView({
               <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{selectedThread.firstName ?? 'Unknown'}</p>
+                    <Link href={`/admin/customers/${selectedThread.customerId}`} className="text-sm font-medium text-gray-900 hover:underline">{selectedThread.firstName ?? 'Unknown'}</Link>
                     <p className="text-xs text-gray-500 font-mono">{selectedThread.phone ?? '---'}</p>
                     {selectedThread.openRequest && (
                       <RequestBadge
