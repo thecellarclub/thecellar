@@ -44,15 +44,15 @@ export default async function WinesPage() {
             ) : (
               (wines ?? []).map((w) => (
                 <tr key={w.id} className={`hover:bg-gray-50 ${!w.active ? 'opacity-50' : ''}`}>
-                  <td className="px-4 py-2.5 border-b border-gray-100 font-medium">
+                  <td className="px-4 py-2.5 border-b border-gray-100 font-medium text-gray-900">
                     {w.name}
-                    {w.vintage && <span className="text-gray-500 text-xs ml-1">{w.vintage}</span>}
+                    {w.vintage && <span className="text-gray-600 text-xs ml-1">{w.vintage}</span>}
                   </td>
-                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600">
+                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">
                     {[w.region, w.country].filter(Boolean).join(', ') || '—'}
                   </td>
-                  <td className="px-4 py-2.5 border-b border-gray-100">{penceToGbp(w.price_pence)}</td>
-                  <td className="px-4 py-2.5 border-b border-gray-100">
+                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">{penceToGbp(w.price_pence)}</td>
+                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-700">
                     <span className={w.stock_bottles === 0 ? 'text-red-600 font-medium' : ''}>{w.stock_bottles}</span>
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
@@ -60,13 +60,13 @@ export default async function WinesPage() {
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     {w.slug ? (
-                      <Link href={`/wine/${w.slug}`} target="_blank" className="text-xs text-gray-500 hover:text-gray-900 hover:underline">View ↗</Link>
+                      <Link href={`/wine/${w.slug}`} target="_blank" className="text-xs text-gray-700 hover:text-gray-900 hover:underline">View ↗</Link>
                     ) : (
                       <span className="text-xs text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
-                    <Link href={`/admin/wines/${w.id}`} className="text-xs text-gray-500 hover:text-gray-900 hover:underline">Edit</Link>
+                    <Link href={`/admin/wines/${w.id}`} className="text-xs text-gray-700 hover:text-gray-900 hover:underline">Edit</Link>
                   </td>
                 </tr>
               ))
