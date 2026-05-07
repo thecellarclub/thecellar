@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const inboxCount = [...lastDirectionByCustomer.values()].filter((d) => d === 'inbound').length
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 text-gray-900">
       {/* Desktop sidebar — hidden on mobile */}
       <aside className="hidden md:flex md:flex-col w-52 bg-gray-900 text-white shrink-0">
         <div className="px-4 py-5 border-b border-gray-700">
