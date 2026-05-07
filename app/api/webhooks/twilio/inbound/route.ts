@@ -1143,6 +1143,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Trim and lowercase for consistent keyword matching
   const rawBody = (params['Body'] ?? '').trim()
   const body = rawBody.toLowerCase()
+  // Strip trailing punctuation for keyword matching only — e.g. "yes." → "yes", "YES!" → "yes"
+  const keyword = body.replace(/[.!?,;]+$/, '')
 
   const sb = createServiceClient()
 
@@ -1169,7 +1171,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // ── Pending state — awaiting follow-up to REQUEST or QUESTION ─────────
     if (customer.sms_awaiting) {
-      if (body === 'exit') {
+      if (keyword === 'exit') {
         await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
         await sendSms(from, `No problem. Text OFFER, QUESTION or REQUEST any time, or visit your portal: ${APP_URL}/portal`, { trigger: 'keyword:exit', customerId: customer.id })
         return twimlOk()
@@ -1177,7 +1179,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       // If awaiting offer and customer replies with a parseable quantity, skip straight to order
       if (customer.sms_awaiting === 'offer') {
-        if (body === 'yes') {
+        if (keyword === 'yes') {
           await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
           return await handleYes(from, customer, sb)
         }
@@ -1277,7 +1279,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── STOP / UNSUBSCRIBE ───────────────────────────────────────────────
-    if (body === 'stop' || body === 'unsubscribe') {
+    if (keyword === 'stop' || keyword === 'unsubscribe') {
       await sb
         .from('customers')
         .update({ active: false, unsubscribed_at: new Date().toISOString() })
@@ -1287,7 +1289,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── CELLAR ───────────────────────────────────────────────────────────
-    if (body === 'cellar') {
+    if (keyword === 'cellar') {
       return await handleCellar(from, customer, sb)
     }
 
@@ -1297,22 +1299,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── SHIP ─────────────────────────────────────────────────────────────
-    if (body === 'ship') {
+    if (keyword === 'ship') {
       return await handleShip(from, customer, sb)
     }
 
     // ── PAUSE ────────────────────────────────────────────────────────────
-    if (body === 'pause') {
+    if (keyword === 'pause') {
       return await handlePause(from, customer, sb)
     }
 
     // ── STATUS ───────────────────────────────────────────────────────────
-    if (body === 'status') {
+    if (keyword === 'status') {
       return await handleStatus(from, customer, sb)
     }
 
     // ── ACCOUNT ──────────────────────────────────────────────────────────
-    if (body === 'account') {
+    if (keyword === 'account') {
       return await handleAccount(from, customer)
     }
 
@@ -1340,7 +1342,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── RESUME ───────────────────────────────────────────────────────────
-    if (body === 'resume') {
+    if (keyword === 'resume') {
       await sb
         .from('customers')
         .update({ texts_snoozed_until: null })
@@ -1417,7 +1419,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── CHANGE (update delivery address on pending shipment) ──────────────
-    if (body === 'change') {
+    if (keyword === 'change') {
       const { data: pending } = await sb
         .from('shipments')
         .select('token')
@@ -1436,19 +1438,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── OFFER ─────────────────────────────────────────────────────────────
-    if (body === 'offer') {
+    if (keyword === 'offer') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:offer' })
       return await handleOffer(from, customer, sb)
     }
 
     // ── YES → charge pending order ────────────────────────────────────────
-    if (body === 'yes') {
+    if (keyword === 'yes') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:yes' })
       return await handleYes(from, customer, sb)
     }
 
     // ── NO / CANCEL → cancel pending order ───────────────────────────────
-    if (body === 'no' || body === 'cancel') {
+    if (keyword === 'no' || keyword === 'cancel') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:no' })
 
       const { data: latestTextForNo } = await sb
