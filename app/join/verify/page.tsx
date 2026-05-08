@@ -4,6 +4,10 @@ import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+declare global {
+  interface Window { gtag?: (...args: unknown[]) => void }
+}
+
 export default function VerifyPage() {
   const router = useRouter()
   const [code, setCode] = useState('')
@@ -34,6 +38,7 @@ export default function VerifyPage() {
         return
       }
 
+      window.gtag?.('event', 'conversion', { send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD' })
       router.push('/join/details')
     } catch {
       setError('Something went wrong. Please try again.')

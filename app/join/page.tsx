@@ -1,12 +1,6 @@
 'use client'
 
 import { useState, useEffect, FormEvent, Suspense } from 'react'
-
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void
-  }
-}
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -53,9 +47,6 @@ function JoinPageInner() {
         return
       }
 
-      window.gtag?.('event', 'conversion', {
-        send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD',
-      })
       router.push('/join/verify')
     } catch {
       setError('Something went wrong. Please try again.')
