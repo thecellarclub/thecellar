@@ -244,90 +244,81 @@ function AssignmentControls({ thread, adminUsers, currentUserId, onAssign }: {
   currentUserId: string
   onAssign: (assignedTo: string | null) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [picking, setPicking] = useState(false)
+  const [loading, setLoading] = useState<string | null>(null) // holds userId being set
 
   const assignedUser = adminUsers.find((u) => u.id === thread.assignedTo)
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!open) return
-    function handle(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [open])
-
   async function assign(userId: string | null) {
-    setLoading(true)
-    setOpen(false)
+    setLoading(userId ?? 'unassign')
+    setPicking(false)
     const res = await fetch(`/api/admin/inbox/${thread.customerId}/assign`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assignedTo: userId }),
     })
-    setLoading(false)
+    setLoading(null)
     if (res.ok) onAssign(userId)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500 w-16 shrink-0">Assigned</span>
-      <div className="relative" ref={dropdownRef}>
-        <div className="flex items-center gap-1.5">
-          {assignedUser && (
-            <span
-              className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: userColour(assignedUser.id) + '33', color: userColour(assignedUser.id) }}
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {assignedUser ? (
+            <span className="text-xs text-gray-700 font-medium truncate">
+              Assigned: <span style={{ color: userColour(assignedUser.id) }}>{assignedUser.name}</span>
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400">Unassigned</span>
+          )}
+        </div>
+        <button
+          onClick={() => setPicking((v) => !v)}
+          disabled={loading !== null}
+          className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors shrink-0"
+        >
+          {loading !== null ? '…' : assignedUser ? 'Change' : 'Assign'}
+        </button>
+      </div>
+      {picking && (
+        <div className="flex flex-wrap gap-1.5 pl-1">
+          {adminUsers.map((u) => (
+            <button
+              key={u.id}
+              onClick={() => assign(u.id)}
+              disabled={loading !== null}
+              className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors disabled:opacity-50 ${
+                u.id === thread.assignedTo
+                  ? 'border-transparent font-semibold'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
+              style={u.id === thread.assignedTo ? {
+                background: userColour(u.id) + '22',
+                borderColor: userColour(u.id),
+                color: userColour(u.id),
+              } : {}}
             >
               <span
-                className="inline-flex items-center justify-center rounded-full text-white text-[10px] font-bold"
-                style={{ width: 16, height: 16, background: userColour(assignedUser.id) }}
+                className="inline-flex items-center justify-center rounded-full text-white text-[9px] font-bold shrink-0"
+                style={{ width: 14, height: 14, background: userColour(u.id) }}
               >
-                {assignedUser.name[0]}
+                {u.name[0]}
               </span>
-              {assignedUser.name}
-            </span>
-          )}
-          <button
-            onClick={() => setOpen((v) => !v)}
-            disabled={loading}
-            className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors"
-          >
-            {loading ? '…' : assignedUser ? 'Change' : 'Assign'}
-          </button>
+              {u.name}
+            </button>
+          ))}
           {assignedUser && (
             <button
               onClick={() => assign(null)}
-              disabled={loading}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={loading !== null}
+              className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              ✕
+              Unassign
             </button>
           )}
         </div>
-        {open && (
-          <div className="absolute z-20 top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-            {adminUsers.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => assign(u.id)}
-                className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 ${u.id === thread.assignedTo ? 'bg-gray-50 font-medium' : ''}`}
-              >
-                <span
-                  className="inline-flex items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0"
-                  style={{ width: 18, height: 18, background: userColour(u.id) }}
-                >
-                  {u.name[0]}
-                </span>
-                {u.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }
