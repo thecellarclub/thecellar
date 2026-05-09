@@ -246,8 +246,19 @@ function AssignmentControls({ thread, adminUsers, currentUserId, onAssign }: {
 }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const assignedUser = adminUsers.find((u) => u.id === thread.assignedTo)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [open])
 
   async function assign(userId: string | null) {
     setLoading(true)
@@ -264,67 +275,56 @@ function AssignmentControls({ thread, adminUsers, currentUserId, onAssign }: {
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-gray-500 w-16 shrink-0">Assigned</span>
-      <div className="relative">
-        {assignedUser ? (
+      <div className="relative" ref={dropdownRef}>
+        <div className="flex items-center gap-1.5">
+          {assignedUser && (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: userColour(assignedUser.id) + '33', color: userColour(assignedUser.id) }}
+            >
+              <span
+                className="inline-flex items-center justify-center rounded-full text-white text-[10px] font-bold"
+                style={{ width: 16, height: 16, background: userColour(assignedUser.id) }}
+              >
+                {assignedUser.name[0]}
+              </span>
+              {assignedUser.name}
+            </span>
+          )}
           <button
             onClick={() => setOpen((v) => !v)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ background: userColour(assignedUser.id) + '33', color: userColour(assignedUser.id) }}
+            className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors"
           >
-            <span
-              className="inline-flex items-center justify-center rounded-full text-white text-[10px] font-bold"
-              style={{ width: 16, height: 16, background: userColour(assignedUser.id) }}
-            >
-              {assignedUser.name[0]}
-            </span>
-            {assignedUser.name}
+            {loading ? '…' : assignedUser ? 'Change' : 'Assign'}
           </button>
-        ) : (
-          <div className="flex items-center gap-1.5">
+          {assignedUser && (
             <button
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => assign(null)}
               disabled={loading}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Unassigned
+              ✕
             </button>
-            {currentUserId !== 'admin' && (
-              <button
-                onClick={() => assign(currentUserId)}
-                disabled={loading}
-                className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-              >
-                Claim
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
         {open && (
           <div className="absolute z-20 top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
             {adminUsers.map((u) => (
               <button
                 key={u.id}
                 onClick={() => assign(u.id)}
-                className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2"
+                className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 ${u.id === thread.assignedTo ? 'bg-gray-50 font-medium' : ''}`}
               >
                 <span
                   className="inline-flex items-center justify-center rounded-full text-white text-[10px] font-bold shrink-0"
-                  style={{ width: 16, height: 16, background: userColour(u.id) }}
+                  style={{ width: 18, height: 18, background: userColour(u.id) }}
                 >
                   {u.name[0]}
                 </span>
                 {u.name}
               </button>
             ))}
-            <div className="border-t border-gray-100 mt-1 pt-1">
-              <button
-                onClick={() => assign(null)}
-                className="w-full text-left px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
-              >
-                Unassign
-              </button>
-            </div>
           </div>
         )}
       </div>
