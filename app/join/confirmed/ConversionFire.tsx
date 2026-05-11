@@ -6,6 +6,7 @@ declare global {
     dataLayer?: IArguments[]
     gtag?: (...args: unknown[]) => void
     rdt?: (...args: unknown[]) => void
+    twq?: (...args: unknown[]) => void
   }
 }
 
@@ -17,6 +18,7 @@ export default function ConversionFire() {
       send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD',
     })
     window.rdt?.('track', 'SignUp')
+    window.twq?.('event', 'tw-qrnta-rcd33', {})
   }, [])
   return null
 }
