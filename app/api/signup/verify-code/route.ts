@@ -92,7 +92,16 @@ export async function POST(req: NextRequest) {
 
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
-        .insert({ phone: session.phone, stripe_customer_id: stripeCustomerId, active: true })
+        .insert({
+          phone: session.phone,
+          stripe_customer_id: stripeCustomerId,
+          active: true,
+          utm_source: session.utmSource ?? null,
+          utm_medium: session.utmMedium ?? null,
+          utm_campaign: session.utmCampaign ?? null,
+          utm_term: session.utmTerm ?? null,
+          utm_content: session.utmContent ?? null,
+        })
         .select('id')
         .single()
 

@@ -14,6 +14,11 @@ export interface SignupSessionData {
   dobDay?: number
   dobMonth?: number
   dobYear?: number
+  utmSource?: string
+  utmMedium?: string
+  utmCampaign?: string
+  utmTerm?: string
+  utmContent?: string
 }
 
 export const sessionOptions: SessionOptions = {

@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 declare global {
-  interface Window { gtag?: (...args: unknown[]) => void }
+  interface Window {
+    dataLayer?: IArguments[]
+    gtag?: (...args: unknown[]) => void
+  }
 }
 
 export default function VerifyPage() {
@@ -38,7 +41,9 @@ export default function VerifyPage() {
         return
       }
 
-      window.gtag?.('event', 'conversion', { send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD' })
+      window.dataLayer = window.dataLayer || []
+      window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments as unknown as IArguments) }
+      window.gtag('event', 'conversion', { send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD' })
       router.push('/join/details')
     } catch {
       setError('Something went wrong. Please try again.')

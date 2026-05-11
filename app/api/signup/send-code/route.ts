@@ -18,7 +18,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { phone: rawPhone } = await req.json()
+    const {
+      phone: rawPhone,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+    } = await req.json()
 
     if (!rawPhone) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
@@ -92,10 +99,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Could not send SMS: ${msg}` }, { status: 502 })
     }
 
-    // Store phone in session (unverified)
+    // Store phone + UTM attribution in session (unverified)
     const session = await getSignupSession()
     session.phone = phone
     session.phoneVerified = false
+    // Only set UTMs if present — don't overwrite with undefined on resend
+    if (utmSource) session.utmSource = utmSource
+    if (utmMedium) session.utmMedium = utmMedium
+    if (utmCampaign) session.utmCampaign = utmCampaign
+    if (utmTerm) session.utmTerm = utmTerm
+    if (utmContent) session.utmContent = utmContent
     await session.save()
 
     return NextResponse.json({ ok: true })

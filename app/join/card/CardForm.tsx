@@ -3,7 +3,10 @@
 import { useState, FormEvent } from 'react'
 
 declare global {
-  interface Window { gtag?: (...args: unknown[]) => void }
+  interface Window {
+    dataLayer?: IArguments[]
+    gtag?: (...args: unknown[]) => void
+  }
 }
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
@@ -112,7 +115,9 @@ function CardFormInner() {
         })
       }
 
-      window.gtag?.('event', 'conversion', { send_to: 'AW-18128381564/YAaxCM__9qccEPzMpMRD' })
+      window.dataLayer = window.dataLayer || []
+      window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments as unknown as IArguments) }
+      window.gtag('event', 'conversion', { send_to: 'AW-18128381564/YAaxCM__9qccEPzMpMRD' })
       router.push('/join/confirmed')
     } catch {
       setError('Something went wrong. Please try again.')

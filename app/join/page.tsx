@@ -24,6 +24,14 @@ function JoinPageInner() {
   const [loading, setLoading] = useState(false)
   const [autoSubmitting, setAutoSubmitting] = useState(!!phoneParam)
 
+  const utmParams = {
+    utmSource: searchParams.get('utm_source') ?? undefined,
+    utmMedium: searchParams.get('utm_medium') ?? undefined,
+    utmCampaign: searchParams.get('utm_campaign') ?? undefined,
+    utmTerm: searchParams.get('utm_term') ?? undefined,
+    utmContent: searchParams.get('utm_content') ?? undefined,
+  }
+
   async function sendCode(e164: string) {
     setError('')
     setAlreadySignedUp(false)
@@ -33,7 +41,7 @@ function JoinPageInner() {
       const res = await fetch('/api/signup/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: e164 }),
+        body: JSON.stringify({ phone: e164, ...utmParams }),
       })
 
       const data = await res.json()
