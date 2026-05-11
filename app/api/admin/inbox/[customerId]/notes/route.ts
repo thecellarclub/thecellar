@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireAdminSession } from '@/lib/adminAuth'
+import { Resend } from 'resend'
+
+const FROM_EMAIL = 'The Cellar Club <cheers@thecellar.club>'
 
 export async function GET(
   _req: NextRequest,
@@ -50,7 +53,7 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const { customerId } = await params
-  const body = await req.json().catch(() => null) as { body: string } | null
+  const body = await req.json().catch(() => null) as { body: string; mentions?: string[] } | null
   if (!body?.body?.trim()) {
     return NextResponse.json({ error: 'Note body is required' }, { status: 400 })
   }
@@ -79,6 +82,39 @@ export async function POST(
     action: 'note_added',
     detail: body.body.trim().slice(0, 80),
   })
+
+  // Send @mention notification emails
+  const mentionIds = (body.mentions ?? []).filter((id) => id !== auth.session.user.id)
+  if (mentionIds.length > 0) {
+    const resendKey = process.env.RESEND_API_KEY
+    if (resendKey && !resendKey.startsWith('re_placeholder')) {
+      // Fetch mentioned users + customer name
+      const [{ data: mentionedUsers }, { data: customer }] = await Promise.all([
+        sb.from('admin_users').select('id, name, email').in('id', mentionIds),
+        sb.from('customers').select('first_name, last_name').eq('id', customerId).maybeSingle(),
+      ])
+
+      const customerName = [customer?.first_name, customer?.last_name ? customer.last_name[0] + '.' : null]
+        .filter(Boolean).join(' ') || 'a customer'
+      const notePreview = body.body.trim().slice(0, 200)
+      const resend = new Resend(resendKey)
+
+      for (const user of (mentionedUsers ?? []) as { id: string; name: string; email: string }[]) {
+        resend.emails.send({
+          from: FROM_EMAIL,
+          to: user.email,
+          subject: `"${customerName}" — ${auth.session.user.name} mentioned you`,
+          text: [
+            `${auth.session.user.name} left a note on ${customerName}'s thread:`,
+            '',
+            `"${notePreview}"`,
+            '',
+            `→ Open thread: https://thecellar.club/admin/inbox?customer=${customerId}`,
+          ].join('\n'),
+        }).catch((err) => console.error('[inbox/notes] mention email error:', err))
+      }
+    }
+  }
 
   return NextResponse.json({
     ...note,

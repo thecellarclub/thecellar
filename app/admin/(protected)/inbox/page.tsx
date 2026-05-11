@@ -31,9 +31,15 @@ type SpecialRequest = {
   status: string
 }
 
-export default async function InboxPage() {
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customer?: string }>
+}) {
   const session = await getServerSession(authOptions)
   if (!session) redirect('/admin/login')
+
+  const { customer: initialCustomerId } = await searchParams
 
   const sb = createServiceClient()
 
@@ -258,6 +264,7 @@ export default async function InboxPage() {
         customers={customers ?? []}
         adminUsers={adminUsers}
         currentUser={currentUser}
+        initialCustomerId={initialCustomerId}
       />
     </div>
   )

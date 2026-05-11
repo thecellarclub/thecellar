@@ -469,37 +469,112 @@ function FollowUpControls({ thread, onUpdate }: {
   )
 }
 
+// ─── Note body renderer (parses @[Name](userId) tokens) ──────────────────────
+
+function NoteBody({ body }: { body: string }) {
+  const parts = body.split(/(@\[[^\]]+\]\([^)]+\))/g)
+  return (
+    <span>
+      {parts.map((part, i) => {
+        const match = part.match(/^@\[([^\]]+)\]\(([^)]+)\)$/)
+        if (match) {
+          return (
+            <span key={i} className="text-blue-600 font-semibold">@{match[1]}</span>
+          )
+        }
+        return <span key={i}>{part}</span>
+      })}
+    </span>
+  )
+}
+
+// Extract mention user IDs from raw body text
+function extractMentionIds(body: string): string[] {
+  const ids: string[] = []
+  const re = /@\[[^\]]+\]\(([^)]+)\)/g
+  let m
+  while ((m = re.exec(body)) !== null) ids.push(m[1])
+  return [...new Set(ids)]
+}
+
 // ─── Notes section ────────────────────────────────────────────────────────────
 
-function NotesSection({ thread, currentUserName, onNoteAdded }: {
+function NotesSection({ thread, adminUsers, onNoteAdded }: {
   thread: InboxThread
-  currentUserName: string
+  adminUsers: AdminUser[]
   onNoteAdded: (note: InboxNote) => void
 }) {
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null) // null = closed
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const notesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     notesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [thread.notes.length])
 
+  // Filtered list for mention popup
+  const mentionMatches = mentionQuery !== null
+    ? adminUsers.filter((u) => u.name.toLowerCase().startsWith(mentionQuery.toLowerCase()))
+    : []
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value
+    setBody(val)
+
+    // Detect @-trigger: find the last '@' before cursor that isn't part of a completed token
+    const cursor = e.target.selectionStart ?? val.length
+    const before = val.slice(0, cursor)
+    const atMatch = before.match(/@([\w]*)$/)
+    if (atMatch) {
+      setMentionQuery(atMatch[1])
+      setMentionIndex(0)
+    } else {
+      setMentionQuery(null)
+    }
+  }
+
+  function insertMention(user: AdminUser) {
+    const cursor = textareaRef.current?.selectionStart ?? body.length
+    const before = body.slice(0, cursor)
+    const after = body.slice(cursor)
+    // Replace the @query with the mention token
+    const replaced = before.replace(/@([\w]*)$/, `@[${user.name}](${user.id})`)
+    setBody(replaced + after)
+    setMentionQuery(null)
+    // Refocus textarea
+    setTimeout(() => textareaRef.current?.focus(), 0)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (mentionQuery !== null && mentionMatches.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex((i) => Math.min(i + 1, mentionMatches.length - 1)) }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIndex((i) => Math.max(i - 1, 0)) }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertMention(mentionMatches[mentionIndex]) }
+      if (e.key === 'Escape') { setMentionQuery(null) }
+    }
+  }
+
   async function addNote() {
     const trimmed = body.trim()
     if (!trimmed) return
     setLoading(true)
     setError(null)
+    const mentions = extractMentionIds(trimmed)
     const res = await fetch(`/api/admin/inbox/${thread.customerId}/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: trimmed }),
+      body: JSON.stringify({ body: trimmed, mentions }),
     })
     setLoading(false)
     if (res.ok) {
       const note = await res.json()
       onNoteAdded(note)
       setBody('')
+      setMentionQuery(null)
     } else {
       const data = await res.json()
       setError(data.error ?? 'Failed to add note')
@@ -517,7 +592,9 @@ function NotesSection({ thread, currentUserName, onNoteAdded }: {
                 <span className="font-medium text-gray-700">{note.author_name}</span>
                 {' · '}{timeAgo(note.created_at)}
               </p>
-              <p className="text-gray-800 leading-relaxed mt-0.5 whitespace-pre-wrap">{note.body}</p>
+              <p className="text-gray-800 leading-relaxed mt-0.5 whitespace-pre-wrap">
+                <NoteBody body={note.body} />
+              </p>
             </div>
           ))}
           <div ref={notesEndRef} />
@@ -527,20 +604,44 @@ function NotesSection({ thread, currentUserName, onNoteAdded }: {
         <p className="text-xs text-gray-400 mb-2">No notes yet</p>
       )}
       <div className="space-y-1.5">
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="Add a note…"
-          rows={2}
-          className="w-full border border-amber-300 rounded px-2.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none bg-amber-50/30"
-        />
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={body}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Add a note… type @ to mention someone"
+            rows={2}
+            className="w-full border border-amber-300 rounded px-2.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none bg-amber-50/30"
+          />
+          {mentionQuery !== null && mentionMatches.length > 0 && (
+            <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] z-10">
+              {mentionMatches.map((u, i) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); insertMention(u) }}
+                  className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 ${i === mentionIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}
+                >
+                  <span
+                    className="inline-flex items-center justify-center rounded-full text-white text-[9px] font-bold shrink-0"
+                    style={{ width: 16, height: 16, background: userColour(u.id) }}
+                  >
+                    {u.name[0]}
+                  </span>
+                  {u.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           onClick={addNote}
           disabled={loading || !body.trim()}
           className="text-xs px-2.5 py-1 rounded border border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-50 transition-colors"
         >
-          {loading ? '...' : `Add note`}
+          {loading ? '...' : 'Add note'}
         </button>
       </div>
     </div>
@@ -626,7 +727,7 @@ function CustomerPanel({ thread, adminUsers, currentUserId, currentUserName, onA
       <div className="border-t border-gray-100 pt-3">
         <NotesSection
           thread={thread}
-          currentUserName={currentUserName}
+          adminUsers={adminUsers}
           onNoteAdded={onNoteAdded}
         />
       </div>
@@ -1018,23 +1119,33 @@ export default function InboxClientView({
   customers,
   adminUsers,
   currentUser,
+  initialCustomerId,
 }: {
   threads: InboxThread[]
   customers: Customer[]
   adminUsers: AdminUser[]
   currentUser: { id: string; name: string; email: string }
+  initialCustomerId?: string
 }) {
   const router = useRouter()
   const [threads, setThreads] = useState<InboxThread[]>(initialThreads)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialCustomerId ?? null)
   const [showClosed, setShowClosed] = useState(false)
   const [showNewMessage, setShowNewMessage] = useState(false)
-  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>('all')
+  // Deep-link: if a specific customer is requested, start with All filter so they're always visible
+  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>(initialCustomerId ? 'all' : 'mine')
   const [view, setView] = useState<View>('active')
 
   useEffect(() => {
     setThreads(initialThreads)
   }, [initialThreads])
+
+  // When deep-linking to a customer, ensure closed threads are shown if theirs is closed
+  useEffect(() => {
+    if (!initialCustomerId) return
+    const t = initialThreads.find((t) => t.customerId === initialCustomerId)
+    if (t?.status === 'closed') setShowClosed(true)
+  }, [initialCustomerId, initialThreads])
 
   const selectedThread = threads.find((t) => t.customerId === selectedId) ?? null
 
