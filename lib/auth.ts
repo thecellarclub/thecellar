@@ -83,6 +83,8 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email as string
         token.name = user.name as string
       }
+      // Backfill id from sub for sessions minted before the id field was added
+      if (!token.id && token.sub) token.id = token.sub
       return token
     },
     async session({ session, token }) {
