@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/format'
 type Customer = {
   id: string
   first_name: string | null
+  last_name: string | null
   phone: string
   email: string | null
   active: boolean
@@ -36,7 +37,7 @@ export default function CustomersClientView({
     const q = search.toLowerCase()
     return customers.filter((c) => {
       if (q) {
-        const name = c.first_name?.toLowerCase() ?? ''
+        const name = [c.first_name, c.last_name].filter(Boolean).join(' ').toLowerCase()
         const phone = c.phone.toLowerCase()
         const email = c.email?.toLowerCase() ?? ''
         if (!name.includes(q) && !phone.includes(q) && !email.includes(q)) return false
@@ -103,7 +104,7 @@ export default function CustomersClientView({
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <Link href={`/admin/customers/${c.id}`} className="font-medium text-gray-900 hover:underline">
-                      {c.first_name ?? '—'}
+                      {[c.first_name, c.last_name].filter(Boolean).join(' ') || '—'}
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100 font-mono text-xs text-gray-600">{c.phone}</td>

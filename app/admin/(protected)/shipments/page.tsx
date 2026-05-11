@@ -28,7 +28,7 @@ export default async function ShipmentsPage() {
 
   const { data: shipments, error: shipmentsError } = await sb
     .from('shipments')
-    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
+    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, last_name, phone, email)')
     .order('created_at', { ascending: false })
 
   if (shipmentsError) {
@@ -79,8 +79,10 @@ export default async function ShipmentsPage() {
                 (shipments ?? []).map((s) => {
                   const c = s.customers as unknown as {
                     id: string
-                    first_name: string
+                    first_name: string | null
+                    last_name: string | null
                     phone: string
+                    email: string | null
                   } | null
 
                   const addr = s.shipping_address as {
@@ -101,12 +103,18 @@ export default async function ShipmentsPage() {
                     <tr key={s.id} className="hover:bg-gray-50 align-top">
                       <td className="px-4 py-3 border-b border-gray-100">
                         <Link href={`/admin/shipments/${s.id}`} className="hover:underline font-medium text-gray-900">
-                          {c ? c.first_name : '—'}
+                          {c ? ([c.first_name, c.last_name].filter(Boolean).join(' ') || '—') : '—'}
                         </Link>
                         {c && (
                           <>
                             <br />
                             <span className="text-gray-600 text-xs">{c.phone}</span>
+                            {c.email && (
+                              <>
+                                <br />
+                                <span className="text-gray-500 text-xs">{c.email}</span>
+                              </>
+                            )}
                           </>
                         )}
                       </td>

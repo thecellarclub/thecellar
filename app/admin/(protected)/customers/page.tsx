@@ -12,7 +12,7 @@ export default async function CustomersPage() {
 
   const { data: customers } = await sb
     .from('customers')
-    .select('id, first_name, phone, email, active, subscribed_at, tier')
+    .select('id, first_name, last_name, phone, email, active, subscribed_at, tier')
     .order('subscribed_at', { ascending: false })
 
   const { data: cellarTotals } = await sb
@@ -30,6 +30,7 @@ export default async function CustomersPage() {
         customers={(customers ?? []) as {
           id: string
           first_name: string | null
+          last_name: string | null
           phone: string
           email: string | null
           active: boolean
