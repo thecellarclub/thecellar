@@ -17,7 +17,7 @@ const links = [
   { href: '/admin/sms-log', label: 'SMS log', exact: false },
 ]
 
-export default function AdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
+export default function AdminNav({ inboxCount = 0, shipmentsCount = 0 }: { inboxCount?: number; shipmentsCount?: number }) {
   const pathname = usePathname()
   return (
     <nav className='flex-1 px-2 py-3 space-y-0.5'>
@@ -26,6 +26,9 @@ export default function AdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
         const cls = active
           ? 'bg-gray-700 text-white'
           : 'text-gray-400 hover:text-white hover:bg-gray-800'
+        const badge =
+          (label === 'Inbox' && inboxCount > 0 ? inboxCount : 0) ||
+          (label === 'Shipments' && shipmentsCount > 0 ? shipmentsCount : 0)
         return (
           <Link
             key={href}
@@ -33,9 +36,9 @@ export default function AdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
             className={'flex items-center justify-between px-3 py-2 rounded text-sm font-medium transition-colors ' + cls}
           >
             <span>{label}</span>
-            {label === 'Inbox' && inboxCount > 0 && (
+            {badge > 0 && (
               <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1.5 py-0.5 min-w-[18px]">
-                {inboxCount > 9 ? '9+' : inboxCount}
+                {badge > 9 ? '9+' : badge}
               </span>
             )}
           </Link>

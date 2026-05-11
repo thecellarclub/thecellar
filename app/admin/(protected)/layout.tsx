@@ -14,11 +14,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session) redirect('/admin/login')
 
   const sb = createServiceClient()
-  const { data: messages } = await sb
-    .from('concierge_messages')
-    .select('customer_id, direction, customers!inner(concierge_status)')
-    .eq('customers.concierge_status', 'open')
-    .order('created_at', { ascending: true })
+  const [{ data: messages }, { count: shipmentsCount }] = await Promise.all([
+    sb
+      .from('concierge_messages')
+      .select('customer_id, direction, customers!inner(concierge_status)')
+      .eq('customers.concierge_status', 'open')
+      .order('created_at', { ascending: true }),
+    sb
+      .from('shipments')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'confirmed'),
+  ])
 
   // Count open threads where the last message is inbound (unanswered)
   const lastDirectionByCustomer = new Map<string, string>()
@@ -26,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     lastDirectionByCustomer.set(row.customer_id, row.direction)
   }
   const inboxCount = [...lastDirectionByCustomer.values()].filter((d) => d === 'inbound').length
+  const pendingShipments = shipmentsCount ?? 0
 
   return (
     <div className="flex min-h-screen bg-gray-100 text-gray-900">
@@ -35,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <p className="font-bold text-sm tracking-wide">The Cellar Club</p>
           <p className="text-xs text-gray-400 mt-0.5">Admin</p>
         </div>
-        <AdminNav inboxCount={inboxCount} />
+        <AdminNav inboxCount={inboxCount} shipmentsCount={pendingShipments} />
         <div className="mt-auto px-4 py-4 border-t border-gray-700">
           <SignOutButton />
         </div>
@@ -44,7 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Content wrapper — takes remaining width */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile top nav + hamburger (hidden on md+) */}
-        <MobileAdminNav inboxCount={inboxCount} />
+        <MobileAdminNav inboxCount={inboxCount} shipmentsCount={pendingShipments} />
 
         {/* Page content */}
         <main className="flex-1 overflow-auto">{children}</main>

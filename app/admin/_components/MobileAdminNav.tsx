@@ -17,7 +17,7 @@ const links = [
   { href: '/admin/inbox', label: 'Inbox', exact: false },
 ]
 
-export default function MobileAdminNav({ inboxCount = 0 }: { inboxCount?: number }) {
+export default function MobileAdminNav({ inboxCount = 0, shipmentsCount = 0 }: { inboxCount?: number; shipmentsCount?: number }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -43,9 +43,9 @@ export default function MobileAdminNav({ inboxCount = 0 }: { inboxCount?: number
             <line x1="0" y1="8" x2="20" y2="8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             <line x1="0" y1="15" x2="20" y2="15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          {inboxCount > 0 && (
+          {(inboxCount > 0 || shipmentsCount > 0) && (
             <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1 min-w-[14px] h-3.5">
-              {inboxCount > 9 ? '9+' : inboxCount}
+              {inboxCount + shipmentsCount > 9 ? '9+' : inboxCount + shipmentsCount}
             </span>
           )}
         </button>
@@ -99,9 +99,9 @@ export default function MobileAdminNav({ inboxCount = 0 }: { inboxCount?: number
                     style={{ minHeight: '44px' }}
                   >
                     <span>{label}</span>
-                    {label === 'Inbox' && inboxCount > 0 && (
+                    {((label === 'Inbox' && inboxCount > 0) || (label === 'Shipments' && shipmentsCount > 0)) && (
                       <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold leading-none px-1.5 py-0.5 min-w-[18px]">
-                        {inboxCount > 9 ? '9+' : inboxCount}
+                        {label === 'Inbox' ? (inboxCount > 9 ? '9+' : inboxCount) : (shipmentsCount > 9 ? '9+' : shipmentsCount)}
                       </span>
                     )}
                   </Link>
