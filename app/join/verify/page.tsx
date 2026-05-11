@@ -8,6 +8,7 @@ declare global {
   interface Window {
     dataLayer?: IArguments[]
     gtag?: (...args: unknown[]) => void
+    rdt?: (...args: unknown[]) => void
   }
 }
 
@@ -44,6 +45,7 @@ export default function VerifyPage() {
       window.dataLayer = window.dataLayer || []
       window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments as unknown as IArguments) }
       window.gtag('event', 'conversion', { send_to: 'AW-18128381564/zX3cCPfJj6gcEPzMpMRD' })
+      window.rdt?.('track', 'Lead')
       router.push('/join/details')
     } catch {
       setError('Something went wrong. Please try again.')

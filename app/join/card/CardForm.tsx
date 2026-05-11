@@ -6,6 +6,7 @@ declare global {
   interface Window {
     dataLayer?: IArguments[]
     gtag?: (...args: unknown[]) => void
+    rdt?: (...args: unknown[]) => void
   }
 }
 import { useRouter } from 'next/navigation'
@@ -118,6 +119,7 @@ function CardFormInner() {
       window.dataLayer = window.dataLayer || []
       window.gtag = window.gtag || function gtag() { window.dataLayer!.push(arguments as unknown as IArguments) }
       window.gtag('event', 'conversion', { send_to: 'AW-18128381564/YAaxCM__9qccEPzMpMRD' })
+      window.rdt?.('track', 'SignUp')
       router.push('/join/confirmed')
     } catch {
       setError('Something went wrong. Please try again.')
