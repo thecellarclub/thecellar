@@ -6,7 +6,29 @@ import { formatDate } from '@/lib/format'
 import Link from 'next/link'
 import ShipmentActions from '@/app/admin/_components/ShipmentActions'
 
-function StatusBadge({ status }: { status: string }) {
+function formatCollectionDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const s = ['th', 'st', 'nd', 'rd']
+  const n = d.getDate()
+  const v = n % 100
+  const ord = n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' })
+  const month = d.toLocaleDateString('en-GB', { month: 'short' })
+  return `${weekday} ${ord} ${month}`
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const hour = h % 12 === 0 ? 12 : h % 12
+  return `${hour}:${String(m).padStart(2, '0')}${ampm}`
+}
+
+function StatusBadge({ status, type }: { status: string; type?: string | null }) {
+  if (type === 'collection') {
+    if (status === 'pending') return <span className="text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700">Collection pending</span>
+    if (status === 'delivered') return <span className="text-xs px-2 py-0.5 rounded font-medium bg-green-100 text-green-700">Collected</span>
+  }
   const styles: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700',
     confirmed: 'bg-purple-100 text-purple-700',
@@ -28,7 +50,7 @@ export default async function ShipmentsPage() {
 
   const { data: shipments, error: shipmentsError } = await sb
     .from('shipments')
-    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, customers(id, first_name, last_name, phone, email)')
+    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, customers(id, first_name, last_name, phone, email)')
     .order('created_at', { ascending: false })
 
   if (shipmentsError) {
@@ -84,6 +106,10 @@ export default async function ShipmentsPage() {
                     phone: string
                     email: string | null
                   } | null
+                  const sType = (s as unknown as { type?: string | null }).type
+                  const collectionVenue = (s as unknown as { collection_venue?: string | null }).collection_venue
+                  const collectionDate = (s as unknown as { collection_date?: string | null }).collection_date
+                  const collectionTime = (s as unknown as { collection_time?: string | null }).collection_time
 
                   const addr = s.shipping_address as {
                     line1?: string
@@ -119,15 +145,25 @@ export default async function ShipmentsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100 text-gray-600 text-xs">
-                        {(s as unknown as { type?: string }).type === 'collection'
-                          ? '—'
-                          : addressParts.length > 0 ? addressParts.join(', ') : '—'}
+                        {sType === 'collection' ? (
+                          collectionVenue || collectionDate ? (
+                            <span>
+                              <span className="font-medium text-gray-800">{collectionVenue === 'crush' ? 'Crush' : collectionVenue === 'norse' ? 'Norse' : collectionVenue}</span>
+                              {collectionDate && (
+                                <>
+                                  <br />
+                                  {formatCollectionDate(collectionDate)}
+                                  {collectionTime ? `, ${formatTime(collectionTime)}` : ''}
+                                </>
+                              )}
+                            </span>
+                          ) : '—'
+                        ) : (
+                          addressParts.length > 0 ? addressParts.join(', ') : '—'
+                        )}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">
-                        {(s as unknown as { type?: string }).type === 'collection' && (
-                          <span className="text-xs font-medium text-gray-700 block mb-1">Collected in person</span>
-                        )}
-                        <StatusBadge status={s.status} />
+                        <StatusBadge status={s.status} type={sType} />
                         {s.dispatched_at && (
                           <p className="text-xs text-gray-600 mt-1">Sent {formatDate(s.dispatched_at)}</p>
                         )}
@@ -142,7 +178,7 @@ export default async function ShipmentsPage() {
                         {formatDate(s.created_at)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <ShipmentActions shipmentId={s.id} status={s.status} />
+                        <ShipmentActions shipmentId={s.id} status={s.status} type={sType} />
                       </td>
                     </tr>
                   )

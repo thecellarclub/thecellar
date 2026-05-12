@@ -7,8 +7,27 @@ import DeactivateButton from '../../../_components/DeactivateButton'
 import RefundButton from '../../../_components/RefundButton'
 import SendOfferForm from '../../../_components/SendOfferForm'
 import CollectCellarForm from '../../../_components/CollectCellarForm'
+import CollectionActions from '../../../_components/CollectionActions'
 import CancelOrderButton from '../../../_components/CancelOrderButton'
 import Link from 'next/link'
+
+function formatCollectionDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const s = ['th', 'st', 'nd', 'rd']
+  const n = d.getDate()
+  const v = n % 100
+  const ord = n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' })
+  const month = d.toLocaleDateString('en-GB', { month: 'short' })
+  return `${weekday} ${ord} ${month}`
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const hour = h % 12 === 0 ? 12 : h % 12
+  return `${hour}:${String(m).padStart(2, '0')}${ampm}`
+}
 
 type WineDetail = {
   name: string
@@ -50,6 +69,10 @@ type ShipmentRow = {
   tracking_provider: string | null
   created_at: string
   dispatched_at: string | null
+  collection_venue: string | null
+  collection_date: string | null
+  collection_time: string | null
+  bottle_count: number | null
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -124,7 +147,7 @@ export default async function CustomerDetailPage({
     sb.from('wines').select('id, name, price_pence, stock_bottles').eq('active', true).order('name'),
     sb
       .from('shipments')
-      .select('id, status, type, tracking_number, tracking_provider, created_at, dispatched_at')
+      .select('id, status, type, tracking_number, tracking_provider, created_at, dispatched_at, collection_venue, collection_date, collection_time, bottle_count')
       .eq('customer_id', id)
       .order('created_at', { ascending: false }),
   ])
@@ -135,7 +158,8 @@ export default async function CustomerDetailPage({
   const orderRows = (orders ?? []) as unknown as OrderRow[]
   const shipmentRows = (shipments ?? []) as unknown as ShipmentRow[]
 
-  const unshipped = cellar.filter((c) => !c.shipped_at)
+  // Available = not shipped AND not reserved for a pending collection
+  const unshipped = cellar.filter((c) => !c.shipped_at && !c.shipment_id)
   const shipped = cellar.filter((c) => c.shipped_at)
   const unshippedBottles = unshipped.reduce((s, c) => s + c.quantity, 0)
 
@@ -154,6 +178,13 @@ export default async function CustomerDetailPage({
       cellarByOrderId.set(c.order_id, c)
     }
   }
+
+  const pendingCollections = shipmentRows.filter(
+    (s) => s.type === 'collection' && s.status !== 'delivered'
+  )
+  const completedShipments = shipmentRows.filter(
+    (s) => !(s.type === 'collection' && s.status !== 'delivered')
+  )
 
   // Group shipped cellar rows by shipment_id for the Shipped section
   const cellarByShipment = new Map<string, CellarEntry[]>()
@@ -225,14 +256,37 @@ export default async function CustomerDetailPage({
         <CollectCellarForm customerId={id} entries={unshipped} />
       </div>
 
-      {/* ── Section 2: Shipped ──────────────────────────────────────────────────── */}
+      {/* ── Section 2: Pending Collections ─────────────────────────────────────── */}
+      {pendingCollections.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <SectionHead title="Pending collections" count={pendingCollections.length} />
+          <div className="divide-y divide-gray-100">
+            {pendingCollections.map((s) => {
+              const venueName = s.collection_venue === 'crush' ? 'Crush' : s.collection_venue === 'norse' ? 'Norse' : s.collection_venue ?? '—'
+              const dateLabel = s.collection_date ? formatCollectionDate(s.collection_date) : '—'
+              const timeLabel = s.collection_time ? `at ${formatTime(s.collection_time)}` : 'no time set'
+              return (
+                <div key={s.id} className="px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{venueName}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{dateLabel} · {timeLabel} · {s.bottle_count ?? '?'} bottle{s.bottle_count !== 1 ? 's' : ''}</p>
+                  </div>
+                  <CollectionActions shipmentId={s.id} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Section 3: Shipped ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200">
-        <SectionHead title="Shipped" count={shipmentRows.length} />
-        {shipmentRows.length === 0 ? (
+        <SectionHead title="Shipped" count={completedShipments.length} />
+        {completedShipments.length === 0 ? (
           <p className="px-4 py-6 text-center text-gray-500 text-sm">No shipments yet</p>
         ) : (
           <div className="divide-y divide-gray-100">
-            {shipmentRows.map((ship) => {
+            {completedShipments.map((ship) => {
               const rows = cellarByShipment.get(ship.id) ?? []
               const date = ship.dispatched_at ?? ship.created_at
               return (
@@ -281,7 +335,7 @@ export default async function CustomerDetailPage({
         )}
       </div>
 
-      {/* ── Section 3: Payments ─────────────────────────────────────────────────── */}
+      {/* ── Section 4: Payments ─────────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200">
         <SectionHead title="Payments" count={orderRows.length} />
         <div className="overflow-x-auto">
@@ -338,7 +392,7 @@ export default async function CustomerDetailPage({
         </div>
       </div>
 
-      {/* ── Section 4: Send Offer ───────────────────────────────────────────────── */}
+      {/* ── Section 5: Send Offer ───────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Send offer</p>
         <SendOfferForm
@@ -349,7 +403,7 @@ export default async function CustomerDetailPage({
         />
       </div>
 
-      {/* ── Section 5: Admin tools ──────────────────────────────────────────────── */}
+      {/* ── Section 6: Admin tools ──────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Admin tools</p>
         <div className="flex items-center gap-4">

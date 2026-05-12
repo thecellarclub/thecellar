@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { formatDate, formatDateTime } from '@/lib/format'
 import Link from 'next/link'
 import ShipmentDispatchForm from '@/app/admin/_components/ShipmentDispatchForm'
+import CollectionActions from '@/app/admin/_components/CollectionActions'
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -34,7 +35,7 @@ export default async function ShipmentDetailPage({
 
   const { data: shipment, error: shipmentError } = await sb
     .from('shipments')
-    .select('id, status, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, customers(id, first_name, phone)')
+    .select('id, status, type, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, customers(id, first_name, phone)')
     .eq('id', id)
     .maybeSingle()
 
@@ -45,6 +46,29 @@ export default async function ShipmentDetailPage({
   if (!shipment) notFound()
 
   const customer = shipment.customers as unknown as { id: string; first_name: string | null; phone: string | null } | null
+  const sType = (shipment as unknown as { type?: string | null }).type
+  const collectionVenue = (shipment as unknown as { collection_venue?: string | null }).collection_venue
+  const collectionDate = (shipment as unknown as { collection_date?: string | null }).collection_date
+  const collectionTime = (shipment as unknown as { collection_time?: string | null }).collection_time
+  const isCollection = sType === 'collection'
+
+  function formatCollectionDate(dateStr: string): string {
+    const d = new Date(dateStr + 'T12:00:00')
+    const s = ['th', 'st', 'nd', 'rd']
+    const n = d.getDate()
+    const v = n % 100
+    const ord = n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+    const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' })
+    const month = d.toLocaleDateString('en-GB', { month: 'long' })
+    return `${weekday} ${ord} ${month}`
+  }
+
+  function formatTime(t: string): string {
+    const [h, m] = t.split(':').map(Number)
+    const ampm = h >= 12 ? 'pm' : 'am'
+    const hour = h % 12 === 0 ? 12 : h % 12
+    return `${hour}:${String(m).padStart(2, '0')}${ampm}`
+  }
 
   const addr = shipment.shipping_address as {
     line1?: string
@@ -88,8 +112,20 @@ export default async function ShipmentDetailPage({
           )}
         </div>
         <div>
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Address</p>
-          <p className="font-medium text-gray-900">{addressParts.length > 0 ? addressParts.join(', ') : '—'}</p>
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{isCollection ? 'Collection' : 'Address'}</p>
+          {isCollection ? (
+            <div>
+              <p className="font-medium text-gray-900">{collectionVenue === 'crush' ? 'Crush' : collectionVenue === 'norse' ? 'Norse' : collectionVenue ?? '—'}</p>
+              {collectionDate && (
+                <p className="text-sm text-gray-600 mt-0.5">
+                  {formatCollectionDate(collectionDate)}
+                  {collectionTime ? ` at ${formatTime(collectionTime)}` : ' · no time set'}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="font-medium text-gray-900">{addressParts.length > 0 ? addressParts.join(', ') : '—'}</p>
+          )}
         </div>
         <div>
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Bottles</p>
@@ -126,20 +162,29 @@ export default async function ShipmentDetailPage({
         )}
       </div>
 
-      {/* Dispatch / tracking form */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-900">Tracking &amp; dispatch</h2>
+      {/* Dispatch / tracking form — hidden for collection shipments */}
+      {isCollection ? (
+        shipment.status === 'pending' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <p className="text-sm font-semibold text-gray-900 mb-3">Collection actions</p>
+            <CollectionActions shipmentId={id} />
+          </div>
+        )
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-900">Tracking &amp; dispatch</h2>
+          </div>
+          <div className="px-4 py-4">
+            <ShipmentDispatchForm
+              shipmentId={id}
+              status={shipment.status}
+              initialCarrier={shipment.tracking_provider ?? ''}
+              initialTracking={shipment.tracking_number ?? ''}
+            />
+          </div>
         </div>
-        <div className="px-4 py-4">
-          <ShipmentDispatchForm
-            shipmentId={id}
-            status={shipment.status}
-            initialCarrier={shipment.tracking_provider ?? ''}
-            initialTracking={shipment.tracking_number ?? ''}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Cellar contents */}
       <div className="bg-white rounded-lg border border-gray-200">

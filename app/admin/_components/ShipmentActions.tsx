@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation'
 export default function ShipmentActions({
   shipmentId,
   status,
+  type,
 }: {
   shipmentId: string
   status: string
+  type?: string | null
 }) {
   const router = useRouter()
   const [trackingNumber, setTrackingNumber] = useState('')
@@ -16,6 +18,37 @@ export default function ShipmentActions({
   const [error, setError] = useState<string | null>(null)
   const [showTrackingInput, setShowTrackingInput] = useState(false)
 
+  // Collection shipment actions
+  if (type === 'collection') {
+    if (status === 'delivered') {
+      return <span className="text-xs text-gray-500">Collected</span>
+    }
+    return (
+      <div>
+        <button
+          onClick={async () => {
+            setLoading(true)
+            setError(null)
+            const res = await fetch(`/api/admin/shipments/${shipmentId}/complete-collection`, { method: 'POST' })
+            setLoading(false)
+            if (!res.ok) {
+              const data = await res.json()
+              setError(data.error ?? 'Failed')
+            } else {
+              router.refresh()
+            }
+          }}
+          disabled={loading}
+          className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
+        >
+          {loading ? '…' : 'Mark collected'}
+        </button>
+        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      </div>
+    )
+  }
+
+  // Standard delivery shipment actions
   async function updateStatus(newStatus: 'dispatched' | 'delivered', tracking?: string) {
     setLoading(true)
     setError(null)
@@ -57,7 +90,6 @@ export default function ShipmentActions({
     )
   }
 
-  // status === 'pending' or 'confirmed'
   return (
     <div className="space-y-2">
       {showTrackingInput ? (
