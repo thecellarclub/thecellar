@@ -32,6 +32,13 @@ export async function PATCH(req: NextRequest) {
 
   const sb = createServiceClient()
 
+  // Fetch request to get customer_id for activity log
+  const { data: request } = await sb
+    .from('special_requests')
+    .select('customer_id')
+    .eq('id', body.id)
+    .maybeSingle()
+
   const { error } = await sb
     .from('special_requests')
     .update({ status: body.status })
@@ -40,6 +47,18 @@ export async function PATCH(req: NextRequest) {
   if (error) {
     console.error('[admin/requests] PATCH error', error)
     return NextResponse.json({ error: 'Failed to update request' }, { status: 500 })
+  }
+
+  // Log activity
+  if (request?.customer_id && body.status === 'resolved') {
+    sb.from('inbox_activity').insert({
+      customer_id: request.customer_id,
+      actor_id: auth.session.user.id,
+      action: 'request_resolved',
+      detail: null,
+    }).then(({ error: logErr }) => {
+      if (logErr) console.error('[admin/requests] activity log error', logErr)
+    })
   }
 
   return NextResponse.json({ ok: true })

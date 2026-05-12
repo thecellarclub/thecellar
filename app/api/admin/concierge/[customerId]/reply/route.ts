@@ -61,5 +61,15 @@ export async function POST(
     return NextResponse.json({ error: 'SMS sent but failed to record message' }, { status: 500 })
   }
 
+  // Log activity (fire-and-forget — don't fail the reply on log error)
+  sb.from('inbox_activity').insert({
+    customer_id: customerId,
+    actor_id: auth.session.user.id,
+    action: 'replied',
+    detail: message.slice(0, 80),
+  }).then(({ error }) => {
+    if (error) console.error('[admin/concierge/reply] activity log error', error)
+  })
+
   return NextResponse.json({ ok: true })
 }

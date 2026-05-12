@@ -35,5 +35,15 @@ export async function PATCH(
       .neq('status', 'resolved')
   }
 
+  // Log activity
+  sb.from('inbox_activity').insert({
+    customer_id: customerId,
+    actor_id: auth.session.user.id,
+    action: body.status === 'closed' ? 'closed' : 'reopened',
+    detail: null,
+  }).then(({ error: logErr }) => {
+    if (logErr) console.error('[admin/concierge/status] activity log error', logErr)
+  })
+
   return NextResponse.json({ ok: true })
 }
