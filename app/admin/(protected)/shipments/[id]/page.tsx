@@ -7,17 +7,27 @@ import Link from 'next/link'
 import ShipmentDispatchForm from '@/app/admin/_components/ShipmentDispatchForm'
 import CollectionActions from '@/app/admin/_components/CollectionActions'
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  collection_booked: 'Collection booked',
+  dispatched: 'Dispatched',
+  delivered: 'Delivered',
+  paused: 'Paused',
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700',
     confirmed: 'bg-purple-100 text-purple-700',
+    collection_booked: 'bg-indigo-100 text-indigo-700',
     dispatched: 'bg-blue-100 text-blue-700',
     delivered: 'bg-green-100 text-green-700',
     paused: 'bg-gray-100 text-gray-600',
   }
   return (
     <span className={`text-xs px-2 py-0.5 rounded font-medium ${styles[status] ?? 'bg-gray-100 text-gray-600'}`}>
-      {status}
+      {STATUS_LABELS[status] ?? status}
     </span>
   )
 }
@@ -35,7 +45,7 @@ export default async function ShipmentDetailPage({
 
   const { data: shipment, error: shipmentError } = await sb
     .from('shipments')
-    .select('id, status, type, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, customers(id, first_name, phone)')
+    .select('id, status, type, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, courier_collection_date, courier_collection_location, customers(id, first_name, phone)')
     .eq('id', id)
     .maybeSingle()
 
@@ -51,6 +61,8 @@ export default async function ShipmentDetailPage({
   const collectionDate = (shipment as unknown as { collection_date?: string | null }).collection_date
   const collectionTime = (shipment as unknown as { collection_time?: string | null }).collection_time
   const isCollection = sType === 'collection'
+  const courierDate = (shipment as unknown as { courier_collection_date?: string | null }).courier_collection_date
+  const courierLocation = (shipment as unknown as { courier_collection_location?: string | null }).courier_collection_location
 
   function formatCollectionDate(dateStr: string): string {
     const d = new Date(dateStr + 'T12:00:00')
@@ -149,6 +161,15 @@ export default async function ShipmentDetailPage({
           <div>
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Delivered</p>
             <p className="font-medium text-gray-900">{formatDate(shipment.delivered_at)}</p>
+          </div>
+        )}
+        {courierDate && (
+          <div>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Courier collection</p>
+            <p className="font-medium text-gray-900">
+              {courierLocation === 'crush' ? 'Crush' : courierLocation === 'norse' ? 'Norse' : courierLocation ?? '—'}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">{formatCollectionDate(courierDate)}</p>
           </div>
         )}
         {shipment.tracking_number && (

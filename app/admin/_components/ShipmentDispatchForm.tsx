@@ -81,7 +81,7 @@ export default function ShipmentDispatchForm({
           {loading ? 'Saving…' : 'Save tracking'}
         </button>
 
-        {status === 'pending' && (
+        {(status === 'pending' || status === 'collection_booked') && (
           <button
             onClick={() => callApi('dispatch')}
             disabled={loading}

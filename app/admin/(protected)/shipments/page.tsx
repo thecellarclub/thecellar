@@ -24,6 +24,14 @@ function formatTime(t: string): string {
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  collection_booked: 'Collection booked',
+  dispatched: 'Dispatched',
+  delivered: 'Delivered',
+}
+
 function StatusBadge({ status, type }: { status: string; type?: string | null }) {
   if (type === 'collection') {
     if (status === 'pending') return <span className="text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700">Collection pending</span>
@@ -32,12 +40,13 @@ function StatusBadge({ status, type }: { status: string; type?: string | null })
   const styles: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700',
     confirmed: 'bg-purple-100 text-purple-700',
+    collection_booked: 'bg-indigo-100 text-indigo-700',
     dispatched: 'bg-blue-100 text-blue-700',
     delivered: 'bg-green-100 text-green-700',
   }
   return (
     <span className={`text-xs px-2 py-0.5 rounded font-medium ${styles[status] ?? 'bg-gray-100 text-gray-600'}`}>
-      {status}
+      {STATUS_LABELS[status] ?? status}
     </span>
   )
 }
@@ -50,14 +59,15 @@ export default async function ShipmentsPage() {
 
   const { data: shipments, error: shipmentsError } = await sb
     .from('shipments')
-    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, customers(id, first_name, last_name, phone, email)')
+    .select('id, status, type, tracking_number, shipping_address, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, courier_collection_date, courier_collection_location, customers(id, first_name, last_name, phone, email)')
     .order('created_at', { ascending: false })
 
   if (shipmentsError) {
     console.error('[admin/shipments] query error', shipmentsError)
   }
 
-  const pending = (shipments ?? []).filter((s) => s.status === 'pending').length
+  const pending = (shipments ?? []).filter((s) => s.status === 'pending' || s.status === 'confirmed').length
+  const collectionBooked = (shipments ?? []).filter((s) => s.status === 'collection_booked').length
   const dispatched = (shipments ?? []).filter((s) => s.status === 'dispatched').length
 
   return (
@@ -65,10 +75,10 @@ export default async function ShipmentsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Shipments</h1>
-          {(pending > 0 || dispatched > 0) && (
-            <p className="text-sm text-gray-500 mt-0.5">
+          {(pending > 0 || collectionBooked > 0 || dispatched > 0) && (
+            <p className="text-sm text-gray-500 mt-0.5 flex flex-wrap gap-x-2">
               {pending > 0 && <span className="text-amber-700 font-medium">{pending} pending</span>}
-              {pending > 0 && dispatched > 0 && ' · '}
+              {collectionBooked > 0 && <span className="text-indigo-700 font-medium">{collectionBooked} collection booked</span>}
               {dispatched > 0 && <span className="text-blue-700 font-medium">{dispatched} in transit</span>}
             </p>
           )}
@@ -110,6 +120,9 @@ export default async function ShipmentsPage() {
                   const collectionVenue = (s as unknown as { collection_venue?: string | null }).collection_venue
                   const collectionDate = (s as unknown as { collection_date?: string | null }).collection_date
                   const collectionTime = (s as unknown as { collection_time?: string | null }).collection_time
+                  const courierDate = (s as unknown as { courier_collection_date?: string | null }).courier_collection_date
+                  const courierLocation = (s as unknown as { courier_collection_location?: string | null }).courier_collection_location
+                  const trackingNum = (s as unknown as { tracking_number?: string | null }).tracking_number
 
                   const addr = s.shipping_address as {
                     line1?: string
@@ -164,6 +177,12 @@ export default async function ShipmentsPage() {
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">
                         <StatusBadge status={s.status} type={sType} />
+                        {s.status === 'collection_booked' && courierDate && (
+                          <p className="text-xs text-gray-600 mt-1">
+                            {courierLocation === 'crush' ? 'Crush' : courierLocation === 'norse' ? 'Norse' : courierLocation}
+                            {' · '}{formatCollectionDate(courierDate)}
+                          </p>
+                        )}
                         {s.dispatched_at && (
                           <p className="text-xs text-gray-600 mt-1">Sent {formatDate(s.dispatched_at)}</p>
                         )}
@@ -178,7 +197,14 @@ export default async function ShipmentsPage() {
                         {formatDate(s.created_at)}
                       </td>
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <ShipmentActions shipmentId={s.id} status={s.status} type={sType} />
+                        <ShipmentActions
+                          shipmentId={s.id}
+                          status={s.status}
+                          type={sType}
+                          courierCollectionDate={courierDate}
+                          courierCollectionLocation={courierLocation}
+                          trackingNumber={trackingNum}
+                        />
                       </td>
                     </tr>
                   )
