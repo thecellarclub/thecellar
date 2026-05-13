@@ -1144,7 +1144,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const rawBody = (params['Body'] ?? '').trim()
   const body = rawBody.toLowerCase()
   // Strip trailing punctuation for keyword matching only — e.g. "yes." → "yes", "YES!" → "yes"
-  const keyword = body.replace(/[.!?,;]+$/, '')
+  // Also normalise polite variants — "yes please" / "yes pls" → "yes"
+  const keyword = body.replace(/[.!?,;]+$/, '').replace(/^yes\s+(please|pls)$/, 'yes')
 
   const sb = createServiceClient()
 
