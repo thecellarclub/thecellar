@@ -65,7 +65,7 @@ export async function PATCH(
   const { error } = await sb.from('shipments').update(updates).eq('id', id)
   if (error) {
     console.error('[admin/shipments/[id]] PATCH error', error)
-    return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+    return NextResponse.json({ error: error.message ?? 'Update failed' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })
