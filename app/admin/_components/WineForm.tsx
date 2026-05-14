@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import SmsCharCounter from './SmsCharCounter'
 
@@ -52,6 +52,9 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -63,6 +66,26 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
     const base = slugify(form.name)
     const suffix = form.vintage ? `-${form.vintage}` : ''
     if (base) setForm((f) => ({ ...f, slug: base + suffix }))
+  }
+
+  async function handleImageFile(file: File) {
+    setImageError(null)
+    setImageUploading(true)
+    const data = new FormData()
+    data.append('image', file)
+    try {
+      const res = await fetch('/api/admin/wines/upload-image', { method: 'POST', body: data })
+      const json = await res.json()
+      if (!res.ok) {
+        setImageError(json.error ?? 'Upload failed')
+      } else {
+        setForm((f) => ({ ...f, image_url: json.url }))
+      }
+    } catch {
+      setImageError('Upload failed')
+    } finally {
+      setImageUploading(false)
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -175,13 +198,58 @@ export default function WineForm({ mode, wineId, initial = {}, onClose }: WineFo
             )}
           </div>
           <div>
-            <label className={labelCls}>Image URL</label>
+            <label className={labelCls}>Image</label>
             <input
-              value={form.image_url}
-              onChange={set('image_url')}
-              className={inputCls}
-              placeholder="https://..."
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleImageFile(file)
+                e.target.value = ''
+              }}
             />
+            {form.image_url ? (
+              <div className="space-y-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={form.image_url}
+                  alt="Wine"
+                  className="max-h-[200px] rounded border border-gray-200 object-contain"
+                />
+                <div className="flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs text-gray-600 underline hover:text-gray-900"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, image_url: '' }))}
+                    className="text-xs text-red-500 underline hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageUploading}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors disabled:opacity-50"
+              >
+                {imageUploading ? (
+                  <span className="text-sm text-gray-500">Uploading…</span>
+                ) : (
+                  <span className="text-sm text-gray-500">Drop an image or click to browse</span>
+                )}
+              </button>
+            )}
+            {imageError && <p className="text-xs text-red-600 mt-1">{imageError}</p>}
           </div>
           <div>
             <label className={labelCls}>Retail price (£)</label>
