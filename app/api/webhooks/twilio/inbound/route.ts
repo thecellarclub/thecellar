@@ -188,7 +188,7 @@ async function handleShip(
   if (total < 12) {
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £15. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`,
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £10. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`,
       { trigger: 'keyword:ship', customerId: customer.id }
     )
     return twimlOk()
@@ -334,7 +334,7 @@ async function handleShipConfirm(
     return twimlOk()
   }
 
-  const SHIPPING_FEE_PENCE = 1500
+  const SHIPPING_FEE_PENCE = 1000
 
   // ── Guard: no payment method saved ──────────────────────────────────────
   if (!customer.stripe_payment_method_id) {
@@ -371,7 +371,7 @@ async function handleShipConfirm(
   const bottlesToShipEarly = availableBottles
   const earlySelectedIds = (cellarRowsForEarly ?? []).map(r => r.id)
 
-  // ── Charge £15 shipping via Stripe ───────────────────────────────────────
+  // ── Charge £10 shipping via Stripe ───────────────────────────────────────
   let paymentIntent: Stripe.PaymentIntent
 
   try {

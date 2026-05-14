@@ -151,7 +151,7 @@ const FAQS: Array<{ q: string; a: React.ReactNode }> = [
   },
   {
     q: 'How does delivery work?',
-    a: 'Free once you fill a case (12 bottles). If you want something sooner, you can ship early for a flat £15.',
+    a: 'Free once you fill a case (12 bottles). If you want something sooner, you can ship early for a flat £10.',
   },
   {
     q: 'Why use The Cellar Club instead of a normal wine shop?',

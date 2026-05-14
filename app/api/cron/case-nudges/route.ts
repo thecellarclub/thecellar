@@ -14,7 +14,7 @@ import { ordinalDate } from '@/lib/format'
  * For each active customer with a running case timer:
  *   Day 75+: send nudge 1 (if not sent)
  *   Day 90+: send nudge 2 (if not sent)
- *   Day 104+ & nudge 2 sent: auto-ship, charge £15, reset timer
+ *   Day 104+ & nudge 2 sent: auto-ship, charge £10, reset timer
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -85,14 +85,14 @@ export async function GET(req: NextRequest) {
     const deadlineStr = ordinalDate(deadline)
 
     if (daysSinceCase >= 104 && customer.case_nudge_2_sent_at) {
-      // ── Auto-ship: charge £15 and create pending shipment ─────────────────
+      // ── Auto-ship: charge £10 and create pending shipment ─────────────────
       if (!customer.stripe_payment_method_id) {
         console.warn('[cron/case-nudges] Customer has no payment method, skipping', customer.id)
         continue
       }
       try {
         const pi = await stripe.paymentIntents.create({
-          amount: 1500,
+          amount: 1000,
           currency: 'gbp',
           customer: customer.stripe_customer_id,
           payment_method: customer.stripe_payment_method_id,
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
               status: 'pending',
               token: shipToken,
               bottle_count: bottles,
-              shipping_fee_pence: 1500,
+              shipping_fee_pence: 1000,
               stripe_payment_intent_id: pi.id,
               stripe_charge_status: 'succeeded',
               created_at: now.toISOString(),
@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
 
           await sendSms(
             customer.phone,
-            `Your 90-day deadline has passed - I've started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged £15. Please confirm your address: ${appUrl}/ship?token=${shipToken}`,
+            `Your 90-day deadline has passed - I've started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged £10. Please confirm your address: ${appUrl}/ship?token=${shipToken}`,
             { trigger: 'cron:auto-ship', customerId: customer.id }
           )
 
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Last call - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send for £15, or keep collecting (free at 12). After the deadline I'll ship and charge £15 automatically.`,
+        `Last call - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send for £10, or keep collecting (free at 12). After the deadline I'll ship and charge £10 automatically.`,
         { trigger: 'cron:nudge-2', customerId: customer.id }
       )
 
@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Just a nudge - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for £15.`,
+        `Just a nudge - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for £10.`,
         { trigger: 'cron:nudge-1', customerId: customer.id }
       )
 
