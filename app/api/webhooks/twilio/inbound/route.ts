@@ -817,12 +817,12 @@ async function handleYes(
     return twimlOk()
   }
 
-  // ── Find the most recent pending order for this customer ──────────────────
+  // ── Find the most recent pending or payment_failed order for this customer ─
   const { data: order } = await sb
     .from('orders')
-    .select('id, wine_id, quantity, price_pence, total_pence, confirmation_expires_at, auth_token, text_id')
+    .select('id, wine_id, quantity, price_pence, total_pence, confirmation_expires_at, auth_token, text_id, order_status, payment_failed_at')
     .eq('customer_id', customer.id)
-    .eq('order_status', 'awaiting_confirmation')
+    .in('order_status', ['awaiting_confirmation', 'payment_failed'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -832,7 +832,25 @@ async function handleYes(
     return twimlOk()
   }
 
-  // Check expiry
+  // ── Payment_failed retry window: allow YES within 24h of failure ──────────
+  if (order.order_status === 'payment_failed') {
+    const retryExpiry = new Date(new Date(order.payment_failed_at as string).getTime() + 24 * 60 * 60 * 1000)
+    if (new Date() > retryExpiry) {
+      // Window expired — release reserved stock and inform customer
+      const { data: failedWine } = await sb.from('wines').select('stock_bottles').eq('id', order.wine_id).maybeSingle()
+      await sb.from('wines').update({ stock_bottles: (failedWine?.stock_bottles ?? 0) + order.quantity }).eq('id', order.wine_id)
+      await sb.from('orders').update({ order_status: 'expired' }).eq('id', order.id)
+      await sendSms(from, `Your order window has passed. Reply with a number to place a new order.`, { trigger: 'keyword:yes', customerId: customer.id })
+      return twimlOk()
+    }
+    // Within retry window — reset back to awaiting_confirmation with a fresh expiry
+    await sb.from('orders').update({
+      order_status: 'awaiting_confirmation',
+      confirmation_expires_at: retryExpiry.toISOString(),
+    }).eq('id', order.id)
+  }
+
+  // Check expiry (for awaiting_confirmation orders; payment_failed path resets above)
   if (new Date() > new Date(order.confirmation_expires_at)) {
     // Release reserved stock
     const { data: expiredWineStock } = await sb
