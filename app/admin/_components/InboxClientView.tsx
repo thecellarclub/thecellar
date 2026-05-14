@@ -1271,7 +1271,7 @@ export default function InboxClientView({
       </div>
 
       {/* DESKTOP: 3-column */}
-      <div className="hidden md:flex border border-gray-200 rounded-lg overflow-hidden bg-white" style={{ minHeight: '600px' }}>
+      <div className="hidden md:flex border border-gray-200 rounded-lg overflow-hidden bg-white h-[calc(100vh-110px)]">
         {/* Left column: thread list */}
         <div className="w-72 lg:w-80 shrink-0 border-r border-gray-200 flex flex-col">
           <div className="px-3 py-2.5 border-b border-gray-100 space-y-2">
