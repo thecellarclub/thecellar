@@ -18,6 +18,7 @@ export default async function ShipmentsPage() {
         'bottle_count, courier_collection_date, courier_collection_location, collection_date, collection_venue, collection_time, ' +
         'customers(id, first_name, last_name, phone, email)'
       )
+      .neq('status', 'delivered')
       .order('created_at', { ascending: false }),
     sb
       .from('cellar')
