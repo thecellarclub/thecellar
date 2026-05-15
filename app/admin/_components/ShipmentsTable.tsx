@@ -65,12 +65,14 @@ function getCollectionDateStyle(dateStr: string | null, status: string): string 
 
 function Contents({ items, bottleCount }: { items: { name: string; quantity: number }[] | undefined; bottleCount: number }) {
   if (!items || items.length === 0) return <span className="text-gray-400">—</span>
-  const full = items.map((i) => `${i.name} ×${i.quantity}`).join(', ')
-  const truncated = full.length > 60 ? full.slice(0, 57) + '…' : full
   return (
     <div>
-      <span title={full} className="text-gray-700 text-xs">{truncated}</span>
-      <span className="text-gray-400 text-xs ml-1 whitespace-nowrap">({bottleCount} bottle{bottleCount !== 1 ? 's' : ''})</span>
+      <div className="text-gray-700 text-xs space-y-0.5">
+        {items.map((i, idx) => (
+          <div key={idx}>{i.name} ×{i.quantity}</div>
+        ))}
+      </div>
+      <div className="text-gray-400 text-xs mt-1">({bottleCount} bottle{bottleCount !== 1 ? 's' : ''})</div>
     </div>
   )
 }
@@ -179,14 +181,13 @@ export default function ShipmentsTable({
                 <SortHeader label="Status" sortKey="status" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
                 <SortHeader label="Created" sortKey="created" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
                 <SortHeader label="Collection" sortKey="collection" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
-                <StaticHeader label="Tracking" />
                 <StaticHeader label="Actions" />
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
                     No shipments
                   </td>
                 </tr>
@@ -196,12 +197,13 @@ export default function ShipmentsTable({
                   const addr = s.shipping_address
                   const isCollection = s.type === 'collection'
 
-                  // Address cell
-                  let addressCell: string
+                  // Address cell — full address for deliveries, venue for collections
+                  let addressCell: React.ReactNode
                   if (isCollection) {
                     addressCell = s.collection_venue ?? 'Collection'
-                  } else if (addr?.city || addr?.postcode) {
-                    addressCell = [addr.city, addr.postcode].filter(Boolean).join(' ')
+                  } else if (addr) {
+                    const parts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(Boolean)
+                    addressCell = parts.length > 0 ? parts.join(', ') : '—'
                   } else {
                     addressCell = '—'
                   }
@@ -221,13 +223,13 @@ export default function ShipmentsTable({
                         {c && <div className="text-gray-600 text-xs">{c.phone}</div>}
                       </td>
 
-                      {/* Contents */}
-                      <td className="px-4 py-3 border-b border-gray-100 max-w-[200px]">
+                      {/* Contents — widest column, one wine per line */}
+                      <td className="px-4 py-3 border-b border-gray-100 w-64 max-w-xs">
                         <Contents items={contents[s.id]} bottleCount={s.bottle_count} />
                       </td>
 
                       {/* Address */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600 whitespace-nowrap">
+                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600">
                         {addressCell}
                       </td>
 
@@ -261,14 +263,16 @@ export default function ShipmentsTable({
                         )}
                       </td>
 
-                      {/* Tracking */}
-                      <td className="px-4 py-3 border-b border-gray-100 text-xs text-gray-600 font-mono">
-                        {s.tracking_number ?? '—'}
-                      </td>
-
                       {/* Actions */}
                       <td className="px-4 py-3 border-b border-gray-100">
-                        <ShipmentActions shipmentId={s.id} status={s.status} />
+                        <ShipmentActions
+                          shipmentId={s.id}
+                          status={s.status}
+                          type={s.type}
+                          courierCollectionDate={s.courier_collection_date}
+                          courierCollectionLocation={s.courier_collection_location}
+                          trackingNumber={s.tracking_number}
+                        />
                       </td>
                     </tr>
                   )
