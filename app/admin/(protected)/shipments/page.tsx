@@ -18,7 +18,7 @@ export default async function ShipmentsPage() {
         'bottle_count, courier_collection_date, courier_collection_location, collection_date, collection_venue, collection_time, ' +
         'customers(id, first_name, last_name, phone, email)'
       )
-      .neq('status', 'delivered')
+      .not('status', 'in', '("delivered","dispatched")')
       .order('created_at', { ascending: false }),
     sb
       .from('cellar')
@@ -48,12 +48,9 @@ export default async function ShipmentsPage() {
 
   const pending = allShipments.filter((s) => s.status === 'pending').length
   const collectionBooked = allShipments.filter((s) => s.status === 'collection_booked').length
-  const dispatched = allShipments.filter((s) => s.status === 'dispatched').length
-
   const summaryParts: React.ReactNode[] = []
   if (pending > 0) summaryParts.push(<span key="p" className="text-amber-700 font-medium">{pending} pending</span>)
   if (collectionBooked > 0) summaryParts.push(<span key="cb" className="text-purple-700 font-medium">{collectionBooked} collection booked</span>)
-  if (dispatched > 0) summaryParts.push(<span key="d" className="text-blue-700 font-medium">{dispatched} dispatched</span>)
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

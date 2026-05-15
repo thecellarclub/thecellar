@@ -76,36 +76,6 @@ export default function ShipmentActions({
   // ── Delivery shipments ─────────────────────────────────────────────────────
   if (status === 'delivered') return <span className="text-xs text-gray-500">Delivered</span>
 
-  if (status === 'dispatched') {
-    return (
-      <div>
-        <button
-          onClick={async () => {
-            setLoading(true)
-            setError(null)
-            const res = await fetch(`/api/admin/shipments/${shipmentId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'delivered' }),
-            })
-            setLoading(false)
-            if (!res.ok) {
-              const data = await res.json()
-              setError(data.error ?? 'Update failed')
-            } else {
-              router.refresh()
-            }
-          }}
-          disabled={loading}
-          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
-        >
-          {loading ? '…' : 'Mark complete'}
-        </button>
-        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-      </div>
-    )
-  }
-
   if (status === 'collection_booked') {
     const locLabel = courierCollectionLocation === 'crush' ? 'Crush' : courierCollectionLocation === 'norse' ? 'Norse' : courierCollectionLocation ?? ''
     const dateLabel = courierCollectionDate ? formatCourierDate(courierCollectionDate) : ''

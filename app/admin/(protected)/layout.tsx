@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     sb
       .from('shipments')
       .select('id', { count: 'exact', head: true })
-      .neq('status', 'delivered'),
+      .not('status', 'in', '("delivered","dispatched")'),
   ])
 
   // Count open threads where the last message is inbound (unanswered)
