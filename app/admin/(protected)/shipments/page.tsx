@@ -49,13 +49,11 @@ export default async function ShipmentsPage() {
   const pending = allShipments.filter((s) => s.status === 'pending').length
   const collectionBooked = allShipments.filter((s) => s.status === 'collection_booked').length
   const dispatched = allShipments.filter((s) => s.status === 'dispatched').length
-  const delivered = allShipments.filter((s) => s.status === 'delivered').length
 
   const summaryParts: React.ReactNode[] = []
   if (pending > 0) summaryParts.push(<span key="p" className="text-amber-700 font-medium">{pending} pending</span>)
   if (collectionBooked > 0) summaryParts.push(<span key="cb" className="text-purple-700 font-medium">{collectionBooked} collection booked</span>)
   if (dispatched > 0) summaryParts.push(<span key="d" className="text-blue-700 font-medium">{dispatched} dispatched</span>)
-  if (delivered > 0) summaryParts.push(<span key="dv" className="text-green-700 font-medium">{delivered} delivered</span>)
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
