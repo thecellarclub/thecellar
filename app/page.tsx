@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { FadeUp } from './_components/FadeUp'
@@ -69,14 +69,19 @@ function SignupForm({
 }) {
   const [phone, setPhone] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (phone.trim()) {
-      router.push(`/join?phone=${encodeURIComponent(phone.trim())}`)
-    } else {
-      router.push('/join')
-    }
+    // Forward UTM params from the landing page URL to /join
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
+    const utmPart = utmKeys
+      .filter((k) => searchParams.get(k))
+      .map((k) => `${k}=${encodeURIComponent(searchParams.get(k)!)}`)
+      .join('&')
+    const phonePart = phone.trim() ? `phone=${encodeURIComponent(phone.trim())}` : ''
+    const qs = [phonePart, utmPart].filter(Boolean).join('&')
+    router.push(qs ? `/join?${qs}` : '/join')
   }
 
   return (
