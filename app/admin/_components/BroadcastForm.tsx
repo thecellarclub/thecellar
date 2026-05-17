@@ -11,12 +11,15 @@ interface Props {
 
 export default function BroadcastForm({ withCard, withoutCard, defaultMessage }: Props) {
   const [body, setBody] = useState(defaultMessage)
+  const [includeWithCard, setIncludeWithCard] = useState(true)
+  const [includeWithoutCard, setIncludeWithoutCard] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<{ sent: number; failed: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const total = withCard + withoutCard
+  const targetCount =
+    (includeWithCard ? withCard : 0) + (includeWithoutCard ? withoutCard : 0)
 
   async function confirmSend() {
     setSending(true)
@@ -26,7 +29,7 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
       const res = await fetch('/api/admin/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body, includeWithCard, includeWithoutCard }),
       })
 
       const data = await res.json()
@@ -61,15 +64,38 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
 
   return (
     <div className="space-y-5">
-      {/* Audience summary */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 space-y-1">
-        <p className="font-medium text-gray-900">Audience: {total} active member{total !== 1 ? 's' : ''}</p>
-        <p className="text-gray-500">
-          {withCard} already have a card on file — they&apos;ll get the plain message.
-        </p>
-        {withoutCard > 0 && (
-          <p className="text-gray-500">
-            {withoutCard} don&apos;t have a card yet — they&apos;ll get the message with a personalised add-card link appended.
+      {/* Audience toggles */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 space-y-3">
+        <p className="font-medium text-gray-900">Audience</p>
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={includeWithCard}
+            onChange={(e) => setIncludeWithCard(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+          />
+          <span>
+            With card{' '}
+            <span className="text-gray-500">({withCard} member{withCard !== 1 ? 's' : ''})</span>
+            <span className="text-gray-400 ml-1 text-xs">— plain message</span>
+          </span>
+        </label>
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={includeWithoutCard}
+            onChange={(e) => setIncludeWithoutCard(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+          />
+          <span>
+            Without card{' '}
+            <span className="text-gray-500">({withoutCard} member{withoutCard !== 1 ? 's' : ''})</span>
+            <span className="text-gray-400 ml-1 text-xs">— message + add-card link appended</span>
+          </span>
+        </label>
+        {targetCount > 0 && (
+          <p className="text-gray-500 pt-1 border-t border-gray-200">
+            Sending to <strong className="text-gray-800">{targetCount}</strong> member{targetCount !== 1 ? 's' : ''}
           </p>
         )}
       </div>
@@ -86,7 +112,7 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
           rows={6}
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 font-mono"
         />
-        {withoutCard > 0 && (
+        {includeWithoutCard && withoutCard > 0 && (
           <p className="text-xs text-gray-500 mt-1">
             For members without a card, a personalised link will be added on a new line after your message.
           </p>
@@ -95,15 +121,20 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
 
       {/* Preview */}
       <div className="bg-gray-50 rounded p-3 border border-gray-200 space-y-3">
-        <div>
-          <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Preview — with card</p>
-          <p className="text-sm whitespace-pre-wrap">{body}</p>
-        </div>
-        {withoutCard > 0 && (
-          <div className="border-t border-gray-200 pt-3">
+        {includeWithCard && (
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Preview — with card</p>
+            <p className="text-sm whitespace-pre-wrap">{body}</p>
+          </div>
+        )}
+        {includeWithoutCard && withoutCard > 0 && (
+          <div className={includeWithCard ? 'border-t border-gray-200 pt-3' : ''}>
             <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Preview — without card</p>
             <p className="text-sm whitespace-pre-wrap">{body}{'\n\n'}Add your card here so you&apos;re ready to order: thecellar.club/b/aB3xYp9Q</p>
           </div>
+        )}
+        {!includeWithCard && !includeWithoutCard && (
+          <p className="text-sm text-gray-400 italic">Select at least one audience group above.</p>
         )}
       </div>
 
@@ -111,10 +142,10 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
 
       <button
         onClick={() => setModalOpen(true)}
-        disabled={!body.trim() || total === 0}
+        disabled={!body.trim() || targetCount === 0}
         className="bg-gray-900 text-white text-sm px-6 py-2 rounded hover:bg-gray-700 disabled:opacity-40"
       >
-        Send to {total} member{total !== 1 ? 's' : ''}
+        Send to {targetCount} member{targetCount !== 1 ? 's' : ''}
       </button>
 
       {/* Confirmation modal */}
@@ -123,7 +154,7 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Confirm broadcast</h2>
             <p className="text-sm text-gray-600 mb-4">
-              This will send to <strong>{total}</strong> member{total !== 1 ? 's' : ''}. This cannot be undone.
+              This will send to <strong>{targetCount}</strong> member{targetCount !== 1 ? 's' : ''}. This cannot be undone.
             </p>
             <div className="bg-gray-50 rounded p-3 text-sm mb-5 whitespace-pre-wrap border border-gray-200 max-h-40 overflow-y-auto">
               {body}

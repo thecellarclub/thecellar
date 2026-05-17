@@ -15,15 +15,23 @@ export async function POST(req: NextRequest) {
   }
 
   let body: string
+  let includeWithCard: boolean
+  let includeWithoutCard: boolean
   try {
     const json = await req.json()
     body = (json.body ?? '').trim()
+    includeWithCard = json.includeWithCard !== false
+    includeWithoutCard = json.includeWithoutCard !== false
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   if (!body) {
     return NextResponse.json({ error: 'Message body is required' }, { status: 400 })
+  }
+
+  if (!includeWithCard && !includeWithoutCard) {
+    return NextResponse.json({ error: 'Select at least one audience group' }, { status: 400 })
   }
 
   const sb = createServiceClient()
@@ -45,11 +53,17 @@ export async function POST(req: NextRequest) {
   expiresAt.setDate(expiresAt.getDate() + TOKEN_TTL_DAYS)
 
   for (const customer of customers) {
+    const hasCard = !!customer.stripe_payment_method_id
+
+    // Skip based on audience filter
+    if (hasCard && !includeWithCard) continue
+    if (!hasCard && !includeWithoutCard) continue
+
     try {
       let message = body
 
       // Customers without a card get a personalised add-card link
-      if (!customer.stripe_payment_method_id) {
+      if (!hasCard) {
         const token = generateShortToken()
         await sb
           .from('customers')
