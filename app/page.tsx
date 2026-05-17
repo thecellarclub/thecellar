@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -212,7 +212,9 @@ export default function HomePage() {
               <p>You can text Daniel anytime too. Dinner party pairings, present ideas, the lot.</p>
             </div>
 
-            <SignupForm buttonText="THIS WEEK'S WINE" />
+            <Suspense fallback={null}>
+              <SignupForm buttonText="THIS WEEK'S WINE" />
+            </Suspense>
             <p className="font-serif mt-3" style={{ fontSize: '0.88rem', color: TEXT_DARK }}>
               Free to join. You only pay for wines you order.
             </p>
@@ -331,7 +333,9 @@ export default function HomePage() {
           <FadeUp>
             <SectionTitle title="This Week's Wine" />
             <div className="flex justify-center">
-              <SignupForm buttonText="JOIN THE CLUB" />
+              <Suspense fallback={null}>
+                <SignupForm buttonText="JOIN THE CLUB" />
+              </Suspense>
             </div>
           </FadeUp>
         </div>
