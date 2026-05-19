@@ -200,7 +200,7 @@ export default async function CustomerDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <Link href="/admin/customers" className="text-xs text-gray-500 hover:text-gray-600 mb-2 block">← Customers</Link>
-          <h1 className="text-xl font-semibold text-gray-900">{customer.first_name ?? 'Unknown'}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{[customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'Unknown'}</h1>
           <p className="text-sm text-gray-600 mt-0.5">{customer.email} · {customer.phone}</p>
         </div>
       </div>

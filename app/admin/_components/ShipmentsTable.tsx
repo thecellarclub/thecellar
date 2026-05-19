@@ -18,7 +18,7 @@ export type ShipmentRow = {
   collection_date: string | null
   collection_venue: string | null
   bottle_count: number
-  customers: { id: string; first_name: string; phone: string } | null
+  customers: { id: string; first_name: string; last_name: string | null; phone: string } | null
 }
 
 export type CellarContents = Record<string, { name: string; quantity: number }[]>
@@ -135,7 +135,9 @@ export default function ShipmentsTable({
     return [...filtered].sort((a, b) => {
       let cmp = 0
       if (sortKey === 'customer') {
-        cmp = (a.customers?.first_name ?? '').localeCompare(b.customers?.first_name ?? '')
+        const aName = `${a.customers?.last_name ?? ''} ${a.customers?.first_name ?? ''}`.trim()
+        const bName = `${b.customers?.last_name ?? ''} ${b.customers?.first_name ?? ''}`.trim()
+        cmp = aName.localeCompare(bName)
       } else if (sortKey === 'status') {
         cmp = a.status.localeCompare(b.status)
       } else if (sortKey === 'created') {
@@ -218,7 +220,7 @@ export default function ShipmentsTable({
                       {/* Customer */}
                       <td className="px-4 py-3 border-b border-gray-100">
                         <Link href={`/admin/shipments/${s.id}`} className="hover:underline font-medium text-gray-900">
-                          {c ? c.first_name : '—'}
+                          {c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : '—'}
                         </Link>
                         {c && <div className="text-gray-600 text-xs">{c.phone}</div>}
                       </td>
