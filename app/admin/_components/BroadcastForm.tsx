@@ -130,7 +130,7 @@ export default function BroadcastForm({ withCard, withoutCard, defaultMessage }:
         {includeWithoutCard && withoutCard > 0 && (
           <div className={includeWithCard ? 'border-t border-gray-200 pt-3' : ''}>
             <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Preview — without card</p>
-            <p className="text-sm whitespace-pre-wrap">{body}{'\n\n'}Add your card here so you&apos;re ready to order: thecellar.club/b/aB3xYp9Q</p>
+            <p className="text-sm whitespace-pre-wrap">{body}{'\n\n'}Nothing charged until you order: thecellar.club/b/aB3xYp9Q</p>
           </div>
         )}
         {!includeWithCard && !includeWithoutCard && (
