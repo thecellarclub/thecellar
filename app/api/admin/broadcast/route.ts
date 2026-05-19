@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', customer.id)
 
-        message = `${body}\n\nNothing charged until you order: ${SITE_URL}/b/${token}`
+        message = `${body}\n\nNothing charged unless you order: ${SITE_URL}/b/${token}`
       }
 
       await sendSms(customer.phone, message)
