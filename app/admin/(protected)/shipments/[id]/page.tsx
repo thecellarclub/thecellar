@@ -45,7 +45,7 @@ export default async function ShipmentDetailPage({
 
   const { data: shipment, error: shipmentError } = await sb
     .from('shipments')
-    .select('id, status, type, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, courier_collection_date, courier_collection_location, customers(id, first_name, phone)')
+    .select('id, status, type, tracking_number, tracking_provider, shipping_address, bottle_count, shipping_fee_pence, created_at, dispatched_at, delivered_at, collection_venue, collection_date, collection_time, courier_collection_date, courier_collection_location, customers(id, first_name, last_name, email, phone)')
     .eq('id', id)
     .maybeSingle()
 
@@ -55,7 +55,7 @@ export default async function ShipmentDetailPage({
 
   if (!shipment) notFound()
 
-  const customer = shipment.customers as unknown as { id: string; first_name: string | null; phone: string | null } | null
+  const customer = shipment.customers as unknown as { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null } | null
   const sType = (shipment as unknown as { type?: string | null }).type
   const collectionVenue = (shipment as unknown as { collection_venue?: string | null }).collection_venue
   const collectionDate = (shipment as unknown as { collection_date?: string | null }).collection_date
@@ -114,13 +114,16 @@ export default async function ShipmentDetailPage({
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Customer</p>
           {customer ? (
             <Link href={`/admin/customers/${customer.id}`} className="font-medium hover:underline text-gray-900">
-              {customer.first_name ?? 'Unknown'}
+              {[customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'Unknown'}
             </Link>
           ) : (
             <p className="font-medium text-gray-900">—</p>
           )}
           {customer?.phone && (
             <p className="text-xs text-gray-500 mt-0.5">{customer.phone}</p>
+          )}
+          {customer?.email && (
+            <p className="text-xs text-gray-500 mt-0.5">{customer.email}</p>
           )}
         </div>
         <div>
