@@ -14,6 +14,11 @@ import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
  *   - If they now have a card on file → welcome A (same as the happy-path SMS)
  *   - If still no card → welcome B with a billing link to add their card
  *
+ * In both cases, if there is an active offer with stock remaining a second SMS
+ * is sent with the offer body so new members can engage immediately without
+ * needing to text OFFER. If the active offer is sold out (or there is no active
+ * offer) the welcome message notes that the next offer is coming soon.
+ *
  * Sets welcome_sent_at and clears welcome_pending_at after sending.
  */
 export async function GET(req: NextRequest) {
@@ -25,6 +30,18 @@ export async function GET(req: NextRequest) {
   const sb = createServiceClient()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+
+  // Fetch the current active offer once — used for all welcomes in this run
+  const { data: activeOffer } = await sb
+    .from('texts')
+    .select('id, body, wines(stock_bottles)')
+    .eq('is_active', true)
+    .maybeSingle() as {
+      data: { id: string; body: string; wines: { stock_bottles: number } | null } | null
+    }
+
+  const offerInStock =
+    activeOffer !== null && (activeOffer.wines?.stock_bottles ?? 0) > 0
 
   const { data: candidates } = await sb
     .from('customers')
@@ -53,16 +70,29 @@ export async function GET(req: NextRequest) {
       const name = customer.first_name ?? 'there'
 
       if (fresh.stripe_payment_method_id) {
-        // Customer finished Step 3 after the query — send completed-card welcome (A)
+        // ── Welcome A — customer has a card ────────────────────────────────
+        const outOfStockLine = offerInStock
+          ? ''
+          : '\n\nThe latest offer has just sold out — the next one will be with you in a few days.'
+
         await twilioClient.messages.create({
           to: customer.phone,
           from: process.env.TWILIO_PHONE_NUMBER!,
           body: sanitiseGsm7(
-            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply how many bottles. I'll store them in the cellar until you fill a case of 12, then deliver free.\n\nGot a question or request? Text me anytime.`
+            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. If you fancy it, reply how many bottles. I'll store them in the cellar until you fill a case of 12, then deliver free.${outOfStockLine}\n\nGot a question or request? Text me anytime.`
           ),
         })
+
+        // Send the current offer as a follow-up if there's stock
+        if (offerInStock && activeOffer) {
+          await twilioClient.messages.create({
+            to: customer.phone,
+            from: process.env.TWILIO_PHONE_NUMBER!,
+            body: sanitiseGsm7(activeOffer.body),
+          })
+        }
       } else {
-        // No card on file — mint a 24-hour billing token and send welcome B
+        // ── Welcome B — no card on file ────────────────────────────────────
         const { generateShortToken } = await import('@/lib/token')
         const billingToken = generateShortToken()
         const billingTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -72,13 +102,28 @@ export async function GET(req: NextRequest) {
           .update({ billing_token: billingToken, billing_token_expires_at: billingTokenExpiresAt })
           .eq('id', customer.id)
 
+        const cardLine = `Nothing charged unless you order: ${appUrl}/b/${billingToken}`
+
+        const outOfStockLine = offerInStock
+          ? ''
+          : '\n\nThe latest offer has just sold out — the next one will be with you in a few days.'
+
         await twilioClient.messages.create({
           to: customer.phone,
           from: process.env.TWILIO_PHONE_NUMBER!,
           body: sanitiseGsm7(
-            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. Add a card here so you're ready to buy in one tap when an offer drops: ${appUrl}/b/${billingToken}\n\nOr just reply OFFER any time and I'll send the latest.`
+            `Welcome, ${name}! It's Daniel from The Cellar Club.\n\nI'll text you whenever I find something special. Add your card so you're ready to order in one tap when an offer drops: ${cardLine}${outOfStockLine}`
           ),
         })
+
+        // Send the current offer as a follow-up if there's stock
+        if (offerInStock && activeOffer) {
+          await twilioClient.messages.create({
+            to: customer.phone,
+            from: process.env.TWILIO_PHONE_NUMBER!,
+            body: sanitiseGsm7(activeOffer.body),
+          })
+        }
       }
 
       await sb
