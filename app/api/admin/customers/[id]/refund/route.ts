@@ -104,6 +104,19 @@ export async function POST(
         .update({ quantity: cellarRow.quantity - quantity })
         .eq('id', cellarId)
     }
+
+    // 6b. Restore wine stock for the refunded bottles
+    const { data: wine } = await sb
+      .from('wines')
+      .select('stock_bottles')
+      .eq('id', cellarRow.wine_id)
+      .maybeSingle()
+    if (wine) {
+      await sb
+        .from('wines')
+        .update({ stock_bottles: wine.stock_bottles + quantity })
+        .eq('id', cellarRow.wine_id)
+    }
   }
 
   // 7. Send SMS to customer if a refund amount was issued
