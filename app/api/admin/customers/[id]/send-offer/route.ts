@@ -28,12 +28,12 @@ export async function POST(
 
   const { data: customer } = await sb
     .from('customers')
-    .select('id, phone, stripe_payment_method_id, active')
+    .select('id, phone, stripe_payment_method_id, status')
     .eq('id', id)
     .maybeSingle()
 
   if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
-  if (!customer.active) return NextResponse.json({ error: 'Customer is not active' }, { status: 400 })
+  if (customer.status !== 'active') return NextResponse.json({ error: 'Customer is not active' }, { status: 400 })
 
   // Guard: one pending order at a time
   const { data: existing } = await sb

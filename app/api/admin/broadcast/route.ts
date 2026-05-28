@@ -15,11 +15,15 @@ export async function POST(req: NextRequest) {
   }
 
   let body: string
+  let includeActive: boolean
+  let includeDormant: boolean
   let includeWithCard: boolean
   let includeWithoutCard: boolean
   try {
     const json = await req.json()
     body = (json.body ?? '').trim()
+    includeActive = json.includeActive !== false
+    includeDormant = json.includeDormant === true
     includeWithCard = json.includeWithCard !== false
     includeWithoutCard = json.includeWithoutCard !== false
   } catch {
@@ -30,16 +34,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message body is required' }, { status: 400 })
   }
 
+  if (!includeActive && !includeDormant) {
+    return NextResponse.json({ error: 'Select at least one audience group' }, { status: 400 })
+  }
+
   if (!includeWithCard && !includeWithoutCard) {
     return NextResponse.json({ error: 'Select at least one audience group' }, { status: 400 })
   }
 
   const sb = createServiceClient()
 
+  const includedStatuses: string[] = []
+  if (includeActive) includedStatuses.push('active')
+  if (includeDormant) includedStatuses.push('dormant')
+
   const { data: customers, error } = await sb
     .from('customers')
     .select('id, phone, stripe_payment_method_id')
-    .eq('active', true)
+    .in('status', includedStatuses)
 
   if (error) throw error
   if (!customers || customers.length === 0) {
@@ -55,7 +67,7 @@ export async function POST(req: NextRequest) {
   for (const customer of customers) {
     const hasCard = !!customer.stripe_payment_method_id
 
-    // Skip based on audience filter
+    // Skip based on card filter
     if (hasCard && !includeWithCard) continue
     if (!hasCard && !includeWithoutCard) continue
 

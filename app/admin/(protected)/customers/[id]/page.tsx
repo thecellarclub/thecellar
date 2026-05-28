@@ -209,8 +209,8 @@ export default async function CustomerDetailPage({
       <div className="bg-white rounded-lg border border-gray-200 p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div>
           <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">Status</p>
-          <span className={`text-xs px-2 py-0.5 rounded font-medium ${customer.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-            {customer.active ? 'Active' : 'Inactive'}
+          <span className={`text-xs px-2 py-0.5 rounded font-medium ${customer.status === 'active' ? 'bg-green-100 text-green-700' : customer.status === 'dormant' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+            {customer.status === 'active' ? 'Active' : customer.status === 'dormant' ? 'Dormant' : 'Deactivated'}
           </span>
         </div>
         <div>
@@ -407,7 +407,7 @@ export default async function CustomerDetailPage({
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Admin tools</p>
         <div className="flex items-center gap-4">
-          <DeactivateButton customerId={customer.id} active={customer.active} />
+          <DeactivateButton customerId={customer.id} status={customer.status} />
         </div>
       </div>
     </div>

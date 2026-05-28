@@ -17,23 +17,27 @@ export default async function BroadcastPage() {
 
   const { data: customers } = await sb
     .from('customers')
-    .select('stripe_payment_method_id')
-    .eq('active', true)
+    .select('status, stripe_payment_method_id')
+    .in('status', ['active', 'dormant'])
 
   const all = customers ?? []
-  const withCard = all.filter((c) => c.stripe_payment_method_id).length
-  const withoutCard = all.length - withCard
+  const activeWithCard = all.filter((c) => c.status === 'active' && c.stripe_payment_method_id).length
+  const activeWithoutCard = all.filter((c) => c.status === 'active' && !c.stripe_payment_method_id).length
+  const dormantWithCard = all.filter((c) => c.status === 'dormant' && c.stripe_payment_method_id).length
+  const dormantWithoutCard = all.filter((c) => c.status === 'dormant' && !c.stripe_payment_method_id).length
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-xl font-semibold text-gray-900 mb-1">Broadcast message</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Send a one-off message to all active members. Members without a card get a personalised link to add one.
+        Send a one-off message to active or dormant members. Members without a card get a personalised link to add one.
       </p>
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <BroadcastForm
-          withCard={withCard}
-          withoutCard={withoutCard}
+          activeWithCard={activeWithCard}
+          activeWithoutCard={activeWithoutCard}
+          dormantWithCard={dormantWithCard}
+          dormantWithoutCard={dormantWithoutCard}
           defaultMessage={DEFAULT_MESSAGE}
         />
       </div>

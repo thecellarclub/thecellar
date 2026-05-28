@@ -48,11 +48,23 @@ export async function PATCH(
   const body = await req.json()
   const sb = createServiceClient()
 
-  // Only allow updating active status (deactivation)
   const updates: Record<string, unknown> = {}
-  if (typeof body.active === 'boolean') {
+
+  if (typeof body.status === 'string' && ['active', 'dormant', 'deactivated'].includes(body.status)) {
+    updates.status = body.status
+    if (body.status === 'deactivated') {
+      updates.unsubscribed_at = new Date().toISOString()
+    } else {
+      updates.unsubscribed_at = null
+    }
+  } else if (typeof body.active === 'boolean') {
+    updates.status = body.active ? 'active' : 'deactivated'
     updates.active = body.active
-    if (!body.active) updates.unsubscribed_at = new Date().toISOString()
+    if (!body.active) {
+      updates.unsubscribed_at = new Date().toISOString()
+    } else {
+      updates.unsubscribed_at = null
+    }
   }
 
   if (Object.keys(updates).length === 0) {

@@ -11,6 +11,7 @@ type Customer = {
   phone: string
   email: string | null
   active: boolean
+  status: string
   subscribed_at: string
   tier: string | null
 }
@@ -21,6 +22,18 @@ const TIER_OPTIONS = [
   { value: 'elvet', label: 'Elvet' },
   { value: 'palatine', label: 'Palatine' },
 ]
+
+function statusBadge(status: string) {
+  if (status === 'active') return 'bg-green-100 text-green-700'
+  if (status === 'dormant') return 'bg-amber-100 text-amber-700'
+  return 'bg-gray-100 text-gray-500'
+}
+
+function statusLabel(status: string) {
+  if (status === 'active') return 'Active'
+  if (status === 'dormant') return 'Dormant'
+  return 'Deactivated'
+}
 
 export default function CustomersClientView({
   customers,
@@ -42,8 +55,7 @@ export default function CustomersClientView({
         const email = c.email?.toLowerCase() ?? ''
         if (!name.includes(q) && !phone.includes(q) && !email.includes(q)) return false
       }
-      if (statusFilter === 'active' && !c.active) return false
-      if (statusFilter === 'inactive' && c.active) return false
+      if (statusFilter && c.status !== statusFilter) return false
       if (tierFilter && (c.tier ?? 'bailey') !== tierFilter) return false
       return true
     })
@@ -65,7 +77,8 @@ export default function CustomersClientView({
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
           <option value="">All statuses</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="dormant">Dormant</option>
+          <option value="deactivated">Deactivated</option>
         </select>
         <select value={tierFilter} onChange={(e) => setTierFilter(e.target.value)} className={inputCls}>
           {TIER_OPTIONS.map((o) => (
@@ -116,8 +129,8 @@ export default function CustomersClientView({
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs">{formatDate(c.subscribed_at)}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 capitalize text-xs">{c.tier ?? 'bailey'}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${c.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {c.active ? 'Active' : 'Inactive'}
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusBadge(c.status)}`}>
+                      {statusLabel(c.status)}
                     </span>
                   </td>
                 </tr>

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   const { data: candidates } = await sb
     .from('customers')
     .select('id, phone, first_name, stripe_payment_method_id')
-    .eq('active', true)
+    .eq('status', 'active')
     .not('first_name', 'is', null)
     .not('dob', 'is', null)
     .is('welcome_sent_at', null)

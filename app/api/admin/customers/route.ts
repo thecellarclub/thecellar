@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: customers, error } = await sb
     .from('customers')
-    .select('id, first_name, phone, email, active, subscribed_at, stripe_customer_id')
+    .select('id, first_name, phone, email, active, status, subscribed_at, stripe_customer_id')
     .order('subscribed_at', { ascending: false })
 
   if (error) {

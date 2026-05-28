@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     .from('customers')
     .select('id, phone, stripe_customer_id, stripe_payment_method_id, case_started_at, case_nudge_1_sent_at, case_nudge_2_sent_at, tier, tier_review_at')
     .not('case_started_at', 'is', null)
-    .eq('active', true)
+    .eq('status', 'active')
 
   let nudge1Count = 0
   let nudge2Count = 0
