@@ -158,9 +158,10 @@ export default async function CustomerDetailPage({
   const orderRows = (orders ?? []) as unknown as OrderRow[]
   const shipmentRows = (shipments ?? []) as unknown as ShipmentRow[]
 
-  // Available = not shipped AND not reserved for a pending collection
-  const unshipped = cellar.filter((c) => !c.shipped_at && !c.shipment_id)
-  const shipped = cellar.filter((c) => c.shipped_at)
+  // Available = not reserved for any shipment
+  const unshipped = cellar.filter((c) => !c.shipment_id)
+  // Linked to a shipment (pending or dispatched)
+  const shipped = cellar.filter((c) => c.shipment_id)
   const unshippedBottles = unshipped.reduce((s, c) => s + c.quantity, 0)
 
   const succeededOrders = orderRows.filter((o) => o.stripe_charge_status === 'succeeded')

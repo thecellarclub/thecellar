@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     // Create or reuse the customers row — idempotent on phone
     const { data: existingCustomer } = await supabase
       .from('customers')
-      .select('id, stripe_customer_id')
+      .select('id, stripe_customer_id, utm_source')
       .eq('phone', session.phone)
       .maybeSingle()
 
@@ -83,6 +83,24 @@ export async function POST(req: NextRequest) {
     if (existingCustomer) {
       customerId = existingCustomer.id
       stripeCustomerId = existingCustomer.stripe_customer_id
+
+      // Backfill UTMs if we have attribution data in the session and the
+      // customer row doesn't yet have any (first-touch attribution).
+      if (
+        !existingCustomer.utm_source &&
+        (session.utmSource || session.utmMedium || session.utmCampaign)
+      ) {
+        await supabase
+          .from('customers')
+          .update({
+            utm_source: session.utmSource ?? null,
+            utm_medium: session.utmMedium ?? null,
+            utm_campaign: session.utmCampaign ?? null,
+            utm_term: session.utmTerm ?? null,
+            utm_content: session.utmContent ?? null,
+          })
+          .eq('id', customerId)
+      }
     } else {
       const stripeCustomer = await stripe.customers.create({
         phone: session.phone,

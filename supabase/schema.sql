@@ -106,11 +106,13 @@ create table verification_codes (
 -- VIEWS
 -- =============================================================
 
--- Customer cellar totals (unshipped bottles per customer)
+-- Customer cellar totals (unreserved bottles per customer)
+-- Uses shipment_id IS NULL so that bottles reserved in a pending shipment
+-- are excluded immediately, not only after they are physically dispatched.
 create view customer_cellar_totals as
 select
   customer_id,
   sum(quantity) as total_bottles
 from cellar
-where shipped_at is null
+where shipment_id is null
 group by customer_id;

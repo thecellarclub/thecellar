@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect, FormEvent, Suspense } from 'react'
+import { useState, useEffect, useRef, FormEvent, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
 
 function buildPhone(raw: string): string {
   let s = raw.replace(/[\s\-]/g, '')
@@ -24,24 +26,65 @@ function JoinPageInner() {
   const [loading, setLoading] = useState(false)
   const [autoSubmitting, setAutoSubmitting] = useState(!!phoneParam)
 
-  const utmParams = {
-    utmSource: searchParams.get('utm_source') ?? undefined,
-    utmMedium: searchParams.get('utm_medium') ?? undefined,
-    utmCampaign: searchParams.get('utm_campaign') ?? undefined,
-    utmTerm: searchParams.get('utm_term') ?? undefined,
-    utmContent: searchParams.get('utm_content') ?? undefined,
-  }
+  // Keep a ref to the latest searchParams so sendCode always reads current
+  // values even when called from the stale-closure useEffect below.
+  const searchParamsRef = useRef(searchParams)
+  useEffect(() => { searchParamsRef.current = searchParams }, [searchParams])
+
+  // Also persist UTMs to sessionStorage on this page in case the user
+  // landed here directly (e.g. ad final URL = /join?utm_source=...).
+  useEffect(() => {
+    const utms: Record<string, string> = {}
+    for (const key of UTM_KEYS) {
+      const val = searchParams.get(key)
+      if (val) utms[key] = val
+    }
+    if (Object.keys(utms).length > 0) {
+      try { sessionStorage.setItem('cellar_utm', JSON.stringify(utms)) } catch {}
+    }
+  }, [searchParams])
 
   async function sendCode(e164: string) {
     setError('')
     setAlreadySignedUp(false)
     setLoading(true)
 
+    // Read UTMs at call time (not from stale closure).
+    // 1. Try current URL params via ref.
+    // 2. Fall back to sessionStorage set on homepage or a previous /join visit.
+    const sp = searchParamsRef.current
+    let utmSource = sp.get('utm_source') ?? undefined
+    let utmMedium = sp.get('utm_medium') ?? undefined
+    let utmCampaign = sp.get('utm_campaign') ?? undefined
+    let utmTerm = sp.get('utm_term') ?? undefined
+    let utmContent = sp.get('utm_content') ?? undefined
+
+    if (!utmSource && !utmMedium && !utmCampaign) {
+      try {
+        const stored = sessionStorage.getItem('cellar_utm')
+        if (stored) {
+          const p = JSON.parse(stored) as Record<string, string>
+          utmSource   = p.utm_source   || undefined
+          utmMedium   = p.utm_medium   || undefined
+          utmCampaign = p.utm_campaign || undefined
+          utmTerm     = p.utm_term     || undefined
+          utmContent  = p.utm_content  || undefined
+        }
+      } catch {}
+    }
+
     try {
       const res = await fetch('/api/signup/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: e164, ...utmParams }),
+        body: JSON.stringify({
+          phone: e164,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+          utmTerm,
+          utmContent,
+        }),
       })
 
       const data = await res.json()

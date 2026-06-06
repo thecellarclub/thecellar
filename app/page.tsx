@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent, Suspense } from 'react'
+import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -60,6 +60,8 @@ function SectionTitle({ title }: { title: string }) {
 
 // ── Sign-up form ────────────────────────────────────────────────────────────
 
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
+
 function SignupForm({
   buttonText = 'JOIN THE CLUB',
   showLoginLink = false,
@@ -71,11 +73,23 @@ function SignupForm({
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Persist UTMs to sessionStorage as soon as we see them so they survive
+  // any subsequent client-side navigation (stale-closure safe).
+  useEffect(() => {
+    const utms: Record<string, string> = {}
+    for (const key of UTM_KEYS) {
+      const val = searchParams.get(key)
+      if (val) utms[key] = val
+    }
+    if (Object.keys(utms).length > 0) {
+      try { sessionStorage.setItem('cellar_utm', JSON.stringify(utms)) } catch {}
+    }
+  }, [searchParams])
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     // Forward UTM params from the landing page URL to /join
-    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
-    const utmPart = utmKeys
+    const utmPart = UTM_KEYS
       .filter((k) => searchParams.get(k))
       .map((k) => `${k}=${encodeURIComponent(searchParams.get(k)!)}`)
       .join('&')

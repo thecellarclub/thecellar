@@ -62,12 +62,14 @@ export async function GET(req: NextRequest) {
     const caseStart = new Date(customer.case_started_at)
     const daysSinceCase = Math.floor((now.getTime() - caseStart.getTime()) / (1000 * 60 * 60 * 24))
 
-    // Fetch unshipped cellar count for this customer
+    // Fetch unreserved cellar count for this customer.
+    // Use shipment_id IS NULL so bottles already reserved in a pending
+    // shipment don't trigger another nudge or auto-ship.
     const { count: bottleCount } = await sb
       .from('cellar')
       .select('*', { count: 'exact', head: true })
       .eq('customer_id', customer.id)
-      .is('shipped_at', null)
+      .is('shipment_id', null)
 
     const bottles = bottleCount ?? 0
 
@@ -103,12 +105,12 @@ export async function GET(req: NextRequest) {
         })
 
         if (pi.status === 'succeeded') {
-          // Fetch unshipped cellar rows
+          // Fetch unreserved cellar rows (shipment_id IS NULL only)
           const { data: cellarRows } = await sb
             .from('cellar')
             .select('id')
             .eq('customer_id', customer.id)
-            .is('shipped_at', null)
+            .is('shipment_id', null)
 
           // Create pending shipment
           const shipToken = crypto.randomUUID()

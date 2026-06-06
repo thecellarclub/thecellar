@@ -56,12 +56,14 @@ export async function handlePostCharge({
 
   const threshold = deliveryThreshold(currentTier)
 
-  // 2. Fetch ALL unshipped cellar rows for this customer, oldest first
+  // 2. Fetch all unreserved cellar rows for this customer, oldest first.
+  // Filter by shipment_id IS NULL (not shipped_at) so that bottles already
+  // reserved in a pending shipment are excluded from the case-complete count.
   const { data: allRows } = await sb
     .from('cellar')
     .select('id, wine_id, quantity, added_at')
     .eq('customer_id', customerId)
-    .is('shipped_at', null)
+    .is('shipment_id', null)
     .order('added_at', { ascending: true })
 
   const rows = allRows ?? []
@@ -128,16 +130,29 @@ export async function handlePostCharge({
 
     const addr = cust?.default_address as Record<string, string> | null
 
-    if (addr?.line1) {
-      // Address saved — create token but ask to confirm by SMS first
-      const shipToken = crypto.randomUUID()
-      await sb.from('shipments').insert({
+    // Create shipment and capture the ID so we can link cellar rows
+    const shipToken = crypto.randomUUID()
+    const { data: newShipment } = await sb
+      .from('shipments')
+      .insert({
         customer_id: customerId,
         status: 'pending',
         token: shipToken,
         bottle_count: threshold,
         shipping_fee_pence: 0,
       })
+      .select('id')
+      .single()
+
+    // Link all unshipped cellar rows to this shipment
+    if (newShipment) {
+      await sb
+        .from('cellar')
+        .update({ shipment_id: newShipment.id })
+        .in('id', rows.map((r) => r.id))
+    }
+
+    if (addr?.line1) {
       const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
       await sendSms(
         customerPhone,
@@ -145,16 +160,7 @@ export async function handlePostCharge({
         { trigger: 'post-charge:case-complete', customerId }
       )
     } else {
-      // No saved address — send the link now
-      const shipToken = crypto.randomUUID()
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-      await sb.from('shipments').insert({
-        customer_id: customerId,
-        status: 'pending',
-        token: shipToken,
-        bottle_count: threshold,
-        shipping_fee_pence: 0,
-      })
       await sendSms(
         customerPhone,
         `Your case is complete!\n\n${wineLines}\n\nConfirm your delivery address here: ${appUrl}/ship?token=${shipToken}`,
