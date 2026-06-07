@@ -14,7 +14,7 @@ create table customers (
   stripe_payment_method_id text,        -- Default saved card
   dob date not null,                    -- For age verification
   age_verified boolean default false,   -- True once DOB confirmed 18+
-  active boolean default true,          -- False if they've unsubscribed
+  status text not null default 'active', -- 'active' | 'dormant' | 'deactivated'
   gdpr_marketing_consent boolean default false,
   gdpr_consent_at timestamptz,
   subscribed_at timestamptz default now(),

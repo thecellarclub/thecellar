@@ -32,7 +32,7 @@ export default async function AdminDashboard() {
     { count: pendingShipments },
     { data: recentOrders },
   ] = await Promise.all([
-    sb.from('customers').select('*', { count: 'exact', head: true }).eq('active', true),
+    sb.from('customers').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     sb.from('customer_cellar_totals').select('total_bottles'),
     sb.from('texts').select('sent_at, wines(name)').order('sent_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('shipments').select('*', { count: 'exact', head: true }).eq('status', 'pending'),

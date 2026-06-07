@@ -15,7 +15,7 @@ export async function GET() {
     { count: pendingShipments },
     { data: recentOrders },
   ] = await Promise.all([
-    sb.from('customers').select('*', { count: 'exact', head: true }).eq('active', true),
+    sb.from('customers').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     sb.from('customer_cellar_totals').select('total_bottles'),
     sb
       .from('texts')

@@ -67,7 +67,7 @@ export default async function InboxPage({
     sb
       .from('customers')
       .select('id, first_name, phone')
-      .eq('active', true)
+      .eq('status', 'active')
       .order('first_name'),
     sb
       .from('admin_users')

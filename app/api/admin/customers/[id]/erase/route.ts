@@ -44,7 +44,7 @@ export async function DELETE(
       first_name: 'Erased',
       stripe_customer_id: null,
       stripe_payment_method_id: null,
-      active: false,
+      status: 'deactivated',
       gdpr_marketing_consent: false,
       unsubscribed_at: new Date().toISOString(),
     })

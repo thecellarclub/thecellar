@@ -113,7 +113,6 @@ export async function POST(req: NextRequest) {
         .insert({
           phone: session.phone,
           stripe_customer_id: stripeCustomerId,
-          active: true,
           utm_source: session.utmSource ?? null,
           utm_medium: session.utmMedium ?? null,
           utm_campaign: session.utmCampaign ?? null,

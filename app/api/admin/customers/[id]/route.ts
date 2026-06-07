@@ -57,14 +57,6 @@ export async function PATCH(
     } else {
       updates.unsubscribed_at = null
     }
-  } else if (typeof body.active === 'boolean') {
-    updates.status = body.active ? 'active' : 'deactivated'
-    updates.active = body.active
-    if (!body.active) {
-      updates.unsubscribed_at = new Date().toISOString()
-    } else {
-      updates.unsubscribed_at = null
-    }
   }
 
   if (Object.keys(updates).length === 0) {

@@ -24,7 +24,7 @@ interface Customer {
   first_name: string | null
   stripe_customer_id: string
   stripe_payment_method_id: string | null
-  active: boolean
+  status: string
   texts_snoozed_until: string | null
   tier: string
   sms_awaiting: string | null
@@ -1171,7 +1171,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Customer lookup ──────────────────────────────────────────────────
     const { data: customer } = await sb
       .from('customers')
-      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, active, texts_snoozed_until, tier, sms_awaiting, concierge_status')
+      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, status, texts_snoozed_until, tier, sms_awaiting, concierge_status')
       .eq('phone', from)
       .maybeSingle() as { data: Customer | null }
 
@@ -1183,7 +1183,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return twimlOk()
     }
 
-    if (!customer.active) {
+    if (customer.status !== 'active') {
       await sendSms(from, `You're unsubscribed. Visit ${APP_URL}/join to rejoin.`, { trigger: 'inactive', customerId: customer.id })
       return twimlOk()
     }
@@ -1301,7 +1301,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (keyword === 'stop' || keyword === 'unsubscribe') {
       await sb
         .from('customers')
-        .update({ active: false, unsubscribed_at: new Date().toISOString() })
+        .update({ status: 'deactivated', unsubscribed_at: new Date().toISOString() })
         .eq('id', customer.id)
       await sendSms(from, `You've been unsubscribed. Visit ${APP_URL}/join to rejoin.`, { trigger: 'keyword:stop', customerId: customer.id })
       return twimlOk()
