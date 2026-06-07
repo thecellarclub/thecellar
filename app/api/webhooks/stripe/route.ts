@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
 
     const { data: customer } = await sb
       .from('customers')
-      .select('id, phone, stripe_payment_method_id')
+      .select('id, phone, stripe_payment_method_id, welcome_sent_at')
       .eq('stripe_customer_id', stripeCustomerId)
       .maybeSingle()
 
@@ -228,21 +228,27 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .maybeSingle() as { data: { id: string; quantity: number; total_pence: number; wine_id: string; wines: { name: string } | null } | null }
 
-    const smsBody = pendingOrder
-      ? cardSavedOrderRecap(
-          pendingOrder.quantity,
-          pendingOrder.wines?.name ?? 'your wine',
-          (pendingOrder.total_pence / 100).toFixed(2),
-          last4
-        )
-      : cardSavedNoOrder()
+    const isSignup = !customer.welcome_sent_at
 
     if (customer.phone) {
-      await twilioClient.messages.create({
-        body: sanitiseGsm7(smsBody),
-        from: process.env.TWILIO_PHONE_NUMBER!,
-        to: customer.phone,
-      })
+      if (pendingOrder) {
+        await twilioClient.messages.create({
+          body: sanitiseGsm7(cardSavedOrderRecap(
+            pendingOrder.quantity,
+            pendingOrder.wines?.name ?? 'your wine',
+            (pendingOrder.total_pence / 100).toFixed(2),
+            last4
+          )),
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          to: customer.phone,
+        })
+      } else if (!isSignup) {
+        await twilioClient.messages.create({
+          body: sanitiseGsm7(cardSavedNoOrder()),
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          to: customer.phone,
+        })
+      }
     }
   }
 

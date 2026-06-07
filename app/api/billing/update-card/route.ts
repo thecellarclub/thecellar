@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   // Look up customer by billing token
   const { data: customer } = await sb
     .from('customers')
-    .select('id, phone, stripe_customer_id, billing_token_expires_at')
+    .select('id, phone, stripe_customer_id, billing_token_expires_at, welcome_sent_at')
     .eq('billing_token', billingToken)
     .not('billing_token', 'is', null)
     .maybeSingle()
@@ -87,20 +87,31 @@ export async function POST(req: NextRequest) {
     .limit(1)
     .maybeSingle() as { data: { id: string; quantity: number; price_pence: number; total_pence: number; wine_id: string; wines: { name: string } | null } | null }
 
-  const smsBody = pendingOrder
-    ? cardSavedOrderRecap(
+  // Only send an SMS if:
+  //   a) There's a pending order to recap (always useful), or
+  //   b) This is an existing member updating their card (welcome already sent).
+  // During initial signup (welcome_sent_at is null) the welcome cron handles
+  // the "you're all set" messaging — no need for a redundant card-saved text.
+  const isSignup = !customer.welcome_sent_at
+
+  if (pendingOrder) {
+    await twilioClient.messages.create({
+      body: sanitiseGsm7(cardSavedOrderRecap(
         pendingOrder.quantity,
         pendingOrder.wines?.name ?? 'your wine',
         (pendingOrder.total_pence / 100).toFixed(2),
         last4
-      )
-    : cardSavedNoOrder()
-
-  await twilioClient.messages.create({
-    body: sanitiseGsm7(smsBody),
-    from: process.env.TWILIO_PHONE_NUMBER!,
-    to: customer.phone,
-  })
+      )),
+      from: process.env.TWILIO_PHONE_NUMBER!,
+      to: customer.phone,
+    })
+  } else if (!isSignup) {
+    await twilioClient.messages.create({
+      body: sanitiseGsm7(cardSavedNoOrder()),
+      from: process.env.TWILIO_PHONE_NUMBER!,
+      to: customer.phone,
+    })
+  }
 
   return NextResponse.json({ ok: true })
 }
