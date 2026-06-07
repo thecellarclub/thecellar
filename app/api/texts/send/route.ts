@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Wine is not active' }, { status: 400 })
     }
 
-    // Fetch all active subscribers (including snooze field)
+    // Fetch active subscribers only — excludes dormant and deactivated
     const { data: customers, error: custErr } = await sb
       .from('customers')
       .select('id, phone, texts_snoozed_until')
-      .eq('active', true)
+      .eq('status', 'active')
 
     if (custErr) throw custErr
 

@@ -16,7 +16,7 @@ export default async function SendPage() {
       .select('id, name, region, country, description, price_pence')
       .eq('active', true)
       .order('name'),
-    sb.from('customers').select('*', { count: 'exact', head: true }).eq('active', true),
+    sb.from('customers').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
   const activeWines = wines ?? []
