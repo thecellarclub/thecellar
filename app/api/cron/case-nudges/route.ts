@@ -192,14 +192,14 @@ export async function GET(req: NextRequest) {
     .not('tier_review_at', 'is', null)
     .lte('tier_review_at', now.toISOString())
     .neq('tier', 'none')
-    .neq('tier', 'bailey')
+    .neq('tier', 'elvet')
 
   for (const tc of tierCustomers ?? []) {
     tierReviewed++
     const spend = await getRollingSpend(tc.id, sb)
     const qualifyingTier = tierFromSpend(spend)
 
-    const tierRank: Record<string, number> = { none: 0, bailey: 1, elvet: 2, palatine: 3 }
+    const tierRank: Record<string, number> = { none: 0, elvet: 1, bailey: 2, palatine: 3 }
     const currentRank = tierRank[tc.tier] ?? 1
     const qualifyingRank = tierRank[qualifyingTier] ?? 1
 

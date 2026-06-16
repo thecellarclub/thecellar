@@ -591,11 +591,11 @@ async function handleStatus(
   const bottles = bottleCount ?? 0
 
   let progressLine = ''
-  if (tier === 'bailey') {
-    const needed = Math.max(0, 50100 - spend)
-    progressLine = `\nElvet tier: £${(needed / 100).toFixed(2)} more spend needed.`
-  } else if (tier === 'elvet') {
+  if (tier === 'elvet' || tier === 'none') {
     const needed = Math.max(0, 100000 - spend)
+    progressLine = `\nBailey tier: £${(needed / 100).toFixed(2)} more spend needed.`
+  } else if (tier === 'bailey') {
+    const needed = Math.max(0, 250000 - spend)
     progressLine = `\nPalatine tier: £${(needed / 100).toFixed(2)} more spend needed.`
   } else {
     progressLine = `\nYou're on our top tier.`

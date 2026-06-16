@@ -56,7 +56,7 @@ export default function CustomersClientView({
         if (!name.includes(q) && !phone.includes(q) && !email.includes(q)) return false
       }
       if (statusFilter && c.status !== statusFilter) return false
-      if (tierFilter && (c.tier ?? 'bailey') !== tierFilter) return false
+      if (tierFilter && (c.tier ?? 'none') !== tierFilter) return false
       return true
     })
   }, [customers, search, statusFilter, tierFilter])
@@ -127,7 +127,7 @@ export default function CustomersClientView({
                     <span className="text-gray-600 text-xs ml-1">bottles</span>
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs">{formatDate(c.subscribed_at)}</td>
-                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 capitalize text-xs">{c.tier ?? 'bailey'}</td>
+                  <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 capitalize text-xs">{c.tier ?? 'none'}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusBadge(c.status)}`}>
                       {statusLabel(c.status)}

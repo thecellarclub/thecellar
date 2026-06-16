@@ -93,9 +93,10 @@ export async function handlePostCharge({
     deadline.setDate(deadline.getDate() + 90)
     const deadlineStr = ordinalDate(deadline)
 
+    const prefix = currentTier === 'none' ? 'Congratulations on your first order! ' : ''
     await sendSms(
       customerPhone,
-      `Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.`,
+      `${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.`,
       { trigger: 'post-charge:cellar-update', customerId }
     )
   } else if (totalBottles === threshold) {

@@ -1,7 +1,9 @@
 import { createServiceClient } from '@/lib/supabase'
+import { sendSms } from '@/lib/twilio'
+import { sanitiseGsm7 } from '@/lib/twilio'
 
-export const ELVET_THRESHOLD = 50100   // £501 in pence
-export const PALATINE_THRESHOLD = 100000 // £1000 in pence
+export const BAILEY_THRESHOLD = 100000   // £1,000 in pence
+export const PALATINE_THRESHOLD = 250000 // £2,500 in pence
 
 /**
  * Sum all confirmed orders for this customer in the last rolling 12 months.
@@ -26,11 +28,12 @@ export async function getRollingSpend(
 
 /**
  * Determine tier from rolling annual spend in pence.
+ * Returns 'elvet' for any spend (first order and above), 'bailey' at £1k, 'palatine' at £2.5k.
  */
-export function tierFromSpend(spendPence: number): 'bailey' | 'elvet' | 'palatine' {
+export function tierFromSpend(spendPence: number): 'elvet' | 'bailey' | 'palatine' {
   if (spendPence >= PALATINE_THRESHOLD) return 'palatine'
-  if (spendPence >= ELVET_THRESHOLD) return 'elvet'
-  return 'bailey'
+  if (spendPence >= BAILEY_THRESHOLD) return 'bailey'
+  return 'elvet'
 }
 
 /**
@@ -38,6 +41,7 @@ export function tierFromSpend(spendPence: number): 'bailey' | 'elvet' | 'palatin
  * now qualify for a higher one. Downgrades are handled separately by the cron.
  *
  * Returns the new tier name if an upgrade occurred, null otherwise.
+ * Sends a congratulations SMS for bailey/palatine upgrades.
  */
 export async function checkAndApplyTierUpgrade(
   customerId: string,
@@ -45,7 +49,7 @@ export async function checkAndApplyTierUpgrade(
 ): Promise<string | null> {
   const { data: customer } = await sb
     .from('customers')
-    .select('tier')
+    .select('tier, phone')
     .eq('id', customerId)
     .maybeSingle()
 
@@ -54,7 +58,7 @@ export async function checkAndApplyTierUpgrade(
   const spend = await getRollingSpend(customerId, sb)
   const qualifyingTier = tierFromSpend(spend)
 
-  const tierRank: Record<string, number> = { none: 0, bailey: 1, elvet: 2, palatine: 3 }
+  const tierRank: Record<string, number> = { none: 0, elvet: 1, bailey: 2, palatine: 3 }
   const currentRank = tierRank[customer.tier ?? 'none'] ?? 0
   const qualifyingRank = tierRank[qualifyingTier] ?? 1
 
@@ -62,7 +66,6 @@ export async function checkAndApplyTierUpgrade(
   if (qualifyingRank <= currentRank) return null
 
   const now = new Date()
-  // Set tier_review_at to 1 year from now for the cron downgrade check
   const reviewAt = new Date(now)
   reviewAt.setFullYear(reviewAt.getFullYear() + 1)
 
@@ -74,6 +77,17 @@ export async function checkAndApplyTierUpgrade(
       tier_review_at: reviewAt.toISOString(),
     })
     .eq('id', customerId)
+
+  // Send congratulations SMS for bailey/palatine upgrades (not for none→elvet — handled in post-charge)
+  if ((qualifyingTier === 'bailey' || qualifyingTier === 'palatine') && customer.phone) {
+    const tierDisplayName = qualifyingTier === 'bailey' ? 'Bailey' : 'Palatine'
+    const message = sanitiseGsm7(
+      `Congratulations on reaching ${tierDisplayName} tier! Daniel will be in touch shortly to explain the benefits you get with it.`
+    )
+    await sendSms(customer.phone, message, { trigger: 'tier-upgrade', customerId }).catch(
+      (e: unknown) => console.error('[tiers] upgrade SMS failed:', e)
+    )
+  }
 
   return qualifyingTier
 }
