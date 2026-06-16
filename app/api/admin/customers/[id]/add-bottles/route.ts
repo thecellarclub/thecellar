@@ -12,7 +12,7 @@ export async function POST(
 
   const { id } = await params
   const body = await req.json()
-  const { wineId, quantity } = body as { wineId: string; quantity: number }
+  const { wineId, quantity, bypassStockCheck = false } = body as { wineId: string; quantity: number; bypassStockCheck?: boolean }
 
   // Validate inputs
   if (!wineId || typeof wineId !== 'string' || wineId.trim() === '') {
@@ -35,7 +35,7 @@ export async function POST(
     return NextResponse.json({ error: 'Wine not found' }, { status: 404 })
   }
 
-  if (wine.stock_bottles < quantity) {
+  if (!bypassStockCheck && wine.stock_bottles < quantity) {
     return NextResponse.json(
       { error: `Insufficient stock — only ${wine.stock_bottles} bottle${wine.stock_bottles === 1 ? '' : 's'} available` },
       { status: 400 }
@@ -54,11 +54,13 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Decrement stock
-  await sb
-    .from('wines')
-    .update({ stock_bottles: wine.stock_bottles - quantity })
-    .eq('id', wineId)
+  // Decrement stock (only if stock > 0)
+  if (wine.stock_bottles > 0) {
+    await sb
+      .from('wines')
+      .update({ stock_bottles: Math.max(0, wine.stock_bottles - quantity) })
+      .eq('id', wineId)
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDateTime } from '@/lib/format'
@@ -699,6 +699,286 @@ function ActivityFeed({ activity }: { activity: ActivityEntry[] }) {
   )
 }
 
+// ─── Add to cellar section ────────────────────────────────────────────────────
+
+type WineResult = { id: string; name: string; producer: string | null; vintage: number | null; price_pence: number; active: boolean }
+
+function AddToCellarSection({ customerId }: { customerId: string }) {
+  const [open, setOpen] = useState(false)
+  const [tab, setTab] = useState<'search' | 'new'>('search')
+  const [confirmation, setConfirmation] = useState<string | null>(null)
+
+  function handleSuccess(msg: string) {
+    setOpen(false)
+    setConfirmation(msg)
+    setTimeout(() => setConfirmation(null), 3000)
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-gray-600 mb-2">Add to cellar</p>
+      {confirmation && (
+        <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1.5 mb-2">{confirmation}</p>
+      )}
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          + Add wine to cellar
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setTab('search')}
+              className={`text-xs px-2.5 py-1 rounded border transition-colors ${tab === 'search' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}
+            >
+              Search existing
+            </button>
+            <button
+              onClick={() => setTab('new')}
+              className={`text-xs px-2.5 py-1 rounded border transition-colors ${tab === 'new' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}
+            >
+              Add new wine
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              className="ml-auto text-xs text-gray-400 hover:text-gray-600 px-1"
+            >
+              ✕
+            </button>
+          </div>
+          {tab === 'search' ? (
+            <SearchExistingTab customerId={customerId} onSuccess={handleSuccess} />
+          ) : (
+            <AddNewWineTab customerId={customerId} onSuccess={handleSuccess} />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SearchExistingTab({ customerId, onSuccess }: { customerId: string; onSuccess: (msg: string) => void }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<WineResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [selected, setSelected] = useState<WineResult | null>(null)
+  const [quantity, setQuantity] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const search = useCallback((q: string) => {
+    if (q.length < 2) { setResults([]); return }
+    setSearching(true)
+    fetch(`/api/admin/wines/search?q=${encodeURIComponent(q)}`)
+      .then((r) => r.json())
+      .then((data) => { setResults(Array.isArray(data) ? data : []); setSearching(false) })
+      .catch(() => setSearching(false))
+  }, [])
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setQuery(val)
+    setSelected(null)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => search(val), 300)
+  }
+
+  async function handleAdd() {
+    if (!selected) return
+    setLoading(true)
+    setError(null)
+    const res = await fetch(`/api/admin/customers/${customerId}/add-bottles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wineId: selected.id, quantity, bypassStockCheck: true }),
+    })
+    setLoading(false)
+    if (res.ok) {
+      onSuccess(`Added ${quantity}× ${selected.name} to cellar.`)
+    } else {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to add')
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {!selected ? (
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={handleQueryChange}
+            placeholder="Search wines…"
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+          />
+          {query.length >= 2 && (
+            <div className="absolute top-full left-0 right-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-48 overflow-y-auto">
+              {searching && <p className="text-xs text-gray-400 px-3 py-2">Searching…</p>}
+              {!searching && results.length === 0 && <p className="text-xs text-gray-400 px-3 py-2">No wines found</p>}
+              {results.map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => { setSelected(w); setQuery(''); setResults([]) }}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                >
+                  <span className="font-medium text-gray-900">{w.name}</span>
+                  {w.producer && <span className="text-gray-500"> — {w.producer}</span>}
+                  {w.vintage && <span className="text-gray-500">, {w.vintage}</span>}
+                  <span className="text-gray-400 ml-1">£{(w.price_pence / 100).toFixed(2)}</span>
+                  {!w.active && <span className="ml-1 text-gray-400 italic">(unlisted)</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-1 bg-gray-50 rounded px-2 py-1.5 border border-gray-200">
+            <p className="text-xs text-gray-800 leading-snug">
+              <span className="font-medium">{selected.name}</span>
+              {selected.producer && <span className="text-gray-500"> — {selected.producer}</span>}
+              {selected.vintage && <span className="text-gray-500">, {selected.vintage}</span>}
+            </p>
+            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-xs shrink-0 mt-0.5">✕</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-600 shrink-0">Qty</label>
+            <input
+              type="number"
+              value={quantity}
+              min={1}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-16 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+            />
+            <button
+              onClick={handleAdd}
+              disabled={loading}
+              className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? '...' : 'Add to cellar'}
+            </button>
+          </div>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AddNewWineTab({ customerId, onSuccess }: { customerId: string; onSuccess: (msg: string) => void }) {
+  const [name, setName] = useState('')
+  const [producer, setProducer] = useState('')
+  const [vintage, setVintage] = useState('')
+  const [price, setPrice] = useState('')
+  const [quantity, setQuantity] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit() {
+    if (!name.trim() || !price) return
+    const pricePence = Math.round(parseFloat(price) * 100)
+    if (isNaN(pricePence) || pricePence < 0) { setError('Invalid price'); return }
+    setLoading(true)
+    setError(null)
+
+    const createRes = await fetch('/api/admin/wines/quick-create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name.trim(),
+        producer: producer.trim() || undefined,
+        vintage: vintage ? parseInt(vintage) : undefined,
+        pricePence,
+      }),
+    })
+    if (!createRes.ok) {
+      const data = await createRes.json()
+      setError(data.error ?? 'Failed to create wine')
+      setLoading(false)
+      return
+    }
+    const wine = await createRes.json()
+
+    const addRes = await fetch(`/api/admin/customers/${customerId}/add-bottles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wineId: wine.id, quantity, bypassStockCheck: true }),
+    })
+    setLoading(false)
+    if (addRes.ok) {
+      onSuccess(`Added ${quantity}× ${wine.name} to cellar.`)
+    } else {
+      const data = await addRes.json()
+      setError(data.error ?? 'Failed to add to cellar')
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Wine name *"
+        className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+      />
+      <input
+        type="text"
+        value={producer}
+        onChange={(e) => setProducer(e.target.value)}
+        placeholder="Producer (optional)"
+        className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+      />
+      <div className="flex gap-2">
+        <input
+          type="number"
+          value={vintage}
+          onChange={(e) => setVintage(e.target.value)}
+          placeholder="Vintage"
+          min={1900}
+          max={2099}
+          className="w-24 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+        />
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">£</span>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="Price *"
+            min={0}
+            step={0.01}
+            className="w-full border border-gray-300 rounded pl-5 pr-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-xs text-gray-600 shrink-0">Qty</label>
+        <input
+          type="number"
+          value={quantity}
+          min={1}
+          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-400"
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !name.trim() || !price}
+          className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
+        >
+          {loading ? '...' : 'Add to cellar'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
 // ─── Customer panel ───────────────────────────────────────────────────────────
 
 function CustomerPanel({ thread, adminUsers, currentUserId, currentUserName, onAssign, onFollowUpUpdate, onNoteAdded }: {
@@ -730,6 +1010,9 @@ function CustomerPanel({ thread, adminUsers, currentUserId, currentUserName, onA
           adminUsers={adminUsers}
           onNoteAdded={onNoteAdded}
         />
+      </div>
+      <div className="border-t border-gray-100 pt-3">
+        <AddToCellarSection customerId={thread.customerId} />
       </div>
       <div className="border-t border-gray-100 pt-3">
         <ActivityFeed activity={thread.activity} />
