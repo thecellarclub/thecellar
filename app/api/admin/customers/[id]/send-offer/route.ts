@@ -57,8 +57,9 @@ export async function POST(
     .maybeSingle()
 
   if (!wine) return NextResponse.json({ error: 'Wine not found' }, { status: 404 })
-  if (!wine.active) return NextResponse.json({ error: 'Wine is not active' }, { status: 400 })
 
+  // Note: `active` only gates broadcast/catalogue visibility — a manual,
+  // single-customer offer can still be sent for an unlisted wine.
   if (wine.stock_bottles < quantity) {
     return NextResponse.json(
       { error: `Insufficient stock. Only ${wine.stock_bottles} bottle${wine.stock_bottles === 1 ? '' : 's'} available.` },

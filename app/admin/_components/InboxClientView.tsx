@@ -716,7 +716,7 @@ function AddToCellarSection({ customerId }: { customerId: string }) {
 
   return (
     <div>
-      <p className="text-xs font-medium text-gray-600 mb-2">Add to cellar</p>
+      <p className="text-xs font-medium text-gray-600 mb-2">Send offer</p>
       {confirmation && (
         <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1.5 mb-2">{confirmation}</p>
       )}
@@ -725,7 +725,7 @@ function AddToCellarSection({ customerId }: { customerId: string }) {
           onClick={() => setOpen(true)}
           className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors"
         >
-          + Add wine to cellar
+          + Send wine offer
         </button>
       ) : (
         <div className="space-y-2">
@@ -791,17 +791,17 @@ function SearchExistingTab({ customerId, onSuccess }: { customerId: string; onSu
     if (!selected) return
     setLoading(true)
     setError(null)
-    const res = await fetch(`/api/admin/customers/${customerId}/add-bottles`, {
+    const res = await fetch(`/api/admin/customers/${customerId}/send-offer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wineId: selected.id, quantity, bypassStockCheck: true }),
+      body: JSON.stringify({ wineId: selected.id, quantity }),
     })
     setLoading(false)
     if (res.ok) {
-      onSuccess(`Added ${quantity}× ${selected.name} to cellar.`)
+      onSuccess(`Offer sent — ${quantity}× ${selected.name}. Waiting for reply.`)
     } else {
       const data = await res.json()
-      setError(data.error ?? 'Failed to add')
+      setError(data.error ?? 'Failed to send offer')
     }
   }
 
@@ -860,7 +860,7 @@ function SearchExistingTab({ customerId, onSuccess }: { customerId: string; onSu
               disabled={loading}
               className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? '...' : 'Add to cellar'}
+              {loading ? '...' : 'Send offer'}
             </button>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -894,6 +894,7 @@ function AddNewWineTab({ customerId, onSuccess }: { customerId: string; onSucces
         producer: producer.trim() || undefined,
         vintage: vintage ? parseInt(vintage) : undefined,
         pricePence,
+        stockBottles: quantity,
       }),
     })
     if (!createRes.ok) {
@@ -904,17 +905,17 @@ function AddNewWineTab({ customerId, onSuccess }: { customerId: string; onSucces
     }
     const wine = await createRes.json()
 
-    const addRes = await fetch(`/api/admin/customers/${customerId}/add-bottles`, {
+    const offerRes = await fetch(`/api/admin/customers/${customerId}/send-offer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wineId: wine.id, quantity, bypassStockCheck: true }),
+      body: JSON.stringify({ wineId: wine.id, quantity }),
     })
     setLoading(false)
-    if (addRes.ok) {
-      onSuccess(`Added ${quantity}× ${wine.name} to cellar.`)
+    if (offerRes.ok) {
+      onSuccess(`Offer sent — ${quantity}× ${wine.name}. Waiting for reply.`)
     } else {
-      const data = await addRes.json()
-      setError(data.error ?? 'Failed to add to cellar')
+      const data = await offerRes.json()
+      setError(data.error ?? 'Failed to send offer')
     }
   }
 
@@ -971,7 +972,7 @@ function AddNewWineTab({ customerId, onSuccess }: { customerId: string; onSucces
           disabled={loading || !name.trim() || !price}
           className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
-          {loading ? '...' : 'Add to cellar'}
+          {loading ? '...' : 'Send offer'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}

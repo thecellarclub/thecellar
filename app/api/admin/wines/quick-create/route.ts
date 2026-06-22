@@ -7,11 +7,12 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { name, producer, vintage, pricePence } = body as {
+  const { name, producer, vintage, pricePence, stockBottles } = body as {
     name: string
     producer?: string
     vintage?: number
     pricePence: number
+    stockBottles?: number
   }
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -30,8 +31,9 @@ export async function POST(req: NextRequest) {
       vintage: vintage ?? null,
       price_pence: pricePence,
       active: false,
+      stock_bottles: Number.isInteger(stockBottles) && stockBottles! >= 0 ? stockBottles : 0,
     })
-    .select('id, name, producer, vintage, price_pence')
+    .select('id, name, producer, vintage, price_pence, stock_bottles')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
