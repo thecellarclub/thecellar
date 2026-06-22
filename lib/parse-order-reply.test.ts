@@ -16,6 +16,8 @@ describe('parseOrderReply', () => {
     ['', { kind: 'unparseable' }],
     ['   ', { kind: 'unparseable' }],
     ['4 plz', { kind: 'quantity', quantity: 4 }],
+    ['could we have 2 of those please', { kind: 'quantity', quantity: 2 }],
+    ['can I add one to my case?', { kind: 'quantity', quantity: 1 }],
   ]
 
   test.each(cases)('parseOrderReply(%j)', (input, expected) => {
