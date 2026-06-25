@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatDateTime } from '@/lib/format'
 import SendMessageForm from './SendMessageForm'
 import SmsCharCounter from './SmsCharCounter'
 
@@ -19,11 +18,14 @@ export type InboxMsg = {
   context?: string
 }
 
-export type SmsContextMsg = {
-  id: string
+export type ConversationMsg = {
+  sid: string
   direction: 'inbound' | 'outbound'
   body: string
-  created_at: string
+  sentAt: string
+  status: string
+  errorCode: number | null
+  segments: number
 }
 
 export type InboxNote = {
@@ -62,7 +64,6 @@ export type InboxThread = {
   followUpNote: string | null
   messages: InboxMsg[]
   openRequest: { id: string; message: string; status: string } | null
-  smsContext: SmsContextMsg[]
   notes: InboxNote[]
   activity: ActivityEntry[]
 }
@@ -115,26 +116,6 @@ function addDays(n: number): string {
   const d = new Date()
   d.setDate(d.getDate() + n)
   return d.toISOString().slice(0, 10)
-}
-
-// ─── SMS context strip ────────────────────────────────────────────────────────
-
-function SmsContextStrip({ msgs }: { msgs: SmsContextMsg[] }) {
-  if (msgs.length === 0) return null
-  return (
-    <div className="space-y-2 mb-4">
-      <p className="text-xs text-gray-600 text-center">— SMS before this thread —</p>
-      {msgs.map((sms) => (
-        <div key={sms.id} className={`flex ${sms.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-xs opacity-50 ${sms.direction === 'outbound' ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-600'}`}>
-            <p className="leading-relaxed">{sms.body}</p>
-            <p className="text-gray-600 mt-0.5">{formatDateTime(sms.created_at)}</p>
-          </div>
-        </div>
-      ))}
-      <div className="border-t border-dashed border-gray-200" />
-    </div>
-  )
 }
 
 // ─── Close / Reopen button ────────────────────────────────────────────────────
@@ -1053,7 +1034,7 @@ function NewMessageModal({ customers, onClose }: {
 
 // ─── Reply input (shared) ─────────────────────────────────────────────────────
 
-function ReplyInput({ customerId, onSent, mobile }: { customerId: string; onSent: () => void; mobile?: boolean }) {
+function ReplyInput({ customerId, onSent, mobile }: { customerId: string; onSent: (body: string) => void; mobile?: boolean }) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1072,7 +1053,7 @@ function ReplyInput({ customerId, onSent, mobile }: { customerId: string; onSent
     setLoading(false)
     if (res.ok) {
       setMessage('')
-      onSent()
+      onSent(trimmed)
     } else {
       const data = await res.json()
       setError(data.error ?? 'Failed to send')
@@ -1141,38 +1122,170 @@ function ReplyInput({ customerId, onSent, mobile }: { customerId: string; onSent
   )
 }
 
-// ─── Message timeline ─────────────────────────────────────────────────────────
+// ─── Live conversation (Twilio-backed) ────────────────────────────────────────
 
-function MessageTimeline({ thread }: { thread: InboxThread }) {
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+function useConversation(customerId: string) {
+  const [messages, setMessages] = useState<ConversationMsg[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [error, setError] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null)
+  const seenSids = useRef<Set<string>>(new Set())
+
+  const fetchFirstPage = useCallback(async () => {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch(`/api/admin/inbox/conversation?customerId=${customerId}`)
+      if (!res.ok) throw new Error('failed to load conversation')
+      const data = await res.json()
+      seenSids.current = new Set((data.messages as ConversationMsg[]).map((m) => m.sid))
+      setMessages(data.messages)
+      setHasMore(data.hasMore)
+      setNextPageToken(data.nextPageToken)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [customerId])
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
-  }, [thread.customerId, thread.messages.length])
+    fetchFirstPage()
+  }, [fetchFirstPage])
+
+  const loadOlder = useCallback(async () => {
+    if (!nextPageToken) return
+    setLoadingOlder(true)
+    try {
+      const res = await fetch(`/api/admin/inbox/conversation?customerId=${customerId}&pageToken=${encodeURIComponent(nextPageToken)}`)
+      if (!res.ok) throw new Error('failed to load older messages')
+      const data = await res.json()
+      const fresh = (data.messages as ConversationMsg[]).filter((m) => !seenSids.current.has(m.sid))
+      fresh.forEach((m) => seenSids.current.add(m.sid))
+      setMessages((prev) => [...fresh, ...prev])
+      setHasMore(data.hasMore)
+      setNextPageToken(data.nextPageToken)
+    } catch {
+      // Leave existing state in place — the "Load older" button stays visible to retry
+    } finally {
+      setLoadingOlder(false)
+    }
+  }, [customerId, nextPageToken])
+
+  const appendOptimistic = useCallback((body: string) => {
+    setMessages((prev) => [...prev, {
+      sid: `optimistic-${Date.now()}`,
+      direction: 'outbound',
+      body,
+      sentAt: new Date().toISOString(),
+      status: 'queued',
+      errorCode: null,
+      segments: 1,
+    }])
+  }, [])
+
+  return { messages, loading, loadingOlder, error, hasMore, loadOlder, retry: fetchFirstPage, refetch: fetchFirstPage, appendOptimistic }
+}
+
+function ConversationBubble({ msg }: { msg: ConversationMsg }) {
+  const isOut = msg.direction === 'outbound'
+  const failed = msg.status === 'failed' || msg.status === 'undelivered' || msg.errorCode != null
+  const empty = !msg.body
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-      <SmsContextStrip msgs={thread.smsContext} />
-      {thread.messages.map((msg) => {
-        const isOut = msg.direction === 'outbound'
-        const isPurchaseQuery = msg.category === 'purchase_query'
-        const isSpecialRequest = msg.category === 'special_request'
-        return (
-          <div key={msg.id} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[80%] px-4 py-3 text-sm ${isOut ? 'rounded-2xl rounded-br-sm text-white' : 'bg-white rounded-2xl rounded-bl-sm text-gray-900 border border-gray-200'}`}
-              style={isOut ? { background: '#9B1B30' } : {}}
-            >
-              {isPurchaseQuery && <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mb-1.5">Purchase query</span>}
-              {isSpecialRequest && <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-700 bg-amber-50 font-medium mb-1.5">Request</span>}
-              <p className="leading-relaxed">{msg.message}</p>
-              {msg.context && <p className="text-xs text-gray-500 mt-1 italic">{msg.context}</p>}
-              <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-500'}`}>{timeAgo(msg.created_at)}</p>
-            </div>
-          </div>
-        )
-      })}
-      <div ref={messagesEndRef} />
+    <div className={`flex flex-col ${isOut ? 'items-end' : 'items-start'}`}>
+      <div
+        className={`max-w-[80%] px-4 py-3 text-sm ${isOut ? 'rounded-2xl rounded-br-sm text-white' : 'bg-white rounded-2xl rounded-bl-sm text-gray-900 border border-gray-200'}`}
+        style={isOut ? { background: '#9B1B30' } : {}}
+      >
+        {empty ? (
+          <p className={`leading-relaxed italic ${isOut ? 'text-white/70' : 'text-gray-400'}`}>(message content no longer available)</p>
+        ) : (
+          <p className="leading-relaxed whitespace-pre-wrap">{msg.body}</p>
+        )}
+        <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-500'}`}>{timeAgo(msg.sentAt)}</p>
+      </div>
+      {failed && <p className="text-xs text-red-600 mt-0.5 px-1">Not delivered</p>}
     </div>
+  )
+}
+
+function ConversationPane({ customerId, mobile, onReplySent }: {
+  customerId: string
+  mobile?: boolean
+  onReplySent?: () => void
+}) {
+  const { messages, loading, loadingOlder, error, hasMore, loadOlder, retry, refetch, appendOptimistic } = useConversation(customerId)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const prevScrollHeightRef = useRef<number | null>(null)
+  const hasScrolledRef = useRef(false)
+
+  useLayoutEffect(() => {
+    if (prevScrollHeightRef.current !== null && containerRef.current) {
+      const newHeight = containerRef.current.scrollHeight
+      containerRef.current.scrollTop += newHeight - prevScrollHeightRef.current
+      prevScrollHeightRef.current = null
+      return
+    }
+    if (!loading && !hasScrolledRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+      hasScrolledRef.current = true
+    }
+  }, [messages, loading])
+
+  async function handleLoadOlder() {
+    if (containerRef.current) prevScrollHeightRef.current = containerRef.current.scrollHeight
+    await loadOlder()
+  }
+
+  function handleSent(body: string) {
+    appendOptimistic(body)
+    hasScrolledRef.current = false
+    refetch()
+    onReplySent?.()
+  }
+
+  return (
+    <>
+      <div ref={containerRef} className={`flex-1 overflow-y-auto space-y-3 ${mobile ? 'px-3 py-3' : 'px-4 py-4'}`}>
+        {hasMore && (
+          <div className="flex justify-center pb-1">
+            <button
+              onClick={handleLoadOlder}
+              disabled={loadingOlder}
+              className="text-xs px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            >
+              {loadingOlder ? 'Loading…' : 'Load older messages'}
+            </button>
+          </div>
+        )}
+        {loading && messages.length === 0 && (
+          <p className="text-center text-xs text-gray-400 py-6">Loading conversation…</p>
+        )}
+        {error && (
+          <div className="flex flex-col items-center justify-center gap-2 py-6 text-xs text-red-600">
+            <p>Couldn&apos;t load messages from Twilio.</p>
+            <button
+              onClick={retry}
+              className="px-2.5 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {!error && !loading && messages.length === 0 && (
+          <p className="text-center text-xs text-gray-400 py-6">No messages yet</p>
+        )}
+        {!error && messages.map((msg) => <ConversationBubble key={msg.sid} msg={msg} />)}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className={mobile ? '' : 'shrink-0 border-t border-gray-200 px-4 py-3'}>
+        <ReplyInput customerId={customerId} onSent={handleSent} mobile={mobile} />
+      </div>
+    </>
   )
 }
 
@@ -1285,30 +1398,7 @@ function MobileThreadDetail({
         onNoteAdded={onNoteAdded}
       />
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        <SmsContextStrip msgs={thread.smsContext} />
-        {thread.messages.map((msg) => {
-          const isOut = msg.direction === 'outbound'
-          const isPurchaseQuery = msg.category === 'purchase_query'
-          const isSpecialRequest = msg.category === 'special_request'
-          return (
-            <div key={msg.id} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] px-4 py-3 ${isOut ? 'rounded-2xl rounded-br-sm text-white' : 'bg-white rounded-2xl rounded-bl-sm text-gray-900 border border-gray-200'}`}
-                style={isOut ? { background: '#9B1B30' } : {}}
-              >
-                {isPurchaseQuery && <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-600 bg-amber-50 font-medium mb-1.5">Purchase query</span>}
-                {isSpecialRequest && <span className="inline-block text-xs px-1.5 py-0.5 rounded border border-amber-400 text-amber-700 bg-amber-50 font-medium mb-1.5">Request</span>}
-                <p className="text-sm leading-relaxed">{msg.message}</p>
-                {msg.context && <p className="text-xs text-gray-500 mt-1 italic">{msg.context}</p>}
-                <p className={`text-xs mt-1 ${isOut ? 'text-white/55' : 'text-gray-500'}`}>{timeAgo(msg.created_at)}</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <ReplyInput customerId={thread.customerId} onSent={() => router.refresh()} mobile />
+      <ConversationPane key={thread.customerId} customerId={thread.customerId} mobile onReplySent={() => router.refresh()} />
     </div>
   )
 }
@@ -1634,14 +1724,11 @@ export default function InboxClientView({
                 </div>
               </div>
 
-              <MessageTimeline thread={selectedThread} />
-
-              <div className="shrink-0 border-t border-gray-200 px-4 py-3">
-                <ReplyInput
-                  customerId={selectedThread.customerId}
-                  onSent={() => router.refresh()}
-                />
-              </div>
+              <ConversationPane
+                key={selectedThread.customerId}
+                customerId={selectedThread.customerId}
+                onReplySent={() => router.refresh()}
+              />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-500">

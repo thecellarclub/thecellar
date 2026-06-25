@@ -14,7 +14,6 @@ const links = [
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
   { href: '/admin/inbox', label: 'Inbox', exact: false },
-  { href: '/admin/sms-log', label: 'SMS log', exact: false },
 ]
 
 export default function AdminNav({ inboxCount = 0, shipmentsCount = 0 }: { inboxCount?: number; shipmentsCount?: number }) {

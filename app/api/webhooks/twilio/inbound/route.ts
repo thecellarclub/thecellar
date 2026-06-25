@@ -100,25 +100,6 @@ async function logInbound(params: {
   }
 }
 
-/** Fire-and-forget write to sms_messages for inbound. Never throws. */
-async function logSmsInbound(params: {
-  sb: ReturnType<typeof createServiceClient>
-  phone: string
-  body: string
-  customerId?: string | null
-}): Promise<void> {
-  try {
-    await params.sb.from('sms_messages').insert({
-      customer_id: params.customerId ?? null,
-      phone: params.phone,
-      direction: 'inbound',
-      body: params.body,
-    })
-  } catch (err) {
-    console.error('[sms_messages] inbound log failed', err)
-  }
-}
-
 /** Format a cellar wine list as "- 2x Wine Name (£X/bottle)" lines */
 function formatWineList(rows: CellarRow[]): string {
   // Aggregate by wine name
@@ -1174,9 +1155,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, status, texts_snoozed_until, tier, sms_awaiting, concierge_status')
       .eq('phone', from)
       .maybeSingle() as { data: Customer | null }
-
-    // ── Log every inbound to sms_messages ───────────────────────────────
-    void logSmsInbound({ sb, phone: from, body: rawBody, customerId: customer?.id ?? null })
 
     if (!customer) {
       await sendSms(from, `Hey! I don't recognise this number. If you'd like to join, sign up at ${APP_URL}/join`, { trigger: 'unknown_number' })

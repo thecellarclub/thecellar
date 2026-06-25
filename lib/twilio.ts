@@ -1,5 +1,4 @@
 import twilio from 'twilio'
-import { createServiceClient } from '@/lib/supabase'
 
 export const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
@@ -42,23 +41,9 @@ export async function sendSms(
   opts?: { trigger?: string; customerId?: string }
 ): Promise<void> {
   const sanitized = sanitiseGsm7(body)
-  const msg = await twilioClient.messages.create({
+  await twilioClient.messages.create({
     to,
     from: process.env.TWILIO_PHONE_NUMBER!,
     body: sanitized,
   })
-  // Fire-and-forget log — never throws
-  try {
-    const sb = createServiceClient()
-    await sb.from('sms_messages').insert({
-      phone: to,
-      direction: 'outbound',
-      body: sanitized,
-      customer_id: opts?.customerId ?? null,
-      twilio_sid: msg.sid,
-      trigger: opts?.trigger ?? null,
-    })
-  } catch (err) {
-    console.error('[sms_messages] outbound log failed', err)
-  }
 }

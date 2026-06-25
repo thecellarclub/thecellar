@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
-import InboxClientView, { type InboxThread, type SmsContextMsg, type InboxNote, type ActivityEntry, type AdminUser } from '@/app/admin/_components/InboxClientView'
+import InboxClientView, { type InboxThread, type InboxNote, type ActivityEntry, type AdminUser } from '@/app/admin/_components/InboxClientView'
 
 type ConciergeMessage = {
   id: string
@@ -108,7 +108,6 @@ export default async function InboxPage({
         followUpNote: cust?.inbox_follow_up_note ?? null,
         messages: [],
         openRequest: requestByCustomer.get(cid) ?? null,
-        smsContext: [],
         notes: [],
         activity: [],
       })
@@ -126,15 +125,9 @@ export default async function InboxPage({
 
   const customerIds = Array.from(threadMap.keys())
 
-  // Parallel: SMS context + notes + activity
+  // Parallel: notes + activity
   if (customerIds.length > 0) {
-    const [{ data: smsRows }, { data: notesRows }, { data: activityRows }] = await Promise.all([
-      sb
-        .from('sms_messages')
-        .select('id, customer_id, direction, body, created_at')
-        .in('customer_id', customerIds)
-        .order('created_at', { ascending: false })
-        .limit(600),
+    const [{ data: notesRows }, { data: activityRows }] = await Promise.all([
       sb
         .from('inbox_notes')
         .select('id, customer_id, author_id, body, created_at, admin_users(name)')
@@ -147,27 +140,6 @@ export default async function InboxPage({
         .order('created_at', { ascending: false })
         .limit(500),
     ])
-
-    // SMS context
-    const contextAcc = new Map<string, SmsContextMsg[]>()
-    for (const row of (smsRows ?? []) as { id: string; customer_id: string; direction: string; body: string; created_at: string }[]) {
-      const thread = threadMap.get(row.customer_id)
-      if (!thread) continue
-      const firstAt = thread.messages[0]?.created_at
-      if (!firstAt || row.created_at >= firstAt) continue
-      const existing = contextAcc.get(row.customer_id) ?? []
-      if (existing.length < 3) {
-        contextAcc.set(row.customer_id, [...existing, {
-          id: row.id,
-          direction: row.direction as 'inbound' | 'outbound',
-          body: row.body,
-          created_at: row.created_at,
-        }])
-      }
-    }
-    for (const [cid, msgs] of contextAcc) {
-      threadMap.get(cid)!.smsContext = [...msgs].reverse()
-    }
 
     // Notes
     for (const row of (notesRows ?? []) as unknown as {
