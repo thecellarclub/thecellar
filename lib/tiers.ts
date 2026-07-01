@@ -94,8 +94,11 @@ export async function checkAndApplyTierUpgrade(
 
 /**
  * The number of bottles a customer needs to trigger free shipping.
- * Palatine members get a case of 6; everyone else gets 12.
+ * - Palatine members get 6 (existing behaviour).
+ * - Any customer with a one-shot free_shipping_at_6 grant gets 6.
+ * - Everyone else gets 12.
  */
-export function deliveryThreshold(tier: string): number {
-  return tier === 'palatine' ? 6 : 12
+export function deliveryThreshold(tier: string, freeShippingAt6 = false): number {
+  if (tier === 'palatine' || freeShippingAt6) return 6
+  return 12
 }

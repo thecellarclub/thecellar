@@ -644,6 +644,8 @@ function ActivityFeed({ activity }: { activity: ActivityEntry[] }) {
       case 'closed': return `marked closed`
       case 'reopened': return `reopened`
       case 'request_resolved': return `resolved request`
+      case 'free_shipping_at_6_set': return `enabled free shipping at 6`
+      case 'free_shipping_at_6_cleared': return entry.detail ? `cleared free shipping at 6 (${entry.detail})` : `cleared free shipping at 6`
       default: return entry.action
     }
   }

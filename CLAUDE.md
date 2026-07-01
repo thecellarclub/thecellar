@@ -6,6 +6,17 @@ Julia writes specs in Cowork (the Claude desktop app). Cowork does NOT make code
 
 Specs live in the project root as `claude-code-prompt-*.md`.
 
+### Keeping the loop closed
+
+Cowork can't see Claude Code work, so it relies on the repo + two docs to know the current state. To prevent drift:
+
+**Claude Code — when you finish implementing a spec, before you're done:**
+
+1. Make the small state edits to this CLAUDE.md: bump the "Latest migration" number, move the completed spec out of the "Active specs" table, and update any table/route list that changed. Keep these edits minimal and structural — CLAUDE.md is high-level and loaded into context every session, so do NOT add narrative or implementation detail here.
+2. Prepend a detailed entry to `IMPLEMENTATION-LOG.md` (state changes, deviations/decisions, gotchas/future context, verification — see the template in that file). This is where granular feedback lives.
+
+**Cowork — before writing any new spec:** read `IMPLEMENTATION-LOG.md` first, and verify state against the actual repo (e.g. `ls supabase/migrations/` for the real latest number, grep for tables/routes before assuming they exist) rather than trusting CLAUDE.md prose alone.
+
 ## What this is
 
 An SMS-first wine club platform (https://thecellar.club). Customers sign up, receive wine offers by text, reply to order, and accumulate bottles until they hit 12 (a case), which triggers a shipment. There's an admin portal for the team to manage wine inventory, customers, orders, shipments, and a shared SMS inbox.
@@ -51,17 +62,17 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 | Table | Purpose |
 |-------|---------|
-| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by` |
+| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by`, `free_shipping_at_6` (one-shot admin grant, see `lib/tiers.ts`/`lib/post-charge.ts`) |
 | `admin_users` | Admin team. Fields: `id`, `email`, `name`, `password_hash`. Passwords set via `scripts/seed-admin-users.ts`. |
 | `concierge_messages` | Inbound/outbound SMS in the inbox. `direction`: `inbound`/`outbound`. |
 | `special_requests` | Customer requests surfaced in the inbox. `status`: `open`/`resolved`. |
 | `inbox_notes` | Internal notes about a customer (customer-level, persist across threads). `author_id` → `admin_users`. |
-| `inbox_activity` | Lightweight audit log. `action` values: `replied`, `assigned`, `note_added`, `follow_up_set`, `follow_up_cleared`, `closed`, `reopened`, `request_resolved`. |
+| `inbox_activity` | Lightweight audit log. `actor_id` nullable (system/auto-consume entries). `action` values: `replied`, `assigned`, `note_added`, `follow_up_set`, `follow_up_cleared`, `closed`, `reopened`, `request_resolved`, `free_shipping_at_6_set`, `free_shipping_at_6_cleared`. |
 | `wines` | Wine catalogue. |
 | `orders` | Customer wine orders. |
 | `cellar` | Bottles accumulated but not yet shipped. `shipment_id` links to a shipment when reserved; `shipped_at` is set when actually shipped/collected. |
 | `shipments` | Case shipments. `type`: `'delivery'` (posted to customer) or `'collection'` (picked up at bar). See shipments section below. |
-| `sms_messages` | All inbound/outbound SMS log. |
+| `sms_messages` | All inbound/outbound SMS log. **Being deprecated** — see `claude-code-prompt-inbox-twilio-history.md` (table dropped once inbox reads live from Twilio). |
 | `texts` | Wine offer campaigns. |
 
 ## Auth model
@@ -71,7 +82,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `038_customer_status.sql`. New work numbers from **039**.
+Latest migration: `042_free_shipping_at_6_flag.sql` (note: there are multiple `039_*` migrations). New work numbers from **043**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 
@@ -104,6 +115,7 @@ The admin inbox (`/admin/inbox`) is a shared inbox for the three-person team. Im
 - Default filter set to "Mine" instead of "All"
 - Deep link support (`/admin/inbox?customer={id}`)
 - Conversation column scroll fix (middle column grows unbounded — should scroll independently so customer panel stays visible)
+- Live Twilio conversation history (`claude-code-prompt-inbox-twilio-history.md`): conversation column reads the full two-way SMS history live from the Twilio Messages API (incl. automated messages) instead of `concierge_messages`, with pagination. Thread list, notes, activity, digest stay on the existing tables.
 
 ## Shipments
 
@@ -138,3 +150,7 @@ Specs live in the project root as `claude-code-prompt-*.md`. Current active (uni
 | `claude-code-prompt-courier-booking.md` | Courier booking stage for delivery shipments |
 | `claude-code-prompt-shipments-and-wine-upload.md` | Shipments page overhaul (sortable columns, contents, collection dates) + wine image upload via Supabase Storage |
 | `claude-code-prompt-shipments-tweaks.md` | Shipments table fixes: drop tracking column, full address, contents line breaks, fix action buttons per type/status |
+| `claude-code-prompt-tiers-update.md` | New tier thresholds (Bailey £1k, Palatine £2.5k), fix 'none' defaults to 'elvet', congrats SMS on Bailey/Palatine upgrade |
+| `claude-code-prompt-tier-benefits.md` | Choose-and-stack benefits at Bailey/Palatine (local/non-local menu); admin fulfilment queue. **Blocked by tiers-update.** (Superseded design in flight — see chat; free-shipping-at-6 split out to its own spec.) |
+| `claude-code-prompt-inbox-add-wine.md` | Quick-add wine to cellar from inbox right panel: search existing wines + quick-create unlisted wines |
+| `claude-code-prompt-inbox-twilio-history.md` | Inbox conversation column reads full SMS history live from Twilio Messages API (incl. automated messages), paginated; replaces `concierge_messages`/`smsContext` rendering in the middle column. Also fully deprecates `sms_messages` (stop writes, delete `/admin/sms-log` page, drop table via migration 041) |

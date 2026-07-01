@@ -164,7 +164,7 @@ export default async function InboxPage({
     for (const row of (activityRows ?? []) as unknown as {
       id: string
       customer_id: string
-      actor_id: string
+      actor_id: string | null
       action: string
       detail: string | null
       created_at: string
@@ -173,8 +173,8 @@ export default async function InboxPage({
       threadMap.get(row.customer_id)?.activity.push({
         id: row.id,
         customer_id: row.customer_id,
-        actor_id: row.actor_id,
-        actor_name: row.admin_users?.name ?? 'Unknown',
+        actor_id: row.actor_id ?? '',
+        actor_name: row.admin_users?.name ?? (row.actor_id ? 'Unknown' : 'System'),
         action: row.action,
         detail: row.detail ?? null,
         created_at: row.created_at,

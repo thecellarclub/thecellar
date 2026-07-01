@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
 import DeactivateButton from '../../../_components/DeactivateButton'
+import FreeShippingAt6Toggle from '../../../_components/FreeShippingAt6Toggle'
 import RefundButton from '../../../_components/RefundButton'
 import SendOfferForm from '../../../_components/SendOfferForm'
 import CollectCellarForm from '../../../_components/CollectCellarForm'
@@ -407,8 +408,11 @@ export default async function CustomerDetailPage({
       {/* ── Section 6: Admin tools ──────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-3">Admin tools</p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 mb-4">
           <DeactivateButton customerId={customer.id} status={customer.status} />
+        </div>
+        <div className="border-t border-gray-100 pt-3">
+          <FreeShippingAt6Toggle customerId={customer.id} enabled={!!customer.free_shipping_at_6} />
         </div>
       </div>
     </div>

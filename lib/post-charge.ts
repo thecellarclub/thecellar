@@ -45,16 +45,17 @@ export async function handlePostCharge({
   // 1b. Fetch customer tier and check for upgrade (non-blocking)
   const { data: customerData } = await sb
     .from('customers')
-    .select('tier')
+    .select('tier, free_shipping_at_6')
     .eq('id', customerId)
     .maybeSingle()
 
   const currentTier = customerData?.tier ?? 'none'
+  const freeShippingAt6 = customerData?.free_shipping_at_6 ?? false
   await checkAndApplyTierUpgrade(customerId, sb).catch((e) =>
     console.error('[post-charge] tier upgrade check failed:', e)
   )
 
-  const threshold = deliveryThreshold(currentTier)
+  const threshold = deliveryThreshold(currentTier, freeShippingAt6)
 
   // 2. Fetch all unreserved cellar rows for this customer, oldest first.
   // Filter by shipment_id IS NULL (not shipped_at) so that bottles already
@@ -96,7 +97,7 @@ export async function handlePostCharge({
     const prefix = currentTier === 'none' ? 'Congratulations on your first order! ' : ''
     await sendSms(
       customerPhone,
-      `${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of 12 by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.`,
+      `${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of ${threshold} by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.`,
       { trigger: 'post-charge:cellar-update', customerId }
     )
   } else if (totalBottles === threshold) {
@@ -115,12 +116,22 @@ export async function handlePostCharge({
       .map((id) => `${wineCounts[id]}x ${wineMap[id] ?? 'wine'}`)
       .join('\n')
 
-    // Reset case timer
+    // Reset case timer (and consume the one-shot free-at-6 grant if it was used)
     await sb.from('customers').update({
       case_started_at: null,
       case_nudge_1_sent_at: null,
       case_nudge_2_sent_at: null,
+      ...(freeShippingAt6 ? { free_shipping_at_6: false } : {}),
     }).eq('id', customerId)
+
+    if (freeShippingAt6) {
+      await sb.from('inbox_activity').insert({
+        customer_id: customerId,
+        actor_id: null,
+        action: 'free_shipping_at_6_cleared',
+        detail: 'auto-cleared on shipment creation',
+      })
+    }
 
     // Check for saved address
     const { data: cust } = await sb
@@ -229,7 +240,8 @@ export async function handlePostCharge({
         .in('id', toShipIds)
     }
 
-    // Start a fresh case timer for the remaining bottles
+    // Start a fresh case timer for the remaining bottles (and consume the
+    // one-shot free-at-6 grant if it was used)
     const now = new Date()
     await sb
       .from('customers')
@@ -237,8 +249,18 @@ export async function handlePostCharge({
         case_started_at: now.toISOString(),
         case_nudge_1_sent_at: null,
         case_nudge_2_sent_at: null,
+        ...(freeShippingAt6 ? { free_shipping_at_6: false } : {}),
       })
       .eq('id', customerId)
+
+    if (freeShippingAt6) {
+      await sb.from('inbox_activity').insert({
+        customer_id: customerId,
+        actor_id: null,
+        action: 'free_shipping_at_6_cleared',
+        detail: 'auto-cleared on shipment creation',
+      })
+    }
 
     const remainingBottles = totalBottles - threshold
     const deadline = new Date(now)
@@ -248,7 +270,7 @@ export async function handlePostCharge({
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(
       customerPhone,
-      `Your case of 12 is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.`,
+      `Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.`,
       { trigger: 'post-charge:case-ready', customerId }
     )
   }
