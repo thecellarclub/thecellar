@@ -11,32 +11,17 @@ const TEXT_DARK = '#1C0E09'
 const BORDER   = 'rgba(42,24,16,0.18)'
 const ACCENT   = '#9B1B30'
 
-function PerkEntry({ name, value }: { name: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2 mb-2.5">
-      <span className="font-serif text-base shrink-0" style={{ color: 'rgba(42,24,16,0.55)' }}>
-        {name}
-      </span>
-      <span
-        className="flex-1 min-w-0"
-        style={{ borderBottom: '1px dotted rgba(42,24,16,0.13)', marginBottom: '0.25em' }}
-      />
-      <span className="font-serif text-base shrink-0 text-right" style={{ color: 'rgba(155,27,48,0.7)' }}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
 function LadderRow({
   caseNumber,
   eyebrow,
   reward,
+  detail,
   isTier,
 }: {
   caseNumber: number
   eyebrow?: string
   reward: string
+  detail?: string
   isTier: boolean
 }) {
   return (
@@ -62,6 +47,14 @@ function LadderRow({
         >
           {reward}
         </p>
+        {detail && (
+          <p
+            className="font-sans"
+            style={{ fontSize: '0.85rem', color: 'rgba(42,24,16,0.5)', marginTop: '0.35rem' }}
+          >
+            {detail}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -75,30 +68,33 @@ const LADDER = [
   },
   {
     caseNumber: 2,
-    eyebrow: 'Bailey',
+    eyebrow: 'New tier: Bailey',
     reward: "You're Bailey. 5% of every order back as credit, delivery drops to £7.",
     isTier: true,
   },
   {
     caseNumber: 3,
     reward: 'Six Riedel glasses, or two tasting tickets — your pick.',
+    detail: 'Two tasting tickets: two tickets to use at our wine tasting events (redeemable anytime).',
     isTier: false,
   },
   {
     caseNumber: 4,
-    eyebrow: 'Elvet',
+    eyebrow: 'New tier: Elvet',
     reward: "You're Elvet. Credit back doubles to 10%, delivery drops to £5.",
     isTier: true,
   },
   {
     caseNumber: 5,
     reward: 'A free bottle chosen by Daniel, or two tasting tickets.',
+    detail: 'Two tasting tickets: two tickets to use at our wine tasting events (redeemable anytime).',
     isTier: false,
   },
   {
     caseNumber: 6,
-    eyebrow: 'Palatine',
-    reward: "You're Palatine. Wine texts two hours before everyone else, free shipping at 6 bottles — and a Coravin.",
+    eyebrow: 'New tier: Palatine',
+    reward: "You're Palatine. Wine texts two hours before everyone else — and a Coravin.",
+    detail: 'A Coravin lets you pour a glass and taste a wine without ever pulling the cork, so the rest of the bottle stays fresh — a timeless piece of kit you\'ll use for years.',
     isTier: true,
   },
 ]
@@ -160,68 +156,6 @@ export default function ClubPage() {
             {LADDER.map((row) => (
               <LadderRow key={row.caseNumber} {...row} />
             ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ borderTop: '1px solid rgba(42,24,16,0.10)' }} className="my-8" />
-
-          {/* 4. Tier detail */}
-          <div className="mb-10">
-            <div className="mb-10">
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="font-serif text-xl" style={{ color: TEXT_DARK }}>Bailey</span>
-                <span
-                  className="flex-1 min-w-0"
-                  style={{ borderBottom: '1px dotted rgba(42,24,16,0.2)', marginBottom: '0.3em' }}
-                />
-                <span className="font-serif text-lg shrink-0" style={{ color: ACCENT }}>2 cases</span>
-              </div>
-              <div className="mt-4">
-                <PerkEntry name="Credit back" value="5% of every order" />
-                <PerkEntry name="Delivery (under a case)" value="£7" />
-                <PerkEntry name="Wine texts" value="2 / week" />
-                <PerkEntry name="Concierge requests" value="2 / month" />
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(42,24,16,0.10)' }} className="my-8" />
-
-            <div className="mb-10">
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="font-serif text-xl" style={{ color: TEXT_DARK }}>Elvet</span>
-                <span
-                  className="flex-1 min-w-0"
-                  style={{ borderBottom: '1px dotted rgba(42,24,16,0.2)', marginBottom: '0.3em' }}
-                />
-                <span className="font-serif text-lg shrink-0" style={{ color: ACCENT }}>4 cases</span>
-              </div>
-              <div className="mt-4">
-                <PerkEntry name="Credit back" value="10% of every order" />
-                <PerkEntry name="Delivery (under a case)" value="£5" />
-                <PerkEntry name="Wine texts" value="2 / week" />
-                <PerkEntry name="Concierge requests" value="5 / month" />
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(42,24,16,0.10)' }} className="my-8" />
-
-            <div>
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="font-serif text-xl" style={{ color: TEXT_DARK }}>Palatine</span>
-                <span
-                  className="flex-1 min-w-0"
-                  style={{ borderBottom: '1px dotted rgba(42,24,16,0.2)', marginBottom: '0.3em' }}
-                />
-                <span className="font-serif text-lg shrink-0" style={{ color: ACCENT }}>6 cases</span>
-              </div>
-              <div className="mt-4">
-                <PerkEntry name="Credit back" value="10% of every order" />
-                <PerkEntry name="Delivery (under a case)" value="£5" />
-                <PerkEntry name="Free shipping" value="at 6 bottles" />
-                <PerkEntry name="Wine texts" value="2 / week, 2 hrs early" />
-                <PerkEntry name="Concierge requests" value="unlimited" />
-              </div>
-            </div>
           </div>
 
           {/* Divider */}
