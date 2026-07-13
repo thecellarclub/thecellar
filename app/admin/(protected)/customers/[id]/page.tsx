@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDate, formatDateTime } from '@/lib/format'
 import DeactivateButton from '../../../_components/DeactivateButton'
 import FreeShippingAt6Toggle from '../../../_components/FreeShippingAt6Toggle'
+import GrantCreditControl from '../../../_components/GrantCreditControl'
 import RefundButton from '../../../_components/RefundButton'
 import SendOfferForm from '../../../_components/SendOfferForm'
 import CollectCellarForm from '../../../_components/CollectCellarForm'
@@ -76,6 +77,14 @@ type ShipmentRow = {
   bottle_count: number | null
 }
 
+type CreditLedgerEntry = {
+  id: string
+  delta_pence: number
+  reason: string
+  note: string | null
+  created_at: string
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     succeeded: 'bg-green-100 text-green-700',
@@ -133,6 +142,7 @@ export default async function CustomerDetailPage({
     { data: cellarRaw },
     { data: activeWines },
     { data: shipments },
+    { data: creditLedgerRaw },
   ] = await Promise.all([
     sb.from('customers').select('*').eq('id', id).maybeSingle(),
     sb
@@ -151,6 +161,12 @@ export default async function CustomerDetailPage({
       .select('id, status, type, tracking_number, tracking_provider, created_at, dispatched_at, collection_venue, collection_date, collection_time, bottle_count')
       .eq('customer_id', id)
       .order('created_at', { ascending: false }),
+    sb
+      .from('credit_ledger')
+      .select('id, delta_pence, reason, note, created_at')
+      .eq('customer_id', id)
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
   if (!customer) notFound()
@@ -158,6 +174,7 @@ export default async function CustomerDetailPage({
   const cellar = (cellarRaw ?? []) as unknown as CellarEntry[]
   const orderRows = (orders ?? []) as unknown as OrderRow[]
   const shipmentRows = (shipments ?? []) as unknown as ShipmentRow[]
+  const creditLedger = (creditLedgerRaw ?? []) as unknown as CreditLedgerEntry[]
 
   // Available = not reserved for any shipment
   const unshipped = cellar.filter((c) => !c.shipment_id)
@@ -413,6 +430,21 @@ export default async function CustomerDetailPage({
         </div>
         <div className="border-t border-gray-100 pt-3">
           <FreeShippingAt6Toggle customerId={customer.id} enabled={!!customer.free_shipping_at_6} />
+        </div>
+        <div className="border-t border-gray-100 pt-3 mt-3">
+          <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-2">
+            Credit balance: {penceToGbp(customer.credit_balance_pence ?? 0)}
+          </p>
+          {creditLedger.length > 0 && (
+            <ul className="text-xs text-gray-500 space-y-1 mb-3">
+              {creditLedger.map((entry) => (
+                <li key={entry.id}>
+                  {formatDateTime(entry.created_at)} — {entry.delta_pence > 0 ? '+' : '-'}{penceToGbp(Math.abs(entry.delta_pence))} ({entry.reason}{entry.note ? `: ${entry.note}` : ''})
+                </li>
+              ))}
+            </ul>
+          )}
+          <GrantCreditControl customerId={customer.id} />
         </div>
       </div>
     </div>

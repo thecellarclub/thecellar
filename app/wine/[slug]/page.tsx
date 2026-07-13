@@ -22,7 +22,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .from('wines')
     .select('name, vintage, website_description, image_url')
     .eq('slug', slug)
-    .eq('active', true)
     .maybeSingle()
 
   if (!wine) return {}
@@ -50,7 +49,6 @@ export default async function WinePage({ params }: { params: Promise<{ slug: str
     .from('wines')
     .select('name, producer, region, country, vintage, price_pence, retail_price_pence, image_url, website_description')
     .eq('slug', slug)
-    .eq('active', true)
     .maybeSingle()
 
   if (!wine) notFound()

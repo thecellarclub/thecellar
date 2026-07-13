@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# contains customer PII (phone numbers), not for source control
+scripts/engagement-campaign-sent-log.json
+
+# supabase CLI local cache
+supabase/.temp/

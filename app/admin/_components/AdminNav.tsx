@@ -14,9 +14,10 @@ const links = [
   { href: '/admin/shipments', label: 'Shipments', exact: false },
   { href: '/admin/billing', label: 'Billing', exact: false },
   { href: '/admin/inbox', label: 'Inbox', exact: false },
+  { href: '/admin/milestones', label: 'Milestones', exact: false },
 ]
 
-export default function AdminNav({ inboxCount = 0, shipmentsCount = 0 }: { inboxCount?: number; shipmentsCount?: number }) {
+export default function AdminNav({ inboxCount = 0, shipmentsCount = 0, milestonesCount = 0 }: { inboxCount?: number; shipmentsCount?: number; milestonesCount?: number }) {
   const pathname = usePathname()
   return (
     <nav className='flex-1 px-2 py-3 space-y-0.5'>
@@ -27,7 +28,8 @@ export default function AdminNav({ inboxCount = 0, shipmentsCount = 0 }: { inbox
           : 'text-gray-400 hover:text-white hover:bg-gray-800'
         const badge =
           (label === 'Inbox' && inboxCount > 0 ? inboxCount : 0) ||
-          (label === 'Shipments' && shipmentsCount > 0 ? shipmentsCount : 0)
+          (label === 'Shipments' && shipmentsCount > 0 ? shipmentsCount : 0) ||
+          (label === 'Milestones' && milestonesCount > 0 ? milestonesCount : 0)
         return (
           <Link
             key={href}

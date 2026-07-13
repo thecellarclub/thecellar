@@ -62,18 +62,20 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 | Table | Purpose |
 |-------|---------|
-| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by`, `free_shipping_at_6` (one-shot admin grant, see `lib/tiers.ts`/`lib/post-charge.ts`) |
+| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by`, `free_shipping_at_6` (one-shot admin grant, see `lib/tiers.ts`/`lib/post-charge.ts`), `credit_balance_pence` (see `credit_ledger`), `tier`/`tier_since`/`tier_review_at` (tiers-v3 case ladder — `tier_since` anchors the current case-counting cycle, not just "last changed") |
 | `admin_users` | Admin team. Fields: `id`, `email`, `name`, `password_hash`. Passwords set via `scripts/seed-admin-users.ts`. |
 | `concierge_messages` | Inbound/outbound SMS in the inbox. `direction`: `inbound`/`outbound`. |
 | `special_requests` | Customer requests surfaced in the inbox. `status`: `open`/`resolved`. |
 | `inbox_notes` | Internal notes about a customer (customer-level, persist across threads). `author_id` → `admin_users`. |
 | `inbox_activity` | Lightweight audit log. `actor_id` nullable (system/auto-consume entries). `action` values: `replied`, `assigned`, `note_added`, `follow_up_set`, `follow_up_cleared`, `closed`, `reopened`, `request_resolved`, `free_shipping_at_6_set`, `free_shipping_at_6_cleared`. |
 | `wines` | Wine catalogue. |
-| `orders` | Customer wine orders. |
+| `orders` | Customer wine orders. `credit_used_pence` records store credit applied at redemption. |
+| `credit_ledger` | Append-only store-credit ledger. `reason`: `rebate` \| `redemption` \| `admin_grant`. Written only via the `apply_credit()` SQL function — see `lib/credit.ts`. |
+| `milestone_awards` | Lifetime one-time-ever rewards at cases 1/3/5/6 (tiers-v3). `unique(customer_id, milestone)` is the one-time guarantee; never deleted. Admin fulfilment queue at `/admin/milestones`. |
 | `cellar` | Bottles accumulated but not yet shipped. `shipment_id` links to a shipment when reserved; `shipped_at` is set when actually shipped/collected. |
 | `shipments` | Case shipments. `type`: `'delivery'` (posted to customer) or `'collection'` (picked up at bar). See shipments section below. |
 | `sms_messages` | All inbound/outbound SMS log. **Being deprecated** — see `claude-code-prompt-inbox-twilio-history.md` (table dropped once inbox reads live from Twilio). |
-| `texts` | Wine offer campaigns. |
+| `texts` | Wine offer campaigns. `broadcast_at`/`broadcast_sent_at` (tiers-v3): Palatine members get sent immediately; the rest go out via a manual "Send to everyone else" second wave once `broadcast_at` has passed. |
 
 ## Auth model
 
@@ -82,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `042_free_shipping_at_6_flag.sql` (note: there are multiple `039_*` migrations). New work numbers from **043**.
+Latest migration: `046_texts_broadcast_wave.sql` (note: there are multiple `039_*` migrations). New work numbers from **047**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 
@@ -150,7 +152,8 @@ Specs live in the project root as `claude-code-prompt-*.md`. Current active (uni
 | `claude-code-prompt-courier-booking.md` | Courier booking stage for delivery shipments |
 | `claude-code-prompt-shipments-and-wine-upload.md` | Shipments page overhaul (sortable columns, contents, collection dates) + wine image upload via Supabase Storage |
 | `claude-code-prompt-shipments-tweaks.md` | Shipments table fixes: drop tracking column, full address, contents line breaks, fix action buttons per type/status |
-| `claude-code-prompt-tiers-update.md` | New tier thresholds (Bailey £1k, Palatine £2.5k), fix 'none' defaults to 'elvet', congrats SMS on Bailey/Palatine upgrade |
-| `claude-code-prompt-tier-benefits.md` | Choose-and-stack benefits at Bailey/Palatine (local/non-local menu); admin fulfilment queue. **Blocked by tiers-update.** (Superseded design in flight — see chat; free-shipping-at-6 split out to its own spec.) |
+| ~~`claude-code-prompt-tiers-v2.md`~~ | **SUPERSEDED by tiers-v3** (was 1/3/6 tiers + choose-your-gift). Do not implement. |
+| ~~`claude-code-prompt-tiers-update.md`~~ | **SUPERSEDED by tiers-v2** (was spend-based £1k/£2.5k). Do not implement. |
+| ~~`claude-code-prompt-tier-benefits.md`~~ | **SUPERSEDED by tiers-v2** (was choose-and-stack spend design). Do not implement. |
 | `claude-code-prompt-inbox-add-wine.md` | Quick-add wine to cellar from inbox right panel: search existing wines + quick-create unlisted wines |
 | `claude-code-prompt-inbox-twilio-history.md` | Inbox conversation column reads full SMS history live from Twilio Messages API (incl. automated messages), paginated; replaces `concierge_messages`/`smsContext` rendering in the middle column. Also fully deprecates `sms_messages` (stop writes, delete `/admin/sms-log` page, drop table via migration 041) |

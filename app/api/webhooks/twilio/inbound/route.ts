@@ -6,7 +6,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { notifyAdmin } from '@/lib/resend'
 import { handlePostCharge } from '@/lib/post-charge'
-import { getRollingSpend, tierFromSpend, deliveryThreshold } from '@/lib/tiers'
+import { getRollingCases, tierFromCases, deliveryThreshold, deliveryFeePence, TIER_NAMES } from '@/lib/tiers'
+import { getBalance } from '@/lib/credit'
 import { normaliseUKPhone } from '@/lib/phone'
 import { generateShortToken } from '@/lib/token'
 import { parseOrderReply } from '@/lib/parse-order-reply'
@@ -167,9 +168,10 @@ async function handleShip(
   }
 
   if (total < 12) {
+    const feePence = deliveryFeePence(customer.tier)
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £10. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`,
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`,
       { trigger: 'keyword:ship', customerId: customer.id }
     )
     return twimlOk()
@@ -315,7 +317,7 @@ async function handleShipConfirm(
     return twimlOk()
   }
 
-  const SHIPPING_FEE_PENCE = 1000
+  const SHIPPING_FEE_PENCE = deliveryFeePence(customer.tier)
 
   // ── Guard: no payment method saved ──────────────────────────────────────
   if (!customer.stripe_payment_method_id) {
@@ -549,18 +551,11 @@ async function handleStatus(
   customer: Customer,
   sb: ReturnType<typeof createServiceClient>
 ): Promise<NextResponse> {
-  const spend = await getRollingSpend(customer.id, sb)
-  const tier = customer.tier && customer.tier !== 'none' ? customer.tier : tierFromSpend(spend)
+  const cases = await getRollingCases(customer.id, sb)
+  const tier = customer.tier && customer.tier !== 'none' ? customer.tier : tierFromCases(cases)
   const threshold = deliveryThreshold(tier)
 
-  const tierNames: Record<string, string> = {
-    bailey: 'Bailey',
-    elvet: 'Elvet',
-    palatine: 'Palatine',
-  }
-
-  const tierName = tierNames[tier] ?? 'Bailey'
-  const spendFormatted = `£${(spend / 100).toFixed(2)}`
+  const tierName = TIER_NAMES[tier] ?? 'Bailey'
 
   // Fetch unshipped bottle count
   const { count: bottleCount } = await sb
@@ -572,19 +567,22 @@ async function handleStatus(
   const bottles = bottleCount ?? 0
 
   let progressLine = ''
-  if (tier === 'elvet' || tier === 'none') {
-    const needed = Math.max(0, 100000 - spend)
-    progressLine = `\nBailey tier: £${(needed / 100).toFixed(2)} more spend needed.`
+  if (tier === 'none') {
+    const needed = Math.max(0, 2 - cases)
+    progressLine = `\nBailey tier: ${needed} more case${needed === 1 ? '' : 's'} needed.`
   } else if (tier === 'bailey') {
-    const needed = Math.max(0, 250000 - spend)
-    progressLine = `\nPalatine tier: £${(needed / 100).toFixed(2)} more spend needed.`
+    const needed = Math.max(0, 4 - cases)
+    progressLine = `\nElvet tier: ${needed} more case${needed === 1 ? '' : 's'} needed.`
+  } else if (tier === 'elvet') {
+    const needed = Math.max(0, 6 - cases)
+    progressLine = `\nPalatine tier: ${needed} more case${needed === 1 ? '' : 's'} needed.`
   } else {
     progressLine = `\nYou're on our top tier.`
   }
 
   await sendSms(
     from,
-    `${tierName} member - ${spendFormatted} spent this year\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (free shipping at ${threshold}).${progressLine}`,
+    `${tierName} member - ${cases} case${cases === 1 ? '' : 's'} this cycle\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (free shipping at ${threshold}).${progressLine}`,
     { trigger: 'keyword:status', customerId: customer.id }
   )
   return twimlOk()
@@ -738,7 +736,9 @@ async function handlePendingOrder(
 async function handleYes(
   from: string,
   customer: Customer,
-  sb: ReturnType<typeof createServiceClient>
+  sb: ReturnType<typeof createServiceClient>,
+  paymentMode: 'auto' | 'card' | 'balance' = 'auto',
+  preNote?: string
 ): Promise<NextResponse> {
   // ── Check for pending shipment confirmation first ─────────────────────────
   const { data: pendingShipment } = await sb
@@ -899,12 +899,57 @@ async function handleYes(
     return twimlOk()
   }
 
+  // ── Credit check (auto mode only — BALANCE/CARD replies skip straight to charging) ──
+  let chargeAmountPence = order.total_pence
+
+  if (paymentMode === 'auto') {
+    const balance = await getBalance(sb, customer.id)
+    if (balance > 0) {
+      await sendSms(
+        from,
+        `You have £${(balance / 100).toFixed(2)} credit. Reply BALANCE to use it (any leftover goes on your card), or CARD to pay by card only.`,
+        { trigger: 'keyword:yes', customerId: customer.id }
+      )
+      return twimlOk()
+    }
+  } else if (paymentMode === 'balance') {
+    const balance = await getBalance(sb, customer.id)
+    const creditToUse = Math.min(balance, order.total_pence)
+    chargeAmountPence = order.total_pence - creditToUse
+
+    await sb.from('orders').update({ credit_used_pence: creditToUse }).eq('id', order.id)
+
+    if (chargeAmountPence === 0) {
+      // Full credit covers the order — no Stripe call at all.
+      await sb.from('orders').update({
+        order_status: 'confirmed',
+        stripe_charge_status: null,
+      }).eq('id', order.id)
+
+      await handlePostCharge({
+        orderId: order.id,
+        customerId: customer.id,
+        wineId: order.wine_id,
+        wineName: wine?.name ?? 'your wine',
+        quantityJustBought: order.quantity,
+        customerPhone: from,
+        sb,
+        preNote,
+      })
+      return twimlOk()
+    }
+  } else {
+    // paymentMode === 'card' — charge full total, credit untouched. Reset any
+    // stale credit_used_pence left over from a prior BALANCE attempt that failed.
+    await sb.from('orders').update({ credit_used_pence: 0 }).eq('id', order.id)
+  }
+
   // ── Charge via Stripe ────────────────────────────────────────────────────
   let paymentIntent: Stripe.PaymentIntent
 
   try {
     paymentIntent = await stripe.paymentIntents.create({
-      amount: order.total_pence,
+      amount: chargeAmountPence,
       currency: 'gbp',
       customer: customer.stripe_customer_id,
       payment_method: customer.stripe_payment_method_id,
@@ -1019,6 +1064,7 @@ async function handleYes(
       quantityJustBought: order.quantity,
       customerPhone: from,
       sb,
+      preNote,
     })
 
     return twimlOk()
@@ -1444,6 +1490,50 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (keyword === 'yes') {
       void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:yes' })
       return await handleYes(from, customer, sb)
+    }
+
+    // ── BALANCE / CARD → credit-aware order confirmation ───────────────────
+    if (keyword === 'card' || keyword === 'balance') {
+      const { data: pendingForCredit } = await sb
+        .from('orders')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .in('order_status', ['awaiting_confirmation', 'payment_failed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (pendingForCredit) {
+        void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: `keyword:${keyword}` })
+
+        if (keyword === 'card') {
+          return await handleYes(from, customer, sb, 'card')
+        }
+
+        const balance = await getBalance(sb, customer.id)
+        if (balance > 0) {
+          return await handleYes(from, customer, sb, 'balance')
+        }
+        // Edge case: balance was spent in the gap between the YES prompt and this
+        // reply — behave exactly as CARD, with a one-line note explaining why.
+        return await handleYes(
+          from, customer, sb, 'card',
+          `No credit was available, so this was charged to your card in full.`
+        )
+      }
+
+      if (keyword === 'balance') {
+        // ── Standalone BALANCE — no pending order ────────────────────────────
+        const balance = await getBalance(sb, customer.id)
+        void logInbound({ sb, phone: from, raw: rawBody, customerId: customer.id, parseKind: 'keyword:balance' })
+        await sendSms(
+          from,
+          `Your Cellar Club credit balance is £${(balance / 100).toFixed(2)}.`,
+          { trigger: 'keyword:balance', customerId: customer.id }
+        )
+        return twimlOk()
+      }
+      // keyword === 'card' with no pending order → fall through to the rest of the router
     }
 
     // ── NO / CANCEL → cancel pending order ───────────────────────────────

@@ -646,6 +646,7 @@ function ActivityFeed({ activity }: { activity: ActivityEntry[] }) {
       case 'request_resolved': return `resolved request`
       case 'free_shipping_at_6_set': return `enabled free shipping at 6`
       case 'free_shipping_at_6_cleared': return entry.detail ? `cleared free shipping at 6 (${entry.detail})` : `cleared free shipping at 6`
+      case 'credit_granted': return `granted credit${entry.detail ? `: ${entry.detail}` : ''}`
       default: return entry.action
     }
   }

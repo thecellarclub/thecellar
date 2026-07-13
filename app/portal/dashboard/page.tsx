@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getPortalSession } from '@/lib/portal-auth'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
+import { getRollingCases } from '@/lib/tiers'
 import DashboardClient from './DashboardClient'
 
 type CellarRow = {
@@ -17,7 +18,7 @@ export default async function PortalDashboardPage() {
 
   const { data: customer } = await sb
     .from('customers')
-    .select('id, first_name, phone, tier, tier_since, stripe_payment_method_id, backup_payment_method_id, default_address')
+    .select('id, first_name, phone, tier, tier_since, stripe_payment_method_id, backup_payment_method_id, default_address, credit_balance_pence')
     .eq('id', session.customerId)
     .maybeSingle()
 
@@ -32,18 +33,15 @@ export default async function PortalDashboardPage() {
 
   const bottles = (cellarRows ?? []).reduce((s, r) => s + r.quantity, 0)
 
-  // Rolling 12-month spend (confirmed charges only)
-  const twelveMonthsAgo = new Date()
-  twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
+  // Cases within the current tier cycle (tiers-v3)
+  const casesThisCycle = await getRollingCases(customer.id, sb)
 
-  const { data: spendRows } = await sb
-    .from('orders')
-    .select('total_pence')
+  // Lifetime milestones
+  const { data: milestoneRows } = await sb
+    .from('milestone_awards')
+    .select('milestone, reward_choice, fulfilled_at')
     .eq('customer_id', customer.id)
-    .eq('stripe_charge_status', 'succeeded')
-    .gte('created_at', twelveMonthsAgo.toISOString())
-
-  const rollingSpendPence = (spendRows ?? []).reduce((s, r) => s + (r.total_pence ?? 0), 0)
+    .order('milestone', { ascending: true })
 
   // Past payments
   const { data: paymentRows } = await sb
@@ -91,13 +89,19 @@ export default async function PortalDashboardPage() {
       phone={customer.phone}
       tier={customer.tier ?? 'none'}
       tierSince={customer.tier_since ?? null}
+      creditBalancePence={customer.credit_balance_pence ?? 0}
       bottles={bottles}
       cellar={(cellarRows ?? []).map((r) => ({
         quantity: r.quantity,
         name: r.wines?.name ?? 'Unknown wine',
         pricePence: r.wines?.price_pence ?? 0,
       }))}
-      rollingSpendPence={rollingSpendPence}
+      casesThisCycle={casesThisCycle}
+      milestones={(milestoneRows ?? []).map((m) => ({
+        milestone: m.milestone,
+        rewardChoice: m.reward_choice,
+        fulfilledAt: m.fulfilled_at,
+      }))}
       primaryCard={primaryCard}
       backupCard={backupCard}
       defaultAddress={addr ? {

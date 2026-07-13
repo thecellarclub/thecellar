@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
 import { stripe } from '@/lib/stripe'
-import { getRollingSpend, tierFromSpend } from '@/lib/tiers'
+import { deliveryFeePence, TIER_NAMES } from '@/lib/tiers'
 import { ordinalDate } from '@/lib/format'
 
 /**
@@ -86,15 +86,18 @@ export async function GET(req: NextRequest) {
     deadline.setDate(deadline.getDate() + 90)
     const deadlineStr = ordinalDate(deadline)
 
+    const feePence = deliveryFeePence(customer.tier)
+    const feeStr = `£${(feePence / 100).toFixed(0)}`
+
     if (daysSinceCase >= 104 && customer.case_nudge_2_sent_at) {
-      // ── Auto-ship: charge £10 and create pending shipment ─────────────────
+      // ── Auto-ship: charge the tier-dependent fee and create pending shipment ─
       if (!customer.stripe_payment_method_id) {
         console.warn('[cron/case-nudges] Customer has no payment method, skipping', customer.id)
         continue
       }
       try {
         const pi = await stripe.paymentIntents.create({
-          amount: 1000,
+          amount: feePence,
           currency: 'gbp',
           customer: customer.stripe_customer_id,
           payment_method: customer.stripe_payment_method_id,
@@ -121,7 +124,7 @@ export async function GET(req: NextRequest) {
               status: 'pending',
               token: shipToken,
               bottle_count: bottles,
-              shipping_fee_pence: 1000,
+              shipping_fee_pence: feePence,
               stripe_payment_intent_id: pi.id,
               stripe_charge_status: 'succeeded',
               created_at: now.toISOString(),
@@ -145,7 +148,7 @@ export async function GET(req: NextRequest) {
 
           await sendSms(
             customer.phone,
-            `Your 90-day deadline has passed - I've started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged £10. Please confirm your address: ${appUrl}/ship?token=${shipToken}`,
+            `Your 90-day deadline has passed - I've started shipping your ${bottles} bottle${bottles !== 1 ? 's' : ''} and charged ${feeStr}. Please confirm your address: ${appUrl}/ship?token=${shipToken}`,
             { trigger: 'cron:auto-ship', customerId: customer.id }
           )
 
@@ -163,7 +166,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Last call - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send for £10, or keep collecting (free at 12). After the deadline I'll ship and charge £10 automatically.`,
+        `Last call - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Reply SHIP to send for ${feeStr}, or keep collecting (free at 12). After the deadline I'll ship and charge ${feeStr} automatically.`,
         { trigger: 'cron:nudge-2', customerId: customer.id }
       )
 
@@ -177,7 +180,7 @@ export async function GET(req: NextRequest) {
 
       await sendSms(
         customer.phone,
-        `Just a nudge - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for £10.`,
+        `Just a nudge - your case deadline is ${deadlineStr}. You have ${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar. Complete your case of 12 for free shipping, or reply SHIP any time to send what you have for ${feeStr}.`,
         { trigger: 'cron:nudge-1', customerId: customer.id }
       )
 
@@ -185,57 +188,39 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Tier review (downgrades) ──────────────────────────────────────────────
+  // ── Tier review (annual soft-demote, tiers-v3) ────────────────────────────
+  // On each member's first-purchase anniversary: soft-demote one rank as a
+  // floor (palatine -> elvet, elvet -> bailey, bailey stays bailey), and start
+  // a fresh case-counting cycle (tier_since reset). Credit and milestones are
+  // never touched here — this only ever moves `tier`/`tier_since`/`tier_review_at`.
+  const TIER_DEMOTE: Record<string, string> = { palatine: 'elvet', elvet: 'bailey', bailey: 'bailey' }
+
   const { data: tierCustomers } = await sb
     .from('customers')
     .select('id, phone, tier, tier_review_at')
     .not('tier_review_at', 'is', null)
     .lte('tier_review_at', now.toISOString())
     .neq('tier', 'none')
-    .neq('tier', 'elvet')
 
   for (const tc of tierCustomers ?? []) {
     tierReviewed++
-    const spend = await getRollingSpend(tc.id, sb)
-    const qualifyingTier = tierFromSpend(spend)
+    const newTier = TIER_DEMOTE[tc.tier] ?? tc.tier
 
-    const tierRank: Record<string, number> = { none: 0, elvet: 1, bailey: 2, palatine: 3 }
-    const currentRank = tierRank[tc.tier] ?? 1
-    const qualifyingRank = tierRank[qualifyingTier] ?? 1
-
-    // Set next review 1 year from now
     const nextReview = new Date(now)
     nextReview.setFullYear(nextReview.getFullYear() + 1)
 
-    if (qualifyingRank < currentRank) {
-      // Downgrade
-      await sb
-        .from('customers')
-        .update({
-          tier: qualifyingTier,
-          tier_since: now.toISOString(),
-          tier_review_at: nextReview.toISOString(),
-        })
-        .eq('id', tc.id)
+    await sb
+      .from('customers')
+      .update({ tier: newTier, tier_since: now.toISOString(), tier_review_at: nextReview.toISOString() })
+      .eq('id', tc.id)
 
-      const tierNames: Record<string, string> = {
-        bailey: 'Bailey',
-        elvet: 'Elvet',
-        palatine: 'Palatine',
-      }
+    if (newTier !== tc.tier) {
+      tierDowngrades++
       await sendSms(
         tc.phone,
-        `Your membership has moved to ${tierNames[qualifyingTier] ?? qualifyingTier} tier. Keep collecting to work your way back up - every bottle counts.`,
+        `Your membership has moved to ${TIER_NAMES[newTier] ?? newTier} tier for the new year. Keep collecting to work your way back up - every case counts.`,
         { trigger: 'cron:tier-downgrade', customerId: tc.id }
       ).catch((e: unknown) => console.error('[cron] tier downgrade SMS failed:', e))
-
-      tierDowngrades++
-    } else {
-      // No downgrade needed — just push review date forward
-      await sb
-        .from('customers')
-        .update({ tier_review_at: nextReview.toISOString() })
-        .eq('id', tc.id)
     }
   }
 

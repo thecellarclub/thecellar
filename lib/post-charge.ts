@@ -1,7 +1,9 @@
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
-import { checkAndApplyTierUpgrade, deliveryThreshold } from '@/lib/tiers'
+import { checkAndApplyTierUpgrade, deliveryThreshold, rebatePctForTier } from '@/lib/tiers'
 import { ordinalDate } from '@/lib/format'
+import { redeemCreditForOrder, accrueRebate, getBalance } from '@/lib/credit'
+import { awardMilestones } from '@/lib/milestones'
 
 interface PostChargeParams {
   orderId: string
@@ -11,6 +13,8 @@ interface PostChargeParams {
   quantityJustBought: number
   customerPhone: string
   sb: ReturnType<typeof createServiceClient>
+  /** Optional line prepended to the outgoing SMS (e.g. a credit-fallback note). */
+  preNote?: string
 }
 
 /**
@@ -32,7 +36,24 @@ export async function handlePostCharge({
   quantityJustBought,
   customerPhone,
   sb,
+  preNote,
 }: PostChargeParams): Promise<void> {
+  // 0. Redeem any credit quoted against this order (idempotent per order — safe
+  // to run on every call, including 3DS/webhook re-deliveries of the same order).
+  const { data: orderForCredit } = await sb
+    .from('orders')
+    .select('total_pence, credit_used_pence')
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (orderForCredit && orderForCredit.credit_used_pence > 0) {
+    await redeemCreditForOrder(sb, {
+      customerId,
+      orderId,
+      intendedPence: orderForCredit.credit_used_pence,
+    }).catch((e) => console.error('[post-charge] credit redemption failed:', e))
+  }
+
   // 1. Insert cellar row for the just-purchased bottles
   await sb.from('cellar').insert({
     customer_id: customerId,
@@ -51,11 +72,43 @@ export async function handlePostCharge({
 
   const currentTier = customerData?.tier ?? 'none'
   const freeShippingAt6 = customerData?.free_shipping_at_6 ?? false
-  await checkAndApplyTierUpgrade(customerId, sb).catch((e) =>
+  const upgradedTier = await checkAndApplyTierUpgrade(customerId, sb).catch((e) => {
     console.error('[post-charge] tier upgrade check failed:', e)
-  )
+    return null
+  })
 
   const threshold = deliveryThreshold(currentTier, freeShippingAt6)
+
+  // 1c2. Lifetime milestone detection (cases 1/3/5/6) — fire-and-forget, never
+  // blocks order confirmation. Suppress milestone 6's own SMS when this call
+  // also just upgraded the customer to Palatine — they get one combined text
+  // instead (see the palatine congrats copy in lib/tiers.ts).
+  await awardMilestones(customerId, sb, {
+    skipSmsForMilestone: upgradedTier === 'palatine' ? 6 : undefined,
+  })
+
+  // 1c. Tier rebate accrual — gated behind CREDIT_REBATE_ENABLED. Off by default:
+  // customers' stored `tier` values still reflect the old spend-based model
+  // until migration 044's recompute has run — flipping this on before then
+  // would pay rebates at rates keyed to tiers customers haven't actually
+  // earned under the v3 case ladder. See claude-code-prompt-credit-wallet.md
+  // §4a. Rate is the tier held coming INTO the order (currentTier, fetched
+  // above before the upgrade check) — an order that triggers an upgrade earns
+  // at the old rate, not the new one.
+  if (process.env.CREDIT_REBATE_ENABLED && orderForCredit) {
+    const rebatePence = Math.round(orderForCredit.total_pence * rebatePctForTier(currentTier))
+    if (rebatePence > 0) {
+      await accrueRebate(sb, { customerId, amountPence: rebatePence, orderId }).catch((e) =>
+        console.error('[post-charge] rebate accrual failed:', e)
+      )
+    }
+  }
+
+  const creditBalancePence = await getBalance(sb, customerId).catch(() => 0)
+  const creditBalanceLine = creditBalancePence > 0
+    ? `\n\nCredit balance: £${(creditBalancePence / 100).toFixed(2)}`
+    : ''
+  const notePrefix = preNote ? `${preNote}\n\n` : ''
 
   // 2. Fetch all unreserved cellar rows for this customer, oldest first.
   // Filter by shipment_id IS NULL (not shipped_at) so that bottles already
@@ -97,7 +150,7 @@ export async function handlePostCharge({
     const prefix = currentTier === 'none' ? 'Congratulations on your first order! ' : ''
     await sendSms(
       customerPhone,
-      `${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of ${threshold} by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.`,
+      `${notePrefix}${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of ${threshold} by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.${creditBalanceLine}`,
       { trigger: 'post-charge:cellar-update', customerId }
     )
   } else if (totalBottles === threshold) {
@@ -168,14 +221,14 @@ export async function handlePostCharge({
       const addrLine = [addr.line1, addr.city, addr.postcode].filter(Boolean).join(', ')
       await sendSms(
         customerPhone,
-        `Your case is complete!\n\n${wineLines}\n\nShipping to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.`,
+        `${notePrefix}Your case is complete!\n\n${wineLines}\n\nShipping to: ${addrLine}\n\nReply YES to confirm or CHANGE to update your address.${creditBalanceLine}`,
         { trigger: 'post-charge:case-complete', customerId }
       )
     } else {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
       await sendSms(
         customerPhone,
-        `Your case is complete!\n\n${wineLines}\n\nConfirm your delivery address here: ${appUrl}/ship?token=${shipToken}`,
+        `${notePrefix}Your case is complete!\n\n${wineLines}\n\nConfirm your delivery address here: ${appUrl}/ship?token=${shipToken}${creditBalanceLine}`,
         { trigger: 'post-charge:case-complete', customerId }
       )
     }
@@ -270,7 +323,7 @@ export async function handlePostCharge({
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(
       customerPhone,
-      `Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.`,
+      `${notePrefix}Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.${creditBalanceLine}`,
       { trigger: 'post-charge:case-ready', customerId }
     )
   }

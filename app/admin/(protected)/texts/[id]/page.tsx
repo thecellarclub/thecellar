@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { penceToGbp, formatDateTime } from '@/lib/format'
 import Link from 'next/link'
+import SendRemainderButton from '@/app/admin/_components/SendRemainderButton'
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -33,7 +34,7 @@ export default async function TextDetailPage({
   const [{ data: text }, { data: orders }] = await Promise.all([
     sb
       .from('texts')
-      .select('id, body, sent_at, recipient_count, is_active, wines(name, price_pence)')
+      .select('id, body, sent_at, recipient_count, is_active, broadcast_at, broadcast_sent_at, wines(name, price_pence)')
       .eq('id', id)
       .maybeSingle(),
     sb
@@ -76,6 +77,15 @@ export default async function TextDetailPage({
           <span className="text-xs px-2 py-1 rounded font-medium bg-gray-100 text-gray-500">Closed</span>
         )}
       </div>
+
+      {/* Palatine early-access second wave */}
+      {text.broadcast_at && !text.broadcast_sent_at && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-amber-900 font-medium mb-1">Sent to Palatine members first</p>
+          <p className="text-xs text-amber-800 mb-3">Everyone else hasn&apos;t received this offer yet.</p>
+          <SendRemainderButton textId={text.id} broadcastAt={text.broadcast_at} />
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

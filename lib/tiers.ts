@@ -2,94 +2,152 @@ import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
 import { sanitiseGsm7 } from '@/lib/twilio'
 
-export const BAILEY_THRESHOLD = 100000   // £1,000 in pence
-export const PALATINE_THRESHOLD = 250000 // £2,500 in pence
+type SB = ReturnType<typeof createServiceClient>
 
 /**
- * Sum all confirmed orders for this customer in the last rolling 12 months.
- * price_pence on orders is for the WHOLE order (quantity * unit price).
+ * Naming note (deliberate, unchanged from v2 — do not "correct" this): `bailey`
+ * is the ENTRY tier and `elvet` is the MID tier, swapped vs the old spend-based
+ * code's naming.
  */
-export async function getRollingSpend(
-  customerId: string,
-  sb: ReturnType<typeof createServiceClient>
-): Promise<number> {
-  const since = new Date()
-  since.setFullYear(since.getFullYear() - 1)
+export const TIER_RANK: Record<string, number> = { none: 0, bailey: 1, elvet: 2, palatine: 3 }
+
+export const TIER_NAMES: Record<string, string> = {
+  none: 'none',
+  bailey: 'Bailey',
+  elvet: 'Elvet',
+  palatine: 'Palatine',
+}
+
+/** Tier from case count, per the tiers-v3 ladder (2 / 4 / 6 cases). */
+export function tierFromCases(cases: number): 'none' | 'bailey' | 'elvet' | 'palatine' {
+  if (cases >= 6) return 'palatine'
+  if (cases >= 4) return 'elvet'
+  if (cases >= 2) return 'bailey'
+  return 'none'
+}
+
+/**
+ * Bottles from confirmed orders within the customer's current tier cycle,
+ * floor-divided into cases (12 bottles each). The cycle starts at `tier_since`
+ * — set once on a customer's first-ever tier upgrade, then only moved by the
+ * annual tier-review cron's soft-demote step (see case-nudges cron) — and
+ * falls back to `subscribed_at` for customers who haven't earned a tier yet.
+ */
+export async function getRollingCases(customerId: string, sb: SB): Promise<number> {
+  const { data: customer } = await sb
+    .from('customers')
+    .select('tier_since, subscribed_at')
+    .eq('id', customerId)
+    .maybeSingle()
+
+  const since = customer?.tier_since ?? customer?.subscribed_at ?? new Date(0).toISOString()
 
   const { data } = await sb
     .from('orders')
-    .select('price_pence')
+    .select('quantity')
     .eq('customer_id', customerId)
     .eq('order_status', 'confirmed')
-    .gte('created_at', since.toISOString())
+    .gte('created_at', since)
 
-  return (data ?? []).reduce((sum, o) => sum + (o.price_pence ?? 0), 0)
+  const bottles = (data ?? []).reduce((sum, o) => sum + (o.quantity ?? 0), 0)
+  return Math.floor(bottles / 12)
 }
 
 /**
- * Determine tier from rolling annual spend in pence.
- * Returns 'elvet' for any spend (first order and above), 'bailey' at £1k, 'palatine' at £2.5k.
+ * Lifetime bottles from ALL confirmed orders ever, no window — used for
+ * milestone detection (lifetime cases 1/3/5/6), which never resets.
  */
-export function tierFromSpend(spendPence: number): 'elvet' | 'bailey' | 'palatine' {
-  if (spendPence >= PALATINE_THRESHOLD) return 'palatine'
-  if (spendPence >= BAILEY_THRESHOLD) return 'bailey'
-  return 'elvet'
+export async function getLifetimeCases(customerId: string, sb: SB): Promise<number> {
+  const { data } = await sb
+    .from('orders')
+    .select('quantity')
+    .eq('customer_id', customerId)
+    .eq('order_status', 'confirmed')
+
+  const bottles = (data ?? []).reduce((sum, o) => sum + (o.quantity ?? 0), 0)
+  return Math.floor(bottles / 12)
 }
 
 /**
- * Check the customer's current rolling spend and upgrade their tier if they
- * now qualify for a higher one. Downgrades are handled separately by the cron.
+ * Check the customer's current-cycle case count and upgrade their tier if they
+ * now qualify for a higher one. Downgrades (soft-demote) are handled separately
+ * by the annual tier-review cron.
  *
  * Returns the new tier name if an upgrade occurred, null otherwise.
- * Sends a congratulations SMS for bailey/palatine upgrades.
+ * Sends a congratulations SMS for bailey/elvet/palatine upgrades.
  */
-export async function checkAndApplyTierUpgrade(
-  customerId: string,
-  sb: ReturnType<typeof createServiceClient>
-): Promise<string | null> {
+export async function checkAndApplyTierUpgrade(customerId: string, sb: SB): Promise<string | null> {
   const { data: customer } = await sb
     .from('customers')
-    .select('tier, phone')
+    .select('tier, phone, tier_since')
     .eq('id', customerId)
     .maybeSingle()
 
   if (!customer) return null
 
-  const spend = await getRollingSpend(customerId, sb)
-  const qualifyingTier = tierFromSpend(spend)
+  const cases = await getRollingCases(customerId, sb)
+  const qualifyingTier = tierFromCases(cases)
 
-  const tierRank: Record<string, number> = { none: 0, elvet: 1, bailey: 2, palatine: 3 }
-  const currentRank = tierRank[customer.tier ?? 'none'] ?? 0
-  const qualifyingRank = tierRank[qualifyingTier] ?? 1
+  const currentRank = TIER_RANK[customer.tier ?? 'none'] ?? 0
+  const qualifyingRank = TIER_RANK[qualifyingTier] ?? 0
 
   // Only upgrade, never downgrade here
   if (qualifyingRank <= currentRank) return null
 
   const now = new Date()
-  const reviewAt = new Date(now)
-  reviewAt.setFullYear(reviewAt.getFullYear() + 1)
+  const updates: Record<string, unknown> = { tier: qualifyingTier }
 
-  await sb
-    .from('customers')
-    .update({
-      tier: qualifyingTier,
-      tier_since: now.toISOString(),
-      tier_review_at: reviewAt.toISOString(),
-    })
-    .eq('id', customerId)
+  // Only the FIRST-ever tier upgrade establishes the cycle anchor — mid-cycle
+  // upgrades (e.g. bailey -> elvet within the same year) don't reset it. The
+  // annual tier-review cron's soft-demote step is the only other thing that
+  // moves tier_since/tier_review_at.
+  if (!customer.tier_since) {
+    const reviewAt = new Date(now)
+    reviewAt.setFullYear(reviewAt.getFullYear() + 1)
+    updates.tier_since = now.toISOString()
+    updates.tier_review_at = reviewAt.toISOString()
+  }
 
-  // Send congratulations SMS for bailey/palatine upgrades (not for none→elvet — handled in post-charge)
-  if ((qualifyingTier === 'bailey' || qualifyingTier === 'palatine') && customer.phone) {
-    const tierDisplayName = qualifyingTier === 'bailey' ? 'Bailey' : 'Palatine'
-    const message = sanitiseGsm7(
-      `Congratulations on reaching ${tierDisplayName} tier! Daniel will be in touch shortly to explain the benefits you get with it.`
-    )
-    await sendSms(customer.phone, message, { trigger: 'tier-upgrade', customerId }).catch(
-      (e: unknown) => console.error('[tiers] upgrade SMS failed:', e)
-    )
+  await sb.from('customers').update(updates).eq('id', customerId)
+
+  // Draft copy — Julia will polish wording.
+  if (customer.phone) {
+    const messages: Record<string, string> = {
+      bailey: `Welcome to Bailey tier! You'll now earn 5% back in credit on every order, and delivery drops to £7 under a full case.`,
+      elvet: `You're up to Elvet tier - your rebate doubles to 10% and delivery drops to £5.`,
+      palatine: `You've reached Palatine, our top tier! You'll now get wine texts 2 hours before everyone else, unlimited concierge - and Daniel will be in touch about your Coravin.`,
+    }
+    const message = messages[qualifyingTier]
+    if (message) {
+      await sendSms(customer.phone, sanitiseGsm7(message), { trigger: 'tier-upgrade', customerId }).catch(
+        (e: unknown) => console.error('[tiers] upgrade SMS failed:', e)
+      )
+    }
   }
 
   return qualifyingTier
+}
+
+/**
+ * Tier rebate percentage, applied to full order value on every confirmed order.
+ * Rates per the tiers-v3 ladder. Gated behind CREDIT_REBATE_ENABLED at the call
+ * site — see lib/post-charge.ts.
+ */
+export function rebatePctForTier(tier: string): number {
+  if (tier === 'palatine') return 0.10
+  if (tier === 'elvet') return 0.10
+  if (tier === 'bailey') return 0.05
+  return 0
+}
+
+/**
+ * Delivery fee for shipments under the free-shipping threshold, per the
+ * tiers-v3 ladder: £10 / £7 / £5 / £5 for none / bailey / elvet / palatine.
+ */
+export function deliveryFeePence(tier: string): number {
+  if (tier === 'elvet' || tier === 'palatine') return 500
+  if (tier === 'bailey') return 700
+  return 1000
 }
 
 /**

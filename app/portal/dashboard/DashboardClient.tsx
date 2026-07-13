@@ -16,9 +16,11 @@ interface Props {
   phone: string
   tier: string
   tierSince: string | null
+  creditBalancePence: number
   bottles: number
   cellar: CellarItem[]
-  rollingSpendPence: number
+  casesThisCycle: number
+  milestones: Array<{ milestone: number; rewardChoice: string | null; fulfilledAt: string | null }>
   primaryCard: Card | null
   backupCard: Card | null
   defaultAddress: Address | null
@@ -86,17 +88,16 @@ function CardPill({ card, label }: { card: Card; label: string }) {
   )
 }
 
-function TierProgress({ tier, spendPence }: { tier: string; spendPence: number }) {
-  const spend = spendPence / 100
-  type TierConfig = { label: string; nextLabel: string | null; current: number; target: number | null; color: string }
+function TierProgress({ tier, cases }: { tier: string; cases: number }) {
+  type TierConfig = { label: string; nextLabel: string | null; target: number | null; color: string }
   const config: TierConfig = (() => {
-    if (tier === 'palatine') return { label: 'Palatine', nextLabel: null, current: spend, target: null, color: '#C9851D' }
-    if (tier === 'elvet') return { label: 'Elvet', nextLabel: 'Palatine', current: Math.max(0, spend - 500), target: 500, color: '#C9851D' }
-    return { label: 'Bailey', nextLabel: 'Elvet', current: spend, target: 500, color: '#9B1B30' }
+    if (tier === 'palatine') return { label: 'Palatine', nextLabel: null, target: null, color: '#C9851D' }
+    if (tier === 'elvet') return { label: 'Elvet', nextLabel: 'Palatine', target: 6, color: '#C9851D' }
+    if (tier === 'bailey') return { label: 'Bailey', nextLabel: 'Elvet', target: 4, color: '#9B1B30' }
+    return { label: 'Member', nextLabel: 'Bailey', target: 2, color: '#9B1B30' }
   })()
 
-  const pct = config.target ? Math.min(100, Math.round((config.current / config.target) * 100)) : 100
-  const formatGBP = (n: number) => n >= 1000 ? `£${(n / 1000).toFixed(1)}k` : `£${Math.round(n)}`
+  const pct = config.target ? Math.min(100, Math.round((cases / config.target) * 100)) : 100
 
   return (
     <div className="mb-6">
@@ -106,20 +107,40 @@ function TierProgress({ tier, spendPence }: { tier: string; spendPence: number }
         </span>
         {config.nextLabel ? (
           <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>
-            {formatGBP(config.current + (tier === 'elvet' ? 500 : 0))} / {tier === 'elvet' ? '£1,000' : '£500'} towards {config.nextLabel}
+            {cases} / {config.target} cases towards {config.nextLabel}
           </span>
         ) : (
-          <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>{formatGBP(spend)} this year</span>
+          <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>{cases} case{cases === 1 ? '' : 's'} this cycle</span>
         )}
       </div>
       <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(42,24,16,0.10)' }}>
         <div className="absolute left-0 top-0 h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: config.color }} />
       </div>
-      {config.nextLabel && (
+      {config.target && (
         <p className="font-sans text-xs mt-1.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
-          {formatGBP(Math.max(0, (config.target ?? 0) - config.current))} to go
+          {Math.max(0, config.target - cases)} more case{Math.max(0, config.target - cases) === 1 ? '' : 's'} to go
         </p>
       )}
+    </div>
+  )
+}
+
+function MilestonesList({ milestones }: { milestones: Array<{ milestone: number; rewardChoice: string | null; fulfilledAt: string | null }> }) {
+  if (milestones.length === 0) return null
+  const labels: Record<number, string> = { 1: 'Case 1', 3: 'Case 3', 5: 'Case 5', 6: 'Case 6' }
+  return (
+    <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
+      <p className="font-sans text-xs uppercase tracking-wide mb-1.5" style={{ color: 'rgba(42,24,16,0.45)' }}>Milestones</p>
+      <ul className="space-y-1">
+        {milestones.map((m) => (
+          <li key={m.milestone} className="font-sans text-xs flex items-center justify-between" style={{ color: 'rgba(42,24,16,0.65)' }}>
+            <span>{labels[m.milestone] ?? `Case ${m.milestone}`}</span>
+            <span style={{ color: m.fulfilledAt ? '#2d6a4f' : 'rgba(42,24,16,0.40)' }}>
+              {m.fulfilledAt ? 'Fulfilled' : m.rewardChoice ? 'Choice recorded' : 'Awaiting your choice'}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -222,9 +243,11 @@ export default function DashboardClient({
   phone,
   tier,
   tierSince,
+  creditBalancePence,
   bottles,
   cellar,
-  rollingSpendPence,
+  casesThisCycle,
+  milestones,
   primaryCard,
   backupCard,
   defaultAddress,
@@ -543,7 +566,15 @@ export default function DashboardClient({
               </div>
             </div>
 
-            <TierProgress tier={tier} spendPence={rollingSpendPence} />
+            <TierProgress tier={tier} cases={casesThisCycle} />
+
+            {creditBalancePence > 0 && (
+              <p className="font-sans text-xs mt-2" style={{ color: 'rgba(42,24,16,0.55)' }}>
+                Credit: £{(creditBalancePence / 100).toFixed(2)}
+              </p>
+            )}
+
+            <MilestonesList milestones={milestones} />
 
             {/* Inner tab bar */}
             <div className="flex gap-4 border-b mb-4 pt-3" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>
