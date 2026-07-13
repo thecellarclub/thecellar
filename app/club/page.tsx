@@ -69,32 +69,30 @@ const LADDER = [
   {
     caseNumber: 2,
     eyebrow: 'New tier: Bailey',
-    reward: "You're Bailey. 5% of every order back as credit, delivery drops to £7.",
+    reward: '5% of every order back as credit, deliver less than a case for £7.',
     isTier: true,
   },
   {
     caseNumber: 3,
-    reward: 'Six Riedel glasses, or two tasting tickets — your pick.',
-    detail: 'Two tasting tickets: two tickets to use at our wine tasting events (redeemable anytime).',
+    reward: 'Gift: Six Riedel glasses, or two tasting tickets — your pick.',
     isTier: false,
   },
   {
     caseNumber: 4,
     eyebrow: 'New tier: Elvet',
-    reward: "You're Elvet. Credit back doubles to 10%, delivery drops to £5.",
+    reward: 'Credit back doubles to 10%, deliver less than a case for £5.',
     isTier: true,
   },
   {
     caseNumber: 5,
-    reward: 'A free bottle chosen by Daniel, or two tasting tickets.',
-    detail: 'Two tasting tickets: two tickets to use at our wine tasting events (redeemable anytime).',
+    reward: 'Gift: A free bottle chosen by Daniel, or two tasting tickets.',
     isTier: false,
   },
   {
     caseNumber: 6,
     eyebrow: 'New tier: Palatine',
-    reward: "You're Palatine. Wine texts two hours before everyone else — and a Coravin.",
-    detail: 'A Coravin lets you pour a glass and taste a wine without ever pulling the cork, so the rest of the bottle stays fresh — a timeless piece of kit you\'ll use for years.',
+    reward: 'Get texts two hours before everyone else & free shipping anytime.',
+    detail: 'Gift: a Coravin Timeless - so you can try your wine without it spoiling.',
     isTier: true,
   },
 ]
@@ -132,20 +130,11 @@ export default function ClubPage() {
 
           {/* 2. How it works */}
           <div className="mb-10">
-            <ol className="space-y-3">
-              <li className="font-serif" style={{ fontSize: '1.05rem' }}>
-                <span style={{ color: ACCENT }}>1.</span>{' '}
-                Daniel texts you wines. You reply to buy — bottles wait in the cellar.
-              </li>
-              <li className="font-serif" style={{ fontSize: '1.05rem' }}>
-                <span style={{ color: ACCENT }}>2.</span>{' '}
-                Twelve bottles make a case. Cases ship free; fewer bottles ship from £5.
-              </li>
-              <li className="font-serif" style={{ fontSize: '1.05rem' }}>
-                <span style={{ color: ACCENT }}>3.</span>{' '}
-                Every case you complete earns you something. Here&rsquo;s the ladder.
-              </li>
-            </ol>
+            <p className="font-serif" style={{ fontSize: '1.05rem' }}>
+              Reply to any text with the number of bottles you want. Once you reach 12
+              bottles, it always ships free. You can ship anytime earlier for a small
+              fee. Every 12 bottles purchased unlocks a new Cellar Club Reward.
+            </p>
           </div>
 
           {/* Divider */}
