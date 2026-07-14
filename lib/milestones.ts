@@ -88,8 +88,8 @@ export async function awardMilestones(
       } else if (milestone === 3 || milestone === 5) {
         if (customer.phone) {
           const rewardLine = milestone === 3
-            ? `6 Riedel glasses or 2 tasting tickets`
-            : `a free bottle (Daniel's pick) or 2 tasting tickets`
+            ? `a free bottle (Daniel's pick) or 2 tasting tickets`
+            : `6 Riedel glasses or 2 tasting tickets`
           await sendSms(
             customer.phone,
             sanitiseGsm7(`Case ${milestone} done - nice work! You've earned your choice of ${rewardLine}. Daniel will be in touch to sort it.`),

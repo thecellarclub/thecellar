@@ -3,8 +3,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { requireAdminSession } from '@/lib/adminAuth'
 
 const VALID_CHOICES: Record<number, string[]> = {
-  3: ['riedel_glasses', 'tasting_tickets'],
-  5: ['free_bottle', 'tasting_tickets'],
+  3: ['free_bottle', 'tasting_tickets'],
+  5: ['riedel_glasses', 'tasting_tickets'],
 }
 
 export async function PATCH(

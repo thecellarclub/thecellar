@@ -27,8 +27,8 @@ const REWARD_LABELS: Record<string, string> = {
 }
 
 const MILESTONE_OPTIONS: Record<number, string[]> = {
-  3: ['riedel_glasses', 'tasting_tickets'],
-  5: ['free_bottle', 'tasting_tickets'],
+  3: ['free_bottle', 'tasting_tickets'],
+  5: ['riedel_glasses', 'tasting_tickets'],
 }
 
 export default async function MilestonesPage() {

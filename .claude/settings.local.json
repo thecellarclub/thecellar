@@ -9,7 +9,13 @@
       "Bash(echo \"exit: $?\")",
       "mcp__a8ca8987-9445-42fd-8580-b3a9dc5de987__apply_migration",
       "Bash(npx tsx *)",
-      "Bash(npx vercel *)"
+      "Bash(npx vercel *)",
+      "Bash(grep -iE \"sk_live|sk_test|AC[a-f0-9]{32}|service_role.{0,20}=|password.{0,5}=.{0,3}['\\\\\"][A-Za-z0-9]{8,}\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "mcp__5f8cd9de-022f-4028-aaa0-cfec827f7567__list_deployments",
+      "Bash(git add *)",
+      "mcp__5f8cd9de-022f-4028-aaa0-cfec827f7567__get_deployment"
     ]
   }
 }

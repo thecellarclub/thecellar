@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'How the Club works — The Cellar Club',
+  title: 'How the Club works - The Cellar Club',
 }
 
 const PAGE_BG  = '#E6D9CA'
@@ -13,16 +13,10 @@ const ACCENT   = '#9B1B30'
 
 function LadderRow({
   caseNumber,
-  eyebrow,
-  reward,
-  detail,
-  isTier,
+  blocks,
 }: {
   caseNumber: number
-  eyebrow?: string
-  reward: string
-  detail?: string
-  isTier: boolean
+  blocks: { eyebrow: string; text: string; italic?: boolean }[]
 }) {
   return (
     <div className="flex gap-4 py-4" style={{ borderBottom: '1px dotted rgba(42,24,16,0.13)' }}>
@@ -33,28 +27,22 @@ function LadderRow({
         {caseNumber}
       </span>
       <div className="min-w-0">
-        {eyebrow && (
-          <p
-            className="font-sans text-xs uppercase tracking-[0.2em] mb-1"
-            style={{ color: ACCENT }}
-          >
-            {eyebrow}
-          </p>
-        )}
-        <p
-          className={`font-serif ${isTier ? '' : 'italic'}`}
-          style={{ fontSize: '1.05rem', color: TEXT_DARK }}
-        >
-          {reward}
-        </p>
-        {detail && (
-          <p
-            className="font-sans"
-            style={{ fontSize: '0.85rem', color: 'rgba(42,24,16,0.5)', marginTop: '0.35rem' }}
-          >
-            {detail}
-          </p>
-        )}
+        {blocks.map((block, i) => (
+          <div key={i} className={i > 0 ? 'mt-3' : ''}>
+            <p
+              className="font-sans text-xs uppercase tracking-[0.2em] mb-1"
+              style={{ color: ACCENT }}
+            >
+              {block.eyebrow}
+            </p>
+            <p
+              className={`font-serif ${block.italic ? 'italic' : ''}`}
+              style={{ fontSize: '1.05rem', color: TEXT_DARK }}
+            >
+              {block.text}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -63,37 +51,40 @@ function LadderRow({
 const LADDER = [
   {
     caseNumber: 1,
-    reward: 'A free-shipping voucher — your next shipment goes free at just 6 bottles.',
-    isTier: false,
+    blocks: [
+      { eyebrow: 'Gift', text: 'A free-shipping voucher - your next shipment goes free at just 6 bottles.', italic: true },
+    ],
   },
   {
     caseNumber: 2,
-    eyebrow: 'New tier: Bailey',
-    reward: '5% of every order back as credit, deliver less than a case for £7.',
-    isTier: true,
+    blocks: [
+      { eyebrow: 'New tier: Bailey', text: '5% of every order back as credit, deliver less than a case for £7.' },
+    ],
   },
   {
     caseNumber: 3,
-    reward: 'Gift: Six Riedel glasses, or two tasting tickets — your pick.',
-    isTier: false,
+    blocks: [
+      { eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or two tasting tickets.', italic: true },
+    ],
   },
   {
     caseNumber: 4,
-    eyebrow: 'New tier: Elvet',
-    reward: 'Credit back doubles to 10%, deliver less than a case for £5.',
-    isTier: true,
+    blocks: [
+      { eyebrow: 'New tier: Elvet', text: 'Credit back doubles to 10%, deliver less than a case for £5.' },
+    ],
   },
   {
     caseNumber: 5,
-    reward: 'Gift: A free bottle chosen by Daniel, or two tasting tickets.',
-    isTier: false,
+    blocks: [
+      { eyebrow: 'Gift', text: 'Six Riedel glasses, or two tasting tickets - your pick.', italic: true },
+    ],
   },
   {
     caseNumber: 6,
-    eyebrow: 'New tier: Palatine',
-    reward: 'Get texts two hours before everyone else & free shipping anytime.',
-    detail: 'Gift: a Coravin Timeless - so you can try your wine without it spoiling.',
-    isTier: true,
+    blocks: [
+      { eyebrow: 'New tier: Palatine', text: 'Get texts two hours before everyone else & free shipping anytime.' },
+      { eyebrow: 'Gift', text: 'Coravin Timeless (a device to try your wine without removing the cork).', italic: true },
+    ],
   },
 ]
 
@@ -123,7 +114,7 @@ export default function ClubPage() {
             </p>
             <h1 className="font-serif text-3xl" style={{ color: TEXT_DARK }}>Every case earns something</h1>
             <p className="font-serif italic mt-3" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.55)' }}>
-              Free to join. Buy wine by text, build cases of twelve — and every case you
+              Free to join. Buy wine by text, build cases of twelve - and every case you
               complete unlocks a reward.
             </p>
           </div>
@@ -154,10 +145,11 @@ export default function ClubPage() {
           <div className="mb-10">
             <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>Credit, not coupons.</h2>
             <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              Your rebate lands as credit on your account — real money against your next
-              order. When you order and have credit, we&rsquo;ll offer it automatically:
-              reply BALANCE and it covers as much of the order as it can, with any
-              remainder going to your card. Text BALANCE any time to check what
+              Every time you spend, you earn credit back into your account. Use it
+              against your next order or save it up for something special.
+              We&rsquo;ll give you the chance to spend it whenever you&rsquo;re placing
+              an order, if it doesn&rsquo;t cover it all, the remainder is charged to
+              your card like normal. Text BALANCE any time to check what
               you&rsquo;ve got. Credit never expires.
             </p>
           </div>
@@ -166,7 +158,7 @@ export default function ClubPage() {
           <div className="mb-10">
             <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>Earn it once, keep it.</h2>
             <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              The gifts on the ladder — the glasses, the bottle, the Coravin — are
+              The gifts on the ladder - the glasses, the bottle, the Coravin - are
               lifetime milestones. You earn each one once, it&rsquo;s yours, and it&rsquo;s
               never taken back. The gift shelf changes from year to year, so there&rsquo;s
               always something new ahead of you.
@@ -177,11 +169,11 @@ export default function ClubPage() {
           <div>
             <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>How the year works.</h2>
             <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              Your case count runs over your membership year — twelve months from your
+              Your case count runs over your membership year - twelve months from your
               first case. When your anniversary comes round, the count starts fresh for
               the new year, and your tier eases down a single step at most: Palatine
               begins the new year as Elvet, Elvet as Bailey. Bailey is yours for good.
-              Your credit and your gifts are untouched — only the climb resets. Order
+              Your credit and your gifts are untouched - only the climb resets. Order
               like you did last year and you&rsquo;ll be back where you were (and
               collecting anything on the ladder you haven&rsquo;t earned yet).
             </p>
@@ -189,7 +181,7 @@ export default function ClubPage() {
 
           {/* 8. Footnote */}
           <p className="font-serif italic text-sm mt-8" style={{ color: 'rgba(42,24,16,0.40)' }}>
-            Tiers update automatically as you order — you&rsquo;ll get a text when you
+            Tiers update automatically as you order - you&rsquo;ll get a text when you
             move up. One case = 12 bottles.
           </p>
 
