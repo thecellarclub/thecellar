@@ -16,7 +16,7 @@ function LadderRow({
   blocks,
 }: {
   caseNumber: number
-  blocks: { eyebrow: string; text: string; italic?: boolean }[]
+  blocks: { eyebrow: string; text: string }[]
 }) {
   return (
     <div className="flex gap-4 py-4" style={{ borderBottom: '1px dotted rgba(42,24,16,0.13)' }}>
@@ -36,7 +36,7 @@ function LadderRow({
               {block.eyebrow}
             </p>
             <p
-              className={`font-serif ${block.italic ? 'italic' : ''}`}
+              className="font-serif"
               style={{ fontSize: '1.05rem', color: TEXT_DARK }}
             >
               {block.text}
@@ -52,7 +52,7 @@ const LADDER = [
   {
     caseNumber: 1,
     blocks: [
-      { eyebrow: 'Gift', text: 'A free-shipping voucher - your next shipment goes free at just 6 bottles.', italic: true },
+      { eyebrow: 'Gift', text: 'A free-shipping voucher - your next shipment goes free at just 6 bottles.' },
     ],
   },
   {
@@ -64,26 +64,26 @@ const LADDER = [
   {
     caseNumber: 3,
     blocks: [
-      { eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or two tasting tickets.', italic: true },
+      { eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or two tasting tickets.' },
     ],
   },
   {
     caseNumber: 4,
     blocks: [
-      { eyebrow: 'New tier: Elvet', text: 'Credit back doubles to 10%, deliver less than a case for £5.' },
+      { eyebrow: 'New tier: Elvet', text: '10% of every order back as credit, deliver less than a case for £5.' },
     ],
   },
   {
     caseNumber: 5,
     blocks: [
-      { eyebrow: 'Gift', text: 'Six Riedel glasses, or two tasting tickets - your pick.', italic: true },
+      { eyebrow: 'Gift', text: 'Six Riedel glasses, or two tasting tickets - your pick.' },
     ],
   },
   {
     caseNumber: 6,
     blocks: [
       { eyebrow: 'New tier: Palatine', text: 'Get texts two hours before everyone else & free shipping anytime.' },
-      { eyebrow: 'Gift', text: 'Coravin Timeless (a device to try your wine without removing the cork).', italic: true },
+      { eyebrow: 'Gift', text: 'Coravin Timeless (a device to try your wine without removing the cork).' },
     ],
   },
 ]
@@ -112,19 +112,10 @@ export default function ClubPage() {
             >
               The Club
             </p>
-            <h1 className="font-serif text-3xl" style={{ color: TEXT_DARK }}>Every case earns something</h1>
+            <h1 className="font-serif text-3xl" style={{ color: TEXT_DARK }}>Earn with every case.</h1>
             <p className="font-serif italic mt-3" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.55)' }}>
               Free to join. Buy wine by text, build cases of twelve - and every case you
               complete unlocks a reward.
-            </p>
-          </div>
-
-          {/* 2. How it works */}
-          <div className="mb-10">
-            <p className="font-serif" style={{ fontSize: '1.05rem' }}>
-              Reply to any text with the number of bottles you want. Once you reach 12
-              bottles, it always ships free. You can ship anytime earlier for a small
-              fee. Every 12 bottles purchased unlocks a new Cellar Club Reward.
             </p>
           </div>
 
