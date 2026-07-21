@@ -11,7 +11,7 @@ import { deliveryThreshold, TIER_NAMES } from '@/lib/tiers'
  *
  * There is no case deadline. Customers are never rushed and never billed
  * automatically for early shipping — the only way a customer is charged for
- * shipping under a full case is the customer-initiated SHIP → SHIP CONFIRM
+ * shipping under a full case is the customer-initiated SHIP → CONFIRM
  * flow (handled entirely in the Twilio inbound webhook). This cron:
  *   Day 90+ of filling a case (once per case): send a single no-pressure
  *   reminder with their bottle count and a link to the rewards page.

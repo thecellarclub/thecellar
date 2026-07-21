@@ -33,6 +33,30 @@ should be able to understand what changed and what to watch out for.
 
 ---
 
+### 2026-07-21 — Rename SHIP CONFIRM to CONFIRM; manual data-repair for two customers (bug fix + ops, no spec)
+
+**State changes**
+- `app/api/webhooks/twilio/inbound/route.ts`: the paid-early-shipping keyword changed from the two-word `SHIP CONFIRM` to a single-word `CONFIRM` (`keyword === 'confirm'` now dispatches to `handleShipConfirm`, replacing the old `body === 'ship confirm'` check). Julia's reasoning: customers were replying `SHIP` a second time instead of `SHIP CONFIRM`, since the two commands look almost identical. All customer-facing SMS copy mentioning "SHIP CONFIRM" updated to say "CONFIRM" (the under-threshold SHIP prompt, the no-card-on-file prompt, and all three card-failure retry prompts). `CONFIRM` was checked against every other keyword in the router first — no collision. Left `handleShipConfirm`'s function name, the `keyword:ship-confirm` trigger strings, and internal comments/log lines untouched (not customer-facing).
+- `app/api/cron/case-nudges/route.ts`: updated the doc-comment's "SHIP → SHIP CONFIRM" mention to "SHIP → CONFIRM" for accuracy.
+- **Manual data repair, `+447828462688` (Suzanne)** — consolidated her cellar into one shipment per Julia's request ("shipping everything slightly early, no error here" — explicitly not a bug to fix in code, a deliberate customer-service gesture). She had 10 confirmed/paid bottles split between an existing pending shipment (6 bottles, 3 rows) and 2 more unlinked cellar rows (4 bottles) from orders confirmed after that shipment was created. Linked the 2 remaining rows to the existing shipment (`shipment_id` + `shipped_at`), updated `shipments.bottle_count` 6→10, and cleared her `case_started_at`/`case_reminder_sent_at` (nothing left unshipped to anchor a case timer). **Did not** touch her separate pending order for 1 bottle of B Leaf Areni Rosé (`awaiting_confirmation`, uncharged) — she asked Daniel to add it and ship "next week", but it isn't paid for yet, so it wasn't folded into the "ship everything now" consolidation. Flagged to Julia that merging it into the same shipment later will need a manual step (once it's actually confirmed/charged) rather than happening automatically, since by the time it confirms the "case" will already be empty and the normal post-charge flow would spin up a fresh one-bottle case instead of joining this shipment.
+- **Manual data repair, `+447860263834` (William)** — attempted the paid-early-shipping charge on his behalf (he'd been typing `SHIP` repeatedly instead of the two-word command, so nothing was happening) by replicating `handleShipConfirm`'s Stripe call directly (same amount, `off_session`/`confirm: true`, same metadata shape) since he has no default address on file and the existing code path wasn't reachable without a real SHIP CONFIRM/CONFIRM reply. **The charge was declined — insufficient funds.** No shipment was created (payment didn't succeed). Set a fresh `billing_token`/`billing_token_expires_at` (1h) on his customer record and sent him the card-decline SMS via direct Twilio call, using the new "CONFIRM" wording: *"Card didn't go through. Update it here: {billing link} — then reply CONFIRM to try again."*
+
+**Deviations & decisions**
+- Both manual repairs were performed via direct Supabase/Stripe/Twilio calls rather than through the deployed app, since the underlying code paths require a live customer SMS/webhook round-trip that can't be triggered from here directly, and both customers were actively waiting.
+- Confirmed no other keyword in the router already used `confirm` as a bare word before renaming — no collision risk.
+
+**Gotchas & future context**
+- William's card is confirmed broken (insufficient funds) as of this session — if he doesn't update it, any future SHIP/CONFIRM/YES flow charging him will keep failing the same way. Worth a heads-up from the team if he doesn't respond to the billing-link text.
+- Suzanne's Areni Rosé order (id `a1f30cf3-8af1-486b-a44d-52a7707103bd`) is still sitting `awaiting_confirmation` — whoever processes it should be aware the "ship everything" consolidation already happened separately, so it won't automatically land in shipment `8c58bf26` without a manual re-link.
+
+**Verification**
+- `npx tsc --noEmit`: clean. `npx eslint` on both touched files: 0 errors, 1 pre-existing unrelated warning.
+- Confirmed via direct query: shipment `8c58bf26` now shows `bottle_count = 10` with all 5 of Suzanne's cellar rows linked to it; her `case_started_at` is null.
+- Confirmed via Stripe response: William's payment intent came back `card_declined` / `insufficient_funds` — no shipment or `orders`/`cellar` rows were created for him as a result.
+- Not yet deployed — grep confirms zero remaining customer-facing "SHIP CONFIRM" strings (`grep -n "SHIP CONFIRM" app/api/webhooks/twilio/inbound/route.ts` → only the internal comment header at the top of `handleShipConfirm`).
+
+---
+
 ### 2026-07-21 — Fix global commands (SHIP, STOP, etc.) getting swallowed while `sms_awaiting` is set (bug fix, no spec)
 
 **State changes**

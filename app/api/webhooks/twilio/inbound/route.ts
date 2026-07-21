@@ -173,7 +173,7 @@ async function handleShip(
     const feePence = deliveryFeePence(customer.tier)
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply SHIP CONFIRM to go ahead, or keep collecting for free at ${threshold}.`,
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply CONFIRM to go ahead, or keep collecting for free at ${threshold}.`,
       { trigger: 'keyword:ship', customerId: customer.id }
     )
     return twimlOk()
@@ -342,7 +342,7 @@ async function handleShipConfirm(
     }).eq('id', customer.id)
     await sendSms(
       from,
-      `I don't have a card on file. Add one here: ${APP_URL}/billing?token=${billingToken} — then text SHIP CONFIRM again.`,
+      `I don't have a card on file. Add one here: ${APP_URL}/billing?token=${billingToken} — then text CONFIRM again.`,
       { trigger: 'keyword:ship-confirm', customerId: customer.id }
     )
     return twimlOk()
@@ -411,7 +411,7 @@ async function handleShipConfirm(
       }).eq('id', customer.id)
       await sendSms(
         from,
-        `Card didn't go through. Update it here: ${APP_URL}/billing?token=${billingToken} — then reply SHIP CONFIRM to try again.`,
+        `Card didn't go through. Update it here: ${APP_URL}/billing?token=${billingToken} — then reply CONFIRM to try again.`,
         { trigger: 'keyword:ship-confirm', customerId: customer.id }
       )
       return twimlOk()
@@ -441,13 +441,13 @@ async function handleShipConfirm(
       }).eq('id', customer.id)
       await sendSms(
         from,
-        `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} and reply SHIP CONFIRM again.`,
+        `There's an issue with your saved card. Please update it at ${APP_URL}/billing?token=${billingToken} and reply CONFIRM again.`,
         { trigger: 'keyword:ship-confirm', customerId: customer.id }
       )
       return twimlOk()
     }
 
-    await sendSms(from, `Something went wrong processing your payment. Please reply SHIP CONFIRM to try again.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
+    await sendSms(from, `Something went wrong processing your payment. Please reply CONFIRM to try again.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
     return twimlOk()
   }
 
@@ -517,7 +517,7 @@ async function handleShipConfirm(
     billing_token: billingToken,
     billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   }).eq('id', customer.id)
-  await sendSms(from, `Card didn't go through. Update it here: ${APP_URL}/billing?token=${billingToken} — then reply SHIP CONFIRM to try again.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
+  await sendSms(from, `Card didn't go through. Update it here: ${APP_URL}/billing?token=${billingToken} — then reply CONFIRM to try again.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
   return twimlOk()
 }
 
@@ -1274,8 +1274,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // means "ship what I have now", not free-text about that offer. Clear the
     // awaiting state and fall through to the normal keyword router below
     // instead of swallowing the command into a generic inbox log entry.
-    const ALWAYS_AVAILABLE_KEYWORDS = new Set(['stop', 'unsubscribe', 'ship', 'pause', 'resume', 'status', 'account', 'cellar'])
-    const isAlwaysAvailableCommand = ALWAYS_AVAILABLE_KEYWORDS.has(keyword) || body === 'ship confirm'
+    const ALWAYS_AVAILABLE_KEYWORDS = new Set(['stop', 'unsubscribe', 'ship', 'confirm', 'pause', 'resume', 'status', 'account', 'cellar'])
+    const isAlwaysAvailableCommand = ALWAYS_AVAILABLE_KEYWORDS.has(keyword)
 
     if (customer.sms_awaiting && isAlwaysAvailableCommand) {
       await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
@@ -1404,8 +1404,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return await handleCellar(from, customer, sb)
     }
 
-    // ── SHIP CONFIRM ─────────────────────────────────────────────────────
-    if (body === 'ship confirm') {
+    // ── CONFIRM (paid early shipping, follows the SHIP prompt) ────────────
+    if (keyword === 'confirm') {
       return await handleShipConfirm(from, customer, sb)
     }
 
