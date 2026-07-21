@@ -1269,7 +1269,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── Pending state — awaiting follow-up to REQUEST or QUESTION ─────────
-    if (customer.sms_awaiting) {
+    // Unambiguous commands always win over whatever the customer was being
+    // asked — e.g. replying SHIP while mid-flow on an unrelated offer clearly
+    // means "ship what I have now", not free-text about that offer. Clear the
+    // awaiting state and fall through to the normal keyword router below
+    // instead of swallowing the command into a generic inbox log entry.
+    const ALWAYS_AVAILABLE_KEYWORDS = new Set(['stop', 'unsubscribe', 'ship', 'pause', 'resume', 'status', 'account', 'cellar'])
+    const isAlwaysAvailableCommand = ALWAYS_AVAILABLE_KEYWORDS.has(keyword) || body === 'ship confirm'
+
+    if (customer.sms_awaiting && isAlwaysAvailableCommand) {
+      await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
+    }
+
+    if (customer.sms_awaiting && !isAlwaysAvailableCommand) {
       if (keyword === 'exit') {
         await sb.from('customers').update({ sms_awaiting: null }).eq('id', customer.id)
         await sendSms(from, `No problem. Text OFFER, QUESTION or REQUEST any time, or visit your portal: ${APP_URL}/portal`, { trigger: 'keyword:exit', customerId: customer.id })

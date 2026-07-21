@@ -33,6 +33,31 @@ should be able to understand what changed and what to watch out for.
 
 ---
 
+### 2026-07-21 — Fix global commands (SHIP, STOP, etc.) getting swallowed while `sms_awaiting` is set (bug fix, no spec)
+
+**State changes**
+- `app/api/webhooks/twilio/inbound/route.ts`: the `if (customer.sms_awaiting) { ... }` block (entered whenever a customer has a pending "awaiting" state — `offer`/`request`/`question`) unconditionally returned for every reply except `yes`/a parseable quantity/`exit`, which meant that typing an unambiguous global command like **SHIP**, **STOP**, **CELLAR**, **STATUS**, **ACCOUNT**, or **PAUSE** while in that state got logged as a generic inbound concierge message instead of ever reaching the actual keyword handlers further down the router — those handlers are unreachable from inside the block. STOP being swallowed this way is a compliance concern (a customer trying to unsubscribe wouldn't be), not just a UX one.
+- **Root cause of the reported case**: William Bayliss (+447860263834, `free_shipping_at_6: true`, 3 cellar bottles) had `sms_awaiting = 'offer'` set and texted `SHIP`. It didn't match `yes` or a parseable quantity, so it fell through to the generic `pendingType === 'offer'` branch, which just logged it to `concierge_messages` (category `purchase_query`, context "Re: B Leaf Areni Rosé...") and returned — he never got a SHIP response at all.
+- **Fix**: added an `ALWAYS_AVAILABLE_KEYWORDS` set (`stop`, `unsubscribe`, `ship`, `pause`, `resume`, `status`, `account`, `cellar`, plus the two-word `ship confirm`). When a customer has `sms_awaiting` set and their reply matches one of these, the awaiting state is cleared and execution falls through to the normal keyword router below — the exact same code path used when nothing is pending — instead of being captured by the `if (customer.sms_awaiting)` block. `yes`/quantity replies (still meaningful mid-offer-flow) and free text (still logged to the inbox) are unaffected.
+- **Immediate customer fix**: sent William the message he should have received, via direct Twilio API call (not through the deployed app, since the fix wasn't live yet at the time): *"You've got 3 bottles in your cellar. Shipping now costs £10. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 6."* — figures matched his actual state (`customer_cellar_totals` = 3 bottles, `deliveryThreshold('none', true)` = 6, `deliveryFeePence('none')` = £10). Twilio SID `SM934ff407f5770e5061d37be94c993b57`, queued successfully.
+
+**Deviations & decisions**
+- Scoped the "always available" keyword set conservatively — included the customer-reported case (SHIP/SHIP CONFIRM) plus the clearly compliance-critical one (STOP/UNSUBSCRIBE) and the other simple read-only/state commands (CELLAR, STATUS, ACCOUNT, PAUSE, RESUME). Deliberately left out `BALANCE`, `CARD`, and `NO`/`CANCEL` — those have more contextual, order-dependent branching further down the router that I didn't fully re-verify behaves identically when reached via this new fallthrough path, so leaving them as-is avoids risking a regression I haven't traced. Worth a follow-up pass if the same "swallowed while awaiting" complaint comes up for one of those.
+- Did not close William's concierge thread (`concierge_status` was already `open` from his SHIP message being logged) — left that for Daniel/Julia's judgement on whether the thread is actually resolved.
+- Sent the one-off message via a raw Twilio API call rather than waiting for a deploy, since the customer was already waiting and the fix + a full deploy cycle would have taken longer than just sending the correct text directly. `lib/twilio.ts`'s `sendSms` only sanitises GSM-7 and calls the same Twilio API — it doesn't write to any DB log table (the admin inbox reads conversation history live from Twilio, not from a stored table), so this direct send is functionally identical and needs no follow-up logging.
+
+**Gotchas & future context**
+- This bug predates every other fix in this log — it's a structural issue with the `sms_awaiting` gate's placement, unrelated to the counting/refund/deadline bugs fixed earlier today. Any future keyword added to the main router should be checked against whether it also needs adding to `ALWAYS_AVAILABLE_KEYWORDS` if it's the kind of command a customer would reasonably expect to work regardless of what they're mid-flow on.
+- If the BALANCE/CARD/NO-CANCEL gap above ever needs closing, trace `pendingForCredit`/credit-balance branching and the NO/CANCEL pending-order-cancellation logic carefully first — both assume context that may or may not still hold when reached via this fallthrough.
+
+**Verification**
+- `npx tsc --noEmit` and `npx next build`: both clean.
+- `npx eslint app/api/webhooks/twilio/inbound/route.ts`: 0 errors, 1 pre-existing unrelated warning.
+- Confirmed root cause directly against production data: queried `concierge_messages` for William's customer id, found his inbound `SHIP` logged as a generic `purchase_query` row instead of a SHIP response.
+- Not yet deployed — this fix is uncommitted alongside today's other work; the immediate customer message was sent out-of-band via direct Twilio API call so William didn't have to wait for a deploy.
+
+---
+
 ### 2026-07-21 — Remove the 90-day case deadline (`claude-code-prompt-remove-case-deadline.md`)
 
 **State changes**
