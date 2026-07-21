@@ -27,11 +27,28 @@ export function tierFromCases(cases: number): 'none' | 'bailey' | 'elvet' | 'pal
 }
 
 /**
+ * Total refunded quantity for a set of orders, keyed by order_id. Refunds
+ * never change `orders.order_status` away from 'confirmed' (see the admin
+ * refund route), so anything counting confirmed-order bottles must net this
+ * out itself or refunded bottles count towards case totals forever.
+ */
+export async function getRefundedQuantityByOrder(orderIds: string[], sb: SB): Promise<Record<string, number>> {
+  if (orderIds.length === 0) return {}
+  const { data } = await sb.from('refunds').select('order_id, quantity').in('order_id', orderIds)
+  const byOrder: Record<string, number> = {}
+  for (const r of data ?? []) {
+    byOrder[r.order_id] = (byOrder[r.order_id] ?? 0) + r.quantity
+  }
+  return byOrder
+}
+
+/**
  * Bottles from confirmed orders within the customer's current tier cycle,
- * floor-divided into cases (12 bottles each). The cycle starts at `tier_since`
- * — set once on a customer's first-ever tier upgrade, then only moved by the
- * annual tier-review cron's soft-demote step (see case-nudges cron) — and
- * falls back to `subscribed_at` for customers who haven't earned a tier yet.
+ * net of refunds, floor-divided into cases (12 bottles each). The cycle
+ * starts at `tier_since` — set once on a customer's first-ever tier upgrade,
+ * then only moved by the annual tier-review cron's soft-demote step (see
+ * case-nudges cron) — and falls back to `subscribed_at` for customers who
+ * haven't earned a tier yet.
  */
 export async function getRollingCases(customerId: string, sb: SB): Promise<number> {
   const { data: customer } = await sb
@@ -44,27 +61,31 @@ export async function getRollingCases(customerId: string, sb: SB): Promise<numbe
 
   const { data } = await sb
     .from('orders')
-    .select('quantity')
+    .select('id, quantity')
     .eq('customer_id', customerId)
     .eq('order_status', 'confirmed')
     .gte('created_at', since)
 
-  const bottles = (data ?? []).reduce((sum, o) => sum + (o.quantity ?? 0), 0)
+  const orders = data ?? []
+  const refundedByOrder = await getRefundedQuantityByOrder(orders.map((o) => o.id), sb)
+  const bottles = orders.reduce((sum, o) => sum + Math.max(0, (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0)), 0)
   return Math.floor(bottles / 12)
 }
 
 /**
- * Lifetime bottles from ALL confirmed orders ever, no window — used for
- * milestone detection (lifetime cases 1/3/5/6), which never resets.
+ * Lifetime bottles from ALL confirmed orders ever, net of refunds, no window
+ * — used for milestone detection (lifetime cases 1/3/5/6), which never resets.
  */
 export async function getLifetimeCases(customerId: string, sb: SB): Promise<number> {
   const { data } = await sb
     .from('orders')
-    .select('quantity')
+    .select('id, quantity')
     .eq('customer_id', customerId)
     .eq('order_status', 'confirmed')
 
-  const bottles = (data ?? []).reduce((sum, o) => sum + (o.quantity ?? 0), 0)
+  const orders = data ?? []
+  const refundedByOrder = await getRefundedQuantityByOrder(orders.map((o) => o.id), sb)
+  const bottles = orders.reduce((sum, o) => sum + Math.max(0, (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0)), 0)
   return Math.floor(bottles / 12)
 }
 

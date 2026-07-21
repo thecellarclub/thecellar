@@ -37,10 +37,10 @@ function statusLabel(status: string) {
 
 export default function CustomersClientView({
   customers,
-  totalsMap,
+  caseDaysMap,
 }: {
   customers: Customer[]
-  totalsMap: Map<string, number>
+  caseDaysMap: Map<string, { bottles: number; daysFilling: number }>
 }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -100,7 +100,7 @@ export default function CustomersClientView({
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              {['Name', 'Phone', 'Email', 'Cellar', 'Joined', 'Tier', 'Status'].map((h) => (
+              {['Name', 'Phone', 'Email', 'Cellar', 'Case days', 'Joined', 'Tier', 'Status'].map((h) => (
                 <th key={h} className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200 px-4 py-2 bg-gray-50">
                   {h}
                 </th>
@@ -110,10 +110,12 @@ export default function CustomersClientView({
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No customers match</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No customers match</td>
               </tr>
             ) : (
-              filtered.map((c) => (
+              filtered.map((c) => {
+                const caseDays = caseDaysMap.get(c.id)
+                return (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2.5 border-b border-gray-100">
                     <Link href={`/admin/customers/${c.id}`} className="font-medium text-gray-900 hover:underline">
@@ -123,8 +125,11 @@ export default function CustomersClientView({
                   <td className="px-4 py-2.5 border-b border-gray-100 font-mono text-xs text-gray-600">{c.phone}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600">{c.email}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100">
-                    <span className="font-medium">{totalsMap.get(c.id) ?? 0}</span>
+                    <span className="font-medium">{caseDays?.bottles ?? 0}</span>
                     <span className="text-gray-600 text-xs ml-1">bottles</span>
+                  </td>
+                  <td className={`px-4 py-2.5 border-b border-gray-100 text-xs ${caseDays && caseDays.daysFilling >= 120 ? 'text-amber-600 font-medium' : 'text-gray-600'}`}>
+                    {caseDays ? caseDays.daysFilling : '—'}
                   </td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 text-xs">{formatDate(c.subscribed_at)}</td>
                   <td className="px-4 py-2.5 border-b border-gray-100 text-gray-600 capitalize text-xs">{c.tier ?? 'none'}</td>
@@ -134,7 +139,8 @@ export default function CustomersClientView({
                     </span>
                   </td>
                 </tr>
-              ))
+                )
+              })
             )}
           </tbody>
         </table>

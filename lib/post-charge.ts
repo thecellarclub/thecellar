@@ -1,7 +1,6 @@
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
-import { checkAndApplyTierUpgrade, deliveryThreshold, rebatePctForTier } from '@/lib/tiers'
-import { ordinalDate } from '@/lib/format'
+import { checkAndApplyTierUpgrade, deliveryThreshold, rebatePctForTier, deliveryFeePence, getRefundedQuantityByOrder } from '@/lib/tiers'
 import { redeemCreditForOrder, accrueRebate, getBalance } from '@/lib/credit'
 import { awardMilestones } from '@/lib/milestones'
 
@@ -24,7 +23,7 @@ interface PostChargeParams {
  * Inserts one cellar row for the just-purchased bottles, then dispatches to
  * one of three scenarios based on the customer's total unshipped cellar count:
  *
- *   Scenario 1 (< 12): Start or maintain case timer, send deadline SMS
+ *   Scenario 1 (< 12): Start or maintain case timer, send cellar-update SMS (no deadline)
  *   Scenario 2 (= 12): Send wine list + free shipping notification, reset timer
  *   Scenario 3 (> 12): Split oldest 12, auto-create pending shipment, start new timer
  */
@@ -79,14 +78,6 @@ export async function handlePostCharge({
 
   const threshold = deliveryThreshold(currentTier, freeShippingAt6)
 
-  // 1c2. Lifetime milestone detection (cases 1/3/5/6) — fire-and-forget, never
-  // blocks order confirmation. Suppress milestone 6's own SMS when this call
-  // also just upgraded the customer to Palatine — they get one combined text
-  // instead (see the palatine congrats copy in lib/tiers.ts).
-  await awardMilestones(customerId, sb, {
-    skipSmsForMilestone: upgradedTier === 'palatine' ? 6 : undefined,
-  })
-
   // 1c. Tier rebate accrual — gated behind CREDIT_REBATE_ENABLED. Off by default:
   // customers' stored `tier` values still reflect the old spend-based model
   // until migration 044's recompute has run — flipping this on before then
@@ -132,25 +123,32 @@ export async function handlePostCharge({
       .eq('id', customerId)
       .maybeSingle()
 
-    let caseStartedAt: Date
-    if (customer?.case_started_at) {
-      caseStartedAt = new Date(customer.case_started_at)
-    } else {
-      caseStartedAt = new Date()
+    if (!customer?.case_started_at) {
       await sb
         .from('customers')
-        .update({ case_started_at: caseStartedAt.toISOString() })
+        .update({ case_started_at: new Date().toISOString() })
         .eq('id', customerId)
     }
 
-    const deadline = new Date(caseStartedAt)
-    deadline.setDate(deadline.getDate() + 90)
-    const deadlineStr = ordinalDate(deadline)
+    // "First order" is a count of real (not fully-refunded) confirmed orders,
+    // never a tier proxy — tier stays 'none' until 2 lifetime cases, so nearly
+    // every order would otherwise get this prefix.
+    const { data: confirmedOrders } = await sb
+      .from('orders')
+      .select('id, quantity')
+      .eq('customer_id', customerId)
+      .eq('order_status', 'confirmed')
 
-    const prefix = currentTier === 'none' ? 'Congratulations on your first order! ' : ''
+    const orders = confirmedOrders ?? []
+    const refundedByOrder = await getRefundedQuantityByOrder(orders.map((o) => o.id), sb)
+    const realOrderCount = orders.filter((o) => (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0) > 0).length
+    const isFirstOrder = realOrderCount === 1
+
+    const prefix = isFirstOrder ? 'Congratulations on your first order! ' : ''
+    const shipFeeStr = `£${(deliveryFeePence(currentTier) / 100).toFixed(0)}`
     await sendSms(
       customerPhone,
-      `${notePrefix}${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of ${threshold} by ${deadlineStr} for free shipping - or reply SHIP any time to send what you have for £10.${creditBalanceLine}`,
+      `${notePrefix}${prefix}Your cellar now holds ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''}. Complete your case of ${threshold} for free shipping - or reply SHIP any time to send what you have for ${shipFeeStr}.${creditBalanceLine}`,
       { trigger: 'post-charge:cellar-update', customerId }
     )
   } else if (totalBottles === threshold) {
@@ -172,8 +170,7 @@ export async function handlePostCharge({
     // Reset case timer (and consume the one-shot free-at-6 grant if it was used)
     await sb.from('customers').update({
       case_started_at: null,
-      case_nudge_1_sent_at: null,
-      case_nudge_2_sent_at: null,
+      case_reminder_sent_at: null,
       ...(freeShippingAt6 ? { free_shipping_at_6: false } : {}),
     }).eq('id', customerId)
 
@@ -300,8 +297,7 @@ export async function handlePostCharge({
       .from('customers')
       .update({
         case_started_at: now.toISOString(),
-        case_nudge_1_sent_at: null,
-        case_nudge_2_sent_at: null,
+        case_reminder_sent_at: null,
         ...(freeShippingAt6 ? { free_shipping_at_6: false } : {}),
       })
       .eq('id', customerId)
@@ -316,15 +312,22 @@ export async function handlePostCharge({
     }
 
     const remainingBottles = totalBottles - threshold
-    const deadline = new Date(now)
-    deadline.setDate(deadline.getDate() + 90)
-    const deadlineStr = ordinalDate(deadline)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(
       customerPhone,
-      `${notePrefix}Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case by ${deadlineStr} for free shipping.${creditBalanceLine}`,
+      `${notePrefix}Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case of ${threshold} for free shipping.${creditBalanceLine}`,
       { trigger: 'post-charge:case-ready', customerId }
     )
   }
+
+  // Lifetime milestone detection (cases 1/3/5/6) — runs after the scenario SMS
+  // above so a milestone congratulations text never arrives before the order
+  // confirmation it's congratulating them alongside. Fire-and-forget, never
+  // blocks order confirmation. Suppress milestone 6's own SMS when this call
+  // also just upgraded the customer to Palatine — they get one combined text
+  // instead (see the palatine congrats copy in lib/tiers.ts).
+  await awardMilestones(customerId, sb, {
+    skipSmsForMilestone: upgradedTier === 'palatine' ? 6 : undefined,
+  })
 }

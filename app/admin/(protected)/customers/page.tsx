@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
+import { getCaseDaysByCustomer } from '@/lib/case-days'
 import CustomersClientView from '@/app/admin/_components/CustomersClientView'
 
 export default async function CustomersPage() {
@@ -15,13 +16,7 @@ export default async function CustomersPage() {
     .select('id, first_name, last_name, phone, email, status, subscribed_at, tier')
     .order('subscribed_at', { ascending: false })
 
-  const { data: cellarTotals } = await sb
-    .from('customer_cellar_totals')
-    .select('customer_id, total_bottles')
-
-  const totalsMap = new Map(
-    (cellarTotals ?? []).map((r) => [r.customer_id, Number(r.total_bottles ?? 0)])
-  )
+  const caseDaysMap = await getCaseDaysByCustomer(sb)
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -38,7 +33,7 @@ export default async function CustomersPage() {
           subscribed_at: string
           tier: string | null
         }[]}
-        totalsMap={totalsMap}
+        caseDaysMap={caseDaysMap}
       />
     </div>
   )

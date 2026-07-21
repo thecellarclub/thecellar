@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { getCaseDaysByCustomer } from '@/lib/case-days'
 import { Resend } from 'resend'
 
 const FROM_EMAIL = 'The Cellar Club <cheers@thecellar.club>'
+const SLOW_CELLAR_DAYS_THRESHOLD = 120
+const SLOW_CELLAR_CAP = 10
 
 function truncate(str: string, len: number): string {
   return str.length > len ? str.slice(0, len) + '…' : str
@@ -11,6 +14,13 @@ function truncate(str: string, len: number): string {
 function formatPhone(phone: string | null): string {
   if (!phone) return 'unknown'
   return phone.slice(-7) // last 7 digits for brevity
+}
+
+function customerLabel(customer: { first_name: string | null; last_name: string | null; phone: string | null }): string {
+  const nameStr = [customer.first_name, customer.last_name ? customer.last_name[0] + '.' : null]
+    .filter(Boolean).join(' ') || formatPhone(customer.phone)
+  const phoneStr = customer.phone ? `(+${customer.phone.replace(/^\+/, '').slice(0, 2)}…${customer.phone.slice(-4)})` : ''
+  return `${nameStr} ${phoneStr}`.trim()
 }
 
 export async function GET(req: NextRequest) {
@@ -49,17 +59,15 @@ export async function GET(req: NextRequest) {
     `)
     .or('concierge_status.eq.open,inbox_follow_up_date.lte.' + today)
 
-  if (!customers || customers.length === 0) {
-    return NextResponse.json({ ok: true, sent: 0 })
-  }
-
   // Get last message direction for each customer with a thread
-  const customerIds = customers.map((c: { id: string }) => c.id)
-  const { data: lastMessages } = await sb
-    .from('concierge_messages')
-    .select('customer_id, direction, message, created_at')
-    .in('customer_id', customerIds)
-    .order('created_at', { ascending: false })
+  const customerIds = (customers ?? []).map((c: { id: string }) => c.id)
+  const { data: lastMessages } = customerIds.length > 0
+    ? await sb
+        .from('concierge_messages')
+        .select('customer_id, direction, message, created_at')
+        .in('customer_id', customerIds)
+        .order('created_at', { ascending: false })
+    : { data: [] }
 
   // Build last-message map per customer
   const lastMsgMap = new Map<string, { direction: string; message: string; created_at: string }>()
@@ -67,6 +75,29 @@ export async function GET(req: NextRequest) {
     if (!lastMsgMap.has(msg.customer_id)) {
       lastMsgMap.set(msg.customer_id, msg)
     }
+  }
+
+  // ── Slow-filling cellars — same list for every admin (not assigned to
+  // anyone), so the team can push people along manually (e.g. a
+  // free-at-6 grant) even though nothing else in the inbox needs them.
+  const caseDaysMap = await getCaseDaysByCustomer(sb)
+  const { data: activeCustomers } = await sb
+    .from('customers')
+    .select('id, first_name, last_name, phone')
+    .eq('status', 'active')
+
+  const slowCellars = (activeCustomers ?? [])
+    .map((c) => ({ customer: c, info: caseDaysMap.get(c.id) }))
+    .filter((x): x is { customer: typeof x.customer; info: { bottles: number; daysFilling: number } } =>
+      !!x.info && x.info.bottles > 0 && x.info.daysFilling >= SLOW_CELLAR_DAYS_THRESHOLD
+    )
+    .sort((a, b) => b.info.daysFilling - a.info.daysFilling)
+
+  const slowCellarLines = slowCellars.slice(0, SLOW_CELLAR_CAP).map(({ customer, info }) =>
+    `- ${customerLabel(customer)}: ${info.bottles} bottle${info.bottles !== 1 ? 's' : ''}, ${info.daysFilling} days filling — consider a free-at-6 grant`
+  )
+  if (slowCellars.length > SLOW_CELLAR_CAP) {
+    slowCellarLines.push(`…and ${slowCellars.length - SLOW_CELLAR_CAP} more`)
   }
 
   const resend = new Resend(resendKey)
@@ -78,7 +109,7 @@ export async function GET(req: NextRequest) {
     const awaitingReply: string[] = []
     const unassignedAwaiting: string[] = []
 
-    for (const customer of customers as {
+    for (const customer of (customers ?? []) as {
       id: string
       first_name: string | null
       last_name: string | null
@@ -88,10 +119,7 @@ export async function GET(req: NextRequest) {
       inbox_follow_up_date: string | null
       inbox_follow_up_note: string | null
     }[]) {
-      const nameStr = [customer.first_name, customer.last_name ? customer.last_name[0] + '.' : null]
-        .filter(Boolean).join(' ') || formatPhone(customer.phone)
-      const phoneStr = customer.phone ? `(+${customer.phone.replace(/^\+/, '').slice(0, 2)}…${customer.phone.slice(-4)})` : ''
-      const label = `${nameStr} ${phoneStr}`.trim()
+      const label = customerLabel(customer)
 
       // Follow-up items
       if (customer.inbox_follow_up_date && customer.inbox_assigned_to === admin.id) {
@@ -122,7 +150,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const totalItems = overdueFollowUps.length + todayFollowUps.length + awaitingReply.length + unassignedAwaiting.length
+    const totalItems = overdueFollowUps.length + todayFollowUps.length + awaitingReply.length
+      + unassignedAwaiting.length + slowCellars.length
     if (totalItems === 0) continue
 
     const sections: string[] = [
@@ -144,6 +173,12 @@ export async function GET(req: NextRequest) {
     if (unassignedAwaiting.length > 0) {
       sections.push('UNASSIGNED & AWAITING REPLY')
       sections.push(...unassignedAwaiting)
+      sections.push('')
+    }
+
+    if (slowCellarLines.length > 0) {
+      sections.push('SLOW-FILLING CELLARS')
+      sections.push(...slowCellarLines)
       sections.push('')
     }
 

@@ -84,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `046_texts_broadcast_wave.sql` (note: there are multiple `039_*` migrations). New work numbers from **047**.
+Latest migration: `047_remove_case_deadline.sql` (note: there are multiple `039_*` migrations). New work numbers from **048**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 
@@ -92,7 +92,7 @@ Migration files live in `supabase/migrations/`. Apply them manually via Supabase
 
 | Path | Schedule | Purpose |
 |------|----------|---------|
-| `/api/cron/case-nudges` | 09:00 UTC | Prompt customers to confirm/schedule shipment |
+| `/api/cron/case-nudges` | 09:00 UTC | One-time gentle reminder at 90 days filling a case (no deadline, no auto-ship/charge) |
 | `/api/cron/welcome-and-card-prompt` | 10:00 UTC | Welcome new members, prompt for card |
 | `/api/cron/payment-retry` | 11:00 UTC | Retry failed Stripe charges |
 | `/api/cron/inbox-digest` | 08:00 UTC | Daily email per admin: due follow-ups + unanswered threads |
@@ -109,7 +109,7 @@ The admin inbox (`/admin/inbox`) is a shared inbox for the three-person team. Im
 - **Internal notes**: customer-level timestamped notes in the customer panel. Persist when a thread closes and a new one opens. Notes are never sent as SMS.
 - **Activity log**: lightweight audit trail (who replied, assigned, added notes, set follow-ups, etc.) in the customer panel, collapsed by default.
 - **Filters**: assignee filter (All / Mine / Unassigned / per-user) + Active / Scheduled view toggle.
-- **Daily digest**: `inbox-digest` cron emails each admin their due follow-ups and unanswered threads every morning at 08:00 UTC.
+- **Daily digest**: `inbox-digest` cron emails each admin their due follow-ups, unanswered threads, and slow-filling cellars (≥120 days, unassigned) every morning at 08:00 UTC.
 
 ### Not yet implemented (see specs)
 

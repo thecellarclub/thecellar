@@ -79,9 +79,13 @@ export async function awardMilestones(
           })
         }
         if (customer.phone) {
+          // No BALANCE/credit mention here — a brand-new one-case customer has
+          // no balance and doesn't earn rebates yet (Bailey+ only). Rule:
+          // proactive automated messages only mention BALANCE/credit when the
+          // customer's balance is > 0, or the message is itself about credit.
           await sendSms(
             customer.phone,
-            sanitiseGsm7(`First case done! Your next shipment is free at just 6 bottles - a little reward from us. Reply BALANCE any time to check your credit.`),
+            sanitiseGsm7(`First case done! Your next shipment is free at just 6 bottles - a little reward from us.`),
             { trigger: 'milestone:1', customerId }
           ).catch((e: unknown) => console.error('[milestones] milestone 1 SMS failed:', e))
         }

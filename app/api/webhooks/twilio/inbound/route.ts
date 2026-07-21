@@ -30,6 +30,7 @@ interface Customer {
   tier: string
   sms_awaiting: string | null
   concierge_status: string | null
+  free_shipping_at_6: boolean
 }
 
 interface Wine {
@@ -161,17 +162,18 @@ async function handleShip(
     .maybeSingle()
 
   const total = Number(totals?.total_bottles ?? 0)
+  const threshold = deliveryThreshold(customer.tier, customer.free_shipping_at_6)
 
   if (total === 0) {
     await sendSms(from, `Nothing in your cellar yet — I'll text you when the next wine's ready.`, { trigger: 'keyword:ship', customerId: customer.id })
     return twimlOk()
   }
 
-  if (total < 12) {
+  if (total < threshold) {
     const feePence = deliveryFeePence(customer.tier)
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply SHIP CONFIRM to go ahead, or keep collecting for free at 12.`,
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply SHIP CONFIRM to go ahead, or keep collecting for free at ${threshold}.`,
       { trigger: 'keyword:ship', customerId: customer.id }
     )
     return twimlOk()
@@ -199,8 +201,8 @@ async function handleShip(
     return twimlOk()
   }
 
-  // Ship in full cases of 12 only - leave any remainder in the cellar
-  const bottlesToShip = Math.floor(total / 12) * 12
+  // Ship in full cases of `threshold` only - leave any remainder in the cellar
+  const bottlesToShip = Math.floor(total / threshold) * threshold
 
   // Fetch unshipped, unlinked rows oldest-first to determine which get shipped
   const { data: cellarRows } = await sb
@@ -259,6 +261,17 @@ async function handleShip(
       .in('id', selectedIds)
   }
 
+  // Consume the one-shot free-at-6 grant, same as post-charge.ts
+  if (customer.free_shipping_at_6) {
+    await sb.from('customers').update({ free_shipping_at_6: false }).eq('id', customer.id)
+    await sb.from('inbox_activity').insert({
+      customer_id: customer.id,
+      actor_id: null,
+      action: 'free_shipping_at_6_cleared',
+      detail: 'auto-cleared on shipment creation',
+    })
+  }
+
   const { data: addrCust } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
   const addr = addrCust?.default_address as Record<string, string> | null
   if (addr?.line1) {
@@ -284,9 +297,10 @@ async function handleShipConfirm(
     .maybeSingle()
 
   const total = Number(totals?.total_bottles ?? 0)
+  const threshold = deliveryThreshold(customer.tier, customer.free_shipping_at_6)
 
-  // If they've hit 12+, redirect to free ship flow
-  if (total >= 12) {
+  // If they've hit their free-shipping threshold, redirect to free ship flow
+  if (total >= threshold) {
     return handleShip(from, customer, sb)
   }
 
@@ -553,18 +567,19 @@ async function handleStatus(
 ): Promise<NextResponse> {
   const cases = await getRollingCases(customer.id, sb)
   const tier = customer.tier && customer.tier !== 'none' ? customer.tier : tierFromCases(cases)
-  const threshold = deliveryThreshold(tier)
+  const threshold = deliveryThreshold(tier, customer.free_shipping_at_6)
 
   const tierName = TIER_NAMES[tier] ?? 'Bailey'
 
-  // Fetch unshipped bottle count
-  const { count: bottleCount } = await sb
-    .from('cellar')
-    .select('*', { count: 'exact', head: true })
+  // Fetch unshipped bottle count — sum(quantity), not a row count, and
+  // excludes bottles already reserved in a pending shipment (shipment_id set).
+  const { data: totals } = await sb
+    .from('customer_cellar_totals')
+    .select('total_bottles')
     .eq('customer_id', customer.id)
-    .is('shipped_at', null)
+    .maybeSingle()
 
-  const bottles = bottleCount ?? 0
+  const bottles = Number(totals?.total_bottles ?? 0)
 
   let progressLine = ''
   if (tier === 'none') {
@@ -605,6 +620,12 @@ async function handleAccount(
 
 // ─── PENDING ORDER flow (integer reply) ──────────────────────────────────────
 
+// A bare-number reply only auto-confirms an order if it lands within this
+// window of the offer actually going out. Past that, `is_active` just marks
+// "most recent offer" — it can stay true for weeks — so a stray number could
+// otherwise re-trigger an old order confirmation out of nowhere.
+const OFFER_REPLY_WINDOW_MS = 72 * 60 * 60 * 1000
+
 async function handlePendingOrder(
   from: string,
   customer: Customer,
@@ -614,9 +635,9 @@ async function handlePendingOrder(
   // Look up the single explicitly-flagged active offer
   const { data: latestText } = await sb
     .from('texts')
-    .select('id, wine_id, wines(*)')
+    .select('id, wine_id, sent_at, broadcast_sent_at, wines(*)')
     .eq('is_active', true)
-    .maybeSingle() as { data: TextBlast | null }
+    .maybeSingle() as { data: (TextBlast & { sent_at: string; broadcast_sent_at: string | null }) | null }
 
   if (!latestText) {
     await sendSms(from, `Nothing live right now — I'll text you when the next one's ready.`, { trigger: 'offer_reply', customerId: customer.id })
@@ -625,6 +646,41 @@ async function handlePendingOrder(
 
   const wine = latestText.wines
   const textId = latestText.id
+
+  // Guard: don't auto-confirm if the offer is stale, or if an admin has
+  // already sent a manual message since it went out — either means a human
+  // is (or should be) driving the conversation, not the auto-order flow.
+  const offerSentAt = new Date(latestText.broadcast_sent_at ?? latestText.sent_at).getTime()
+  const offerIsStale = Date.now() - offerSentAt > OFFER_REPLY_WINDOW_MS
+
+  let adminHasReplied = false
+  if (!offerIsStale) {
+    const { data: recentAdminMsg } = await sb
+      .from('concierge_messages')
+      .select('id')
+      .eq('customer_id', customer.id)
+      .eq('direction', 'outbound')
+      .gt('created_at', new Date(offerSentAt).toISOString())
+      .limit(1)
+      .maybeSingle()
+    adminHasReplied = !!recentAdminMsg
+  }
+
+  if (offerIsStale || adminHasReplied) {
+    // Route to the inbox for a human instead of auto-processing — mirrors the
+    // "unparseable" fallback below.
+    await sb.from('concierge_messages').insert({
+      customer_id: customer.id,
+      direction: 'inbound',
+      message: String(qty),
+      category: 'general',
+    })
+    if (customer.concierge_status === 'closed') {
+      await sb.from('customers').update({ concierge_status: 'open' }).eq('id', customer.id)
+    }
+    void logInbound({ sb, phone: from, raw: String(qty), customerId: customer.id, parseKind: 'quantity', parseQuantity: qty, matchedTextId: textId })
+    return twimlOk()
+  }
 
   // Check for existing pending order for this customer + text
   const { data: pendingOrder } = await sb
@@ -1198,7 +1254,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── Customer lookup ──────────────────────────────────────────────────
     const { data: customer } = await sb
       .from('customers')
-      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, status, texts_snoozed_until, tier, sms_awaiting, concierge_status')
+      .select('id, phone, first_name, stripe_customer_id, stripe_payment_method_id, status, texts_snoozed_until, tier, sms_awaiting, concierge_status, free_shipping_at_6')
       .eq('phone', from)
       .maybeSingle() as { data: Customer | null }
 
