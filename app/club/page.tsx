@@ -14,12 +14,10 @@ const ACCENT   = '#9B1B30'
 function LadderRow({
   caseNumber,
   eyebrow,
-  isTier,
   text,
 }: {
   caseNumber: number
   eyebrow: string
-  isTier: boolean
   text: string
 }) {
   return (
@@ -39,7 +37,7 @@ function LadderRow({
         </p>
         <p
           className="font-serif"
-          style={{ fontSize: '1.05rem', color: TEXT_DARK, fontWeight: isTier ? 600 : 400 }}
+          style={{ fontSize: '1.05rem', color: TEXT_DARK }}
         >
           {text}
         </p>
@@ -80,14 +78,14 @@ function TierBlock({
   )
 }
 
-const LADDER: { caseNumber: number; eyebrow: string; isTier: boolean; text: string }[] = [
-  { caseNumber: 1, eyebrow: 'Gift', isTier: false, text: 'A free shipping voucher - your next shipment goes free at just 6 bottles.' },
-  { caseNumber: 2, eyebrow: 'New tier: Bailey', isTier: true, text: "5% of every order back as credit, deliver less than a case for £7." },
-  { caseNumber: 3, eyebrow: 'Gift', isTier: false, text: 'A free bottle chosen by Daniel, or two tickets to our wine tasting events.' },
-  { caseNumber: 4, eyebrow: 'New tier: Elvet', isTier: true, text: '7% of every order back as credit, deliver less than a case for £5.' },
-  { caseNumber: 5, eyebrow: 'Gift', isTier: false, text: 'Six Riedel glasses, or two tickets to our wine tasting events.' },
-  { caseNumber: 6, eyebrow: 'New tier: Palatine', isTier: true, text: '10% of every order back as credit, get texts two hours before everyone else, free shipping of any amount anytime.' },
-  { caseNumber: 7, eyebrow: 'Gift', isTier: false, text: 'A Coravin Timeless - so you can try your wine without removing the cork.' },
+const LADDER: { caseNumber: number; eyebrow: string; text: string }[] = [
+  { caseNumber: 1, eyebrow: 'Gift', text: 'A free shipping voucher - your next shipment goes free at just 6 bottles.' },
+  { caseNumber: 2, eyebrow: 'New tier: Bailey', text: "5% of every order back as credit, deliver less than a case for £7." },
+  { caseNumber: 3, eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or two tickets to our wine tasting events.' },
+  { caseNumber: 4, eyebrow: 'New tier: Elvet', text: '7% of every order back as credit, deliver less than a case for £5.' },
+  { caseNumber: 5, eyebrow: 'Gift', text: 'Six Riedel glasses, or two tickets to our wine tasting events.' },
+  { caseNumber: 6, eyebrow: 'New tier: Palatine', text: '10% of every order back as credit, get texts two hours before everyone else, free shipping of any amount anytime.' },
+  { caseNumber: 7, eyebrow: 'Gift', text: 'A Coravin Timeless - so you can try your wine without removing the cork.' },
 ]
 
 const TIERS: { name: string; cases: string; perks: { label: string; value: string }[] }[] = [
@@ -149,29 +147,22 @@ export default function ClubPage() {
             </p>
             <h1 className="font-serif text-3xl" style={{ color: TEXT_DARK }}>Every case earns something</h1>
             <p className="font-serif italic mt-3" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.55)' }}>
-              Free to join. Buy wine by text, build cases of twelve - and every case you
+              Free to join. Reply how many bottles you want by text. Every case you
               complete unlocks a reward.
             </p>
           </div>
 
-          {/* 2. How it works */}
-          <div className="mb-10 space-y-3">
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              1. Daniel texts you wines. You reply to buy - bottles wait in the cellar.
-            </p>
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              2. Twelve bottles make a case. Cases ship free; fewer bottles ship from £5.
-            </p>
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              3. Every case you complete earns you something. Here&rsquo;s the ladder.
-            </p>
-          </div>
-
-          {/* Divider */}
-          <div style={{ borderTop: '1px solid rgba(42,24,16,0.10)' }} className="my-8" />
-
           {/* 3. The ladder */}
           <div className="mb-10">
+            <p
+              className="font-sans text-xs uppercase tracking-[0.28em] mb-2"
+              style={{ color: 'rgba(42,24,16,0.38)' }}
+            >
+              The Ladder
+            </p>
+            <p className="font-serif mb-6" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
+              Each number below is a case you&rsquo;ve completed - twelve bottles bought.
+            </p>
             {LADDER.map((row) => (
               <LadderRow key={row.caseNumber} {...row} />
             ))}
@@ -182,6 +173,12 @@ export default function ClubPage() {
 
           {/* 4. Tier detail */}
           <div className="mb-10 space-y-8">
+            <p
+              className="font-sans text-xs uppercase tracking-[0.28em]"
+              style={{ color: 'rgba(42,24,16,0.38)' }}
+            >
+              The Tiers
+            </p>
             {TIERS.map((tier) => (
               <TierBlock key={tier.name} {...tier} />
             ))}
