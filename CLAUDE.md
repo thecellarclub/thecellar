@@ -79,12 +79,12 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Auth model
 
-- **Admin**: Database-backed multi-user auth via `admin_users` table. Auth goes through NextAuth CredentialsProvider (`lib/auth.ts`). JWT stores `id`, `name`, `email`. Fallback to `ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH` env vars if `admin_users` table is empty or seed script hasn't run — logs a warning when fallback fires.
+- **Admin**: Database-backed multi-user auth via `admin_users` table. Auth goes through NextAuth CredentialsProvider (`lib/auth.ts`), rate-limited per-email (10 attempts/15min). JWT session, 7-day maxAge. No env-var fallback — all three admin rows have real bcrypt hashes.
 - **Customer portal**: OTP via SMS (iron-session, `lib/portal-auth.ts`).
 
 ## Migrations
 
-Latest migration: `049_milestone_seven.sql` (note: there are multiple `039_*` migrations). New work numbers from **050**.
+Latest migration: `050_security_advisor_fixes.sql` (note: there are multiple `039_*` migrations). New work numbers from **051**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 

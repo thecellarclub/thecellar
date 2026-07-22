@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { createServiceClient } from '@/lib/supabase'
 import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
 import { normaliseUKPhone } from '@/lib/phone'
+import { isAllowed, getClientIp } from '@/lib/rateLimit'
+
+const ONE_HOUR_MS = 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
+  // ── IP-based rate limit: 10 requests per IP per hour ─────────────────
+  const ip = getClientIp(req)
+  if (!isAllowed(`ip:${ip}`, 10, ONE_HOUR_MS)) {
+    return NextResponse.json(
+      { error: 'Too many requests from this device. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   const { phone } = await req.json()
 
   if (!phone) {
@@ -42,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate 6-digit code
-  const code = String(Math.floor(100000 + Math.random() * 900000))
+  const code = String(randomInt(100000, 1000000))
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
   await sb.from('verification_codes').insert({

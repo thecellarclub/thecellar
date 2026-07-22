@@ -64,7 +64,7 @@ export default async function AuthenticatePage({
     <Shell>
       <AuthenticateForm
         clientSecret={pi.client_secret!}
-        orderId={order.id}
+        token={token}
         quantity={order.quantity}
         wineName={wine?.name ?? 'your wine'}
         amount={pi.amount}

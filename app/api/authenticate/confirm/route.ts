@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { handlePostCharge } from '@/lib/post-charge'
+import { isAuthTokenExpired } from '@/lib/tokens'
 
 /**
  * POST /api/authenticate/confirm
- * Body: { orderId: string }
+ * Body: { token: string }
  *
  * Called by AuthenticateForm after stripe.confirmCardPayment() succeeds (3DS).
  * Verifies the PI status from Stripe (source of truth), marks the order confirmed,
@@ -17,29 +18,33 @@ import { handlePostCharge } from '@/lib/post-charge'
  * Idempotent: guards on order_status === 'awaiting_confirmation'.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  let body: { orderId?: string }
+  let body: { token?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { orderId } = body
-  if (!orderId) {
-    return NextResponse.json({ error: 'orderId is required' }, { status: 400 })
+  const { token } = body
+  if (!token) {
+    return NextResponse.json({ error: 'token is required' }, { status: 400 })
   }
 
   const sb = createServiceClient()
 
-  // ── Fetch order ──────────────────────────────────────────────────────────
+  // ── Fetch order by auth token (not a bare orderId) ─────────────────────────
   const { data: order } = await sb
     .from('orders')
-    .select('id, customer_id, wine_id, quantity, stripe_payment_intent_id, stripe_charge_status, order_status')
-    .eq('id', orderId)
+    .select('id, customer_id, wine_id, quantity, stripe_payment_intent_id, stripe_charge_status, order_status, created_at')
+    .eq('auth_token', token)
     .maybeSingle()
 
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+
+  if (isAuthTokenExpired(order.created_at)) {
+    return NextResponse.json({ error: 'This link has expired' }, { status: 410 })
   }
 
   // Guard: only process orders awaiting confirmation
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   await sb
     .from('orders')
     .update({ stripe_charge_status: 'succeeded', order_status: 'confirmed' })
-    .eq('id', orderId)
+    .eq('id', order.id)
 
   // ── Fetch customer phone and wine name ────────────────────────────────────
   const [{ data: customer }, { data: wine }] = await Promise.all([

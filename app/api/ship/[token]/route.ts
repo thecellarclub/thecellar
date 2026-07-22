@@ -21,7 +21,7 @@ export async function GET(
 
   const { data: shipment } = await sb
     .from('shipments')
-    .select('id, customer_id, bottle_count, status, created_at, customers(first_name, email, phone)')
+    .select('id, customer_id, bottle_count, status, created_at, customers(first_name)')
     .eq('token', token)
     .maybeSingle()
 

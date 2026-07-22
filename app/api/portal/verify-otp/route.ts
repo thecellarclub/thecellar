@@ -2,10 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { signPortalToken, COOKIE_NAME } from '@/lib/portal-auth'
 import { normaliseUKPhone } from '@/lib/phone'
+import { isAllowed, getClientIp } from '@/lib/rateLimit'
 
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 // 30 days in seconds
+const ONE_HOUR_MS = 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
+  // ── IP-based rate limit: 20 attempts per IP per hour — the per-code
+  // attempt cap is the real guard, this just stops phone-number cycling.
+  const ip = getClientIp(req)
+  if (!isAllowed(`ip:${ip}`, 20, ONE_HOUR_MS)) {
+    return NextResponse.json(
+      { error: 'Too many attempts from this device. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   const { phone, code } = await req.json()
 
   if (!phone || !code) {

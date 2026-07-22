@@ -140,6 +140,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── Data-retention purge ──────────────────────────────────────────────────
+  // Short-lived secrets and raw inbound SMS logs are never otherwise deleted.
+  const codesCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const parseLogCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString()
+
+  const { count: codesPurged } = await sb
+    .from('verification_codes')
+    .delete({ count: 'exact' })
+    .lt('created_at', codesCutoff)
+
+  const { count: parseLogPurged } = await sb
+    .from('sms_parse_log')
+    .delete({ count: 'exact' })
+    .lt('created_at', parseLogCutoff)
+
   return NextResponse.json({
     ok: true,
     expiredOrders: expiredOrderCount,
@@ -147,5 +162,7 @@ export async function GET(req: NextRequest) {
     reminders: reminderCount,
     tierReviewed,
     tierDowngrades,
+    codesPurged: codesPurged ?? 0,
+    parseLogPurged: parseLogPurged ?? 0,
   })
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { getSignupSession } from '@/lib/session'
 import { createServiceClient } from '@/lib/supabase'
 import { twilioClient, sanitiseGsm7 } from '@/lib/twilio'
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const code = String(randomInt(100000, 1000000))
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
     const { error: insertError } = await supabase

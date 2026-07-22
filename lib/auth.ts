@@ -2,6 +2,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { createServiceClient } from './supabase'
+import { isAllowed } from './rateLimit'
 
 declare module 'next-auth' {
   interface User {
@@ -37,41 +38,29 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        // Try DB-backed admin_users first
-        try {
-          const sb = createServiceClient()
-          const { data: row, error } = await sb
-            .from('admin_users')
-            .select('id, email, name, password_hash')
-            .ilike('email', credentials.email)
-            .maybeSingle()
-
-          if (!error && row && row.password_hash && !row.password_hash.startsWith('$placeholder')) {
-            const valid = await bcrypt.compare(credentials.password, row.password_hash)
-            if (!valid) return null
-            return { id: row.id, email: row.email, name: row.name }
-          }
-        } catch (err) {
-          console.warn('[auth] admin_users lookup failed, falling back to env vars:', err)
+        // Rate-limit by email since we can't easily get the caller's IP here.
+        // In-memory is imperfect on serverless but this is belt-and-braces on
+        // top of bcrypt cost 12.
+        if (!isAllowed(`admin-login:${credentials.email.toLowerCase()}`, 10, 15 * 60 * 1000)) {
+          return null
         }
 
-        // Fallback: env-var single user (pre-migration or seed-not-yet-run)
-        if (
-          process.env.ADMIN_EMAIL &&
-          process.env.ADMIN_PASSWORD_HASH &&
-          credentials.email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
-        ) {
-          console.warn('[auth] WARNING: using env-var admin fallback — run the seed script to switch to DB auth')
-          const valid = await bcrypt.compare(credentials.password, process.env.ADMIN_PASSWORD_HASH)
-          if (!valid) return null
-          return { id: 'admin', email: credentials.email, name: 'Admin' }
-        }
+        const sb = createServiceClient()
+        const { data: row, error } = await sb
+          .from('admin_users')
+          .select('id, email, name, password_hash')
+          .ilike('email', credentials.email)
+          .maybeSingle()
 
-        return null
+        if (error || !row) return null
+
+        const valid = await bcrypt.compare(credentials.password, row.password_hash)
+        if (!valid) return null
+        return { id: row.id, email: row.email, name: row.name }
       },
     }),
   ],
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
   pages: {
     signIn: '/admin/login',
   },

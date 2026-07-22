@@ -22,7 +22,7 @@ export interface SignupSessionData {
 }
 
 export const sessionOptions: SessionOptions = {
-  password: process.env.NEXTAUTH_SECRET as string,
+  password: process.env.SIGNUP_SESSION_SECRET ?? (process.env.NEXTAUTH_SECRET as string),
   cookieName: 'ct_signup',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',

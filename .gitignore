@@ -47,3 +47,6 @@ scripts/engagement-campaign-sent-log.json
 
 # supabase CLI local cache
 supabase/.temp/
+
+# local Claude Code permission settings (can contain secrets as permission entries)
+.claude/settings.local.json

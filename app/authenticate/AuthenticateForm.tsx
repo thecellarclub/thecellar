@@ -8,13 +8,13 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 interface Props {
   clientSecret: string
-  orderId: string
+  token: string
   quantity: number
   wineName: string
   amount: number
 }
 
-function Inner({ clientSecret, orderId, quantity, wineName }: Props) {
+function Inner({ clientSecret, token, quantity, wineName }: Props) {
   const stripe = useStripe()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
@@ -30,12 +30,12 @@ function Inner({ clientSecret, orderId, quantity, wineName }: Props) {
         await fetch('/api/authenticate/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId }),
+          body: JSON.stringify({ token }),
         })
         setStatus('success')
       }
     })
-  }, [stripe, clientSecret, orderId])
+  }, [stripe, clientSecret, token])
 
   if (status === 'loading') {
     return (
