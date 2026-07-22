@@ -84,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `047_remove_case_deadline.sql` (note: there are multiple `039_*` migrations). New work numbers from **048**.
+Latest migration: `048_enable_rls_credit_and_milestones.sql` (note: there are multiple `039_*` migrations). New work numbers from **049**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 

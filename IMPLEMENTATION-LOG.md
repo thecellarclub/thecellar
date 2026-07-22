@@ -33,6 +33,25 @@ should be able to understand what changed and what to watch out for.
 
 ---
 
+### 2026-07-21 — Enable RLS on `credit_ledger` and `milestone_awards` (security fix, no spec)
+
+**State changes**
+- Migration `048_enable_rls_credit_and_milestones.sql` (applied directly to production via Supabase MCP `apply_migration`): `alter table credit_ledger enable row level security;` and the same for `milestone_awards`. No policies added — matches every other table in the schema (RLS enabled, zero policies, deny-all to anon/authenticated; the app only ever talks to Supabase via the service-role client in `lib/supabase.ts`, which bypasses RLS regardless).
+- Triggered by Supabase's automated security-advisor email flagging both tables as `rls_disabled_in_public` (ERROR level — ""Table publicly accessible... anyone with your project URL can read, edit, and delete all data"). Confirmed via `get_advisors` before and after: both tables previously showed the ERROR-level `rls_disabled_in_public` lint; after the migration they show only the same harmless INFO-level `rls_enabled_no_policy` lint every other table already carries.
+
+**Deviations & decisions**
+- Root cause: migrations `043_credit_wallet.sql` and `045_milestone_awards.sql` (the two newest tables in the schema, both from the tiers-v3/credit-wallet work) never included an `enable row level security` statement — every older table has RLS enabled (via Studio, not tracked in a migration file, per `grep` turning up no `enable row level security` in any existing migration), so this was a one-off oversight in those two migrations, not a pattern to sweep for elsewhere.
+- Verified before applying that this is genuinely zero-risk to the app: grepped the whole repo for any Supabase client construction — `lib/supabase.ts`'s `createServiceClient()` (service-role key) is the only one, used everywhere; no anon-key browser client exists anywhere in the codebase. So enabling RLS with no policies cannot break any existing read/write path.
+
+**Gotchas & future context**
+- Two pre-existing, unrelated security-advisor findings remain (not part of this fix, not raised by the triggering email): a `security_definer_view` ERROR on `customer_cellar_totals`, and `function_search_path_mutable` WARNs on `increment_offers_received` and `apply_credit`. Worth a look in a future pass if Julia wants to keep working down the advisor list.
+- Any future new table should have RLS enabled explicitly in its own migration (`enable row level security` right after `create table`) — the two tables that missed it were exactly the two most recently added.
+
+**Verification**
+- `get_advisors(type: 'security')` re-run after applying: `rls_disabled_in_public` no longer appears for either table.
+
+---
+
 ### 2026-07-21 — Rename SHIP CONFIRM to CONFIRM; manual data-repair for two customers (bug fix + ops, no spec)
 
 **State changes**
