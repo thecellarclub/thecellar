@@ -35,8 +35,8 @@ export default function MilestoneRowActions({
     router.refresh()
   }
 
-  // Milestones 1 and 6 are auto/self-fulfilling — just need the "mark fulfilled"
-  // button once Daniel's actually arranged the Coravin (milestone 6). Milestone
+  // Milestones 1 and 7 are auto/self-fulfilling — just need the "mark fulfilled"
+  // button once Daniel's actually arranged the Coravin (milestone 7). Milestone
   // 1 fulfils itself in post-charge and shouldn't normally land here.
   const needsChoice = options.length > 0 && !currentChoice
 

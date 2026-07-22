@@ -171,9 +171,10 @@ async function handleShip(
 
   if (total < threshold) {
     const feePence = deliveryFeePence(customer.tier)
+    const feeLine = feePence === 0 ? `Shipping's free for you, any time.` : `Shipping now costs £${(feePence / 100).toFixed(0)}.`
     await sendSms(
       from,
-      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. Shipping now costs £${(feePence / 100).toFixed(0)}. Reply CONFIRM to go ahead, or keep collecting for free at ${threshold}.`,
+      `You've got ${total} bottle${total === 1 ? '' : 's'} in your cellar. ${feeLine} Reply CONFIRM to go ahead, or keep collecting for free at ${threshold}.`,
       { trigger: 'keyword:ship', customerId: customer.id }
     )
     return twimlOk()
@@ -333,22 +334,7 @@ async function handleShipConfirm(
 
   const SHIPPING_FEE_PENCE = deliveryFeePence(customer.tier)
 
-  // ── Guard: no payment method saved ──────────────────────────────────────
-  if (!customer.stripe_payment_method_id) {
-    const billingToken = crypto.randomUUID()
-    await sb.from('customers').update({
-      billing_token: billingToken,
-      billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    }).eq('id', customer.id)
-    await sendSms(
-      from,
-      `I don't have a card on file. Add one here: ${APP_URL}/billing?token=${billingToken} — then text CONFIRM again.`,
-      { trigger: 'keyword:ship-confirm', customerId: customer.id }
-    )
-    return twimlOk()
-  }
-
-  // ── Fetch unshipped cellar rows to pre-link ──────────────────────────────
+  // ── Fetch unshipped cellar rows to pre-link (needed on both the free and paid paths) ──
   const { data: cellarRowsForEarly } = await sb
     .from('cellar')
     .select('id, quantity, wine_id')
@@ -368,7 +354,55 @@ async function handleShipConfirm(
   const bottlesToShipEarly = availableBottles
   const earlySelectedIds = (cellarRowsForEarly ?? []).map(r => r.id)
 
-  // ── Charge £10 shipping via Stripe ───────────────────────────────────────
+  // ── Palatine: shipping is free at any amount — skip Stripe entirely (it
+  // rejects zero-amount charges) and don't require a card on file either. ──
+  if (SHIPPING_FEE_PENCE === 0) {
+    const token = crypto.randomUUID()
+    const { data: newShipment, error } = await sb.from('shipments').insert({
+      customer_id: customer.id,
+      bottle_count: bottlesToShipEarly,
+      status: 'pending',
+      token,
+      shipping_fee_pence: 0,
+    }).select('id').single()
+
+    if (error || !newShipment) {
+      console.error('[twilio/inbound] shipment insert error (ship confirm, free)', error)
+      await sendSms(from, `Something went wrong saving your shipment. Please try again.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
+      return twimlOk()
+    }
+
+    if (earlySelectedIds.length > 0) {
+      await sb.from('cellar').update({ shipment_id: newShipment.id }).in('id', earlySelectedIds)
+    }
+
+    const { data: addrCustFree } = await sb.from('customers').select('default_address').eq('id', customer.id).maybeSingle()
+    const addrFree = addrCustFree?.default_address as Record<string, string> | null
+    if (addrFree?.line1) {
+      const addrLine = [addrFree.line1, addrFree.line2, addrFree.city, addrFree.postcode].filter(Boolean).join(', ')
+      await sendSms(from, `Free shipping — one of the perks. I'll ship your ${bottlesToShipEarly} bottle${bottlesToShipEarly === 1 ? '' : 's'} to ${addrLine}.\n\nReply YES to confirm or CHANGE to update your address.`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
+    } else {
+      await sendSms(from, `Free shipping — one of the perks. Confirm your delivery address at ${APP_URL}/ship?token=${token}`, { trigger: 'keyword:ship-confirm', customerId: customer.id })
+    }
+    return twimlOk()
+  }
+
+  // ── Guard: no payment method saved ──────────────────────────────────────
+  if (!customer.stripe_payment_method_id) {
+    const billingToken = crypto.randomUUID()
+    await sb.from('customers').update({
+      billing_token: billingToken,
+      billing_token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    }).eq('id', customer.id)
+    await sendSms(
+      from,
+      `I don't have a card on file. Add one here: ${APP_URL}/billing?token=${billingToken} — then text CONFIRM again.`,
+      { trigger: 'keyword:ship-confirm', customerId: customer.id }
+    )
+    return twimlOk()
+  }
+
+  // ── Charge shipping via Stripe ───────────────────────────────────────────
   let paymentIntent: Stripe.PaymentIntent
 
   try {
@@ -595,9 +629,11 @@ async function handleStatus(
     progressLine = `\nYou're on our top tier.`
   }
 
+  const shippingLine = tier === 'palatine' ? 'free shipping any time' : `free shipping at ${threshold}`
+
   await sendSms(
     from,
-    `${tierName} member - ${cases} case${cases === 1 ? '' : 's'} this cycle\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (free shipping at ${threshold}).${progressLine}`,
+    `${tierName} member - ${cases} case${cases === 1 ? '' : 's'} this cycle\n${bottles} bottle${bottles !== 1 ? 's' : ''} in your cellar (${shippingLine}).${progressLine}`,
     { trigger: 'keyword:status', customerId: customer.id }
   )
   return twimlOk()
@@ -1218,10 +1254,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     params[k] = v
   })
 
-  // Reconstruct the exact URL Twilio signed (works with ngrok in dev)
+  // The signed URL is the canonical production URL; reconstructing it from
+  // request headers is only needed for ngrok in dev.
   const proto = req.headers.get('x-forwarded-proto') ?? 'https'
   const host = req.headers.get('host') ?? ''
-  const url = `${proto}://${host}/api/webhooks/twilio/inbound`
+  const url = process.env.NODE_ENV === 'production'
+    ? `${APP_URL}/api/webhooks/twilio/inbound`
+    : `${proto}://${host}/api/webhooks/twilio/inbound`
 
   // Validate Twilio signature — reject anything that fails (critical)
   const authToken = process.env.TWILIO_AUTH_TOKEN!

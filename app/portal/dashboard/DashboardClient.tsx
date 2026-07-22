@@ -127,7 +127,7 @@ function TierProgress({ tier, cases }: { tier: string; cases: number }) {
 
 function MilestonesList({ milestones }: { milestones: Array<{ milestone: number; rewardChoice: string | null; fulfilledAt: string | null }> }) {
   if (milestones.length === 0) return null
-  const labels: Record<number, string> = { 1: 'Case 1', 3: 'Case 3', 5: 'Case 5', 6: 'Case 6' }
+  const labels: Record<number, string> = { 1: 'Case 1', 3: 'Case 3', 5: 'Case 5', 7: 'Case 7' }
   return (
     <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
       <p className="font-sans text-xs uppercase tracking-wide mb-1.5" style={{ color: 'rgba(42,24,16,0.45)' }}>Milestones</p>
@@ -317,7 +317,7 @@ export default function DashboardClient({
 
   const tierLabel = TIER_LABELS[tier] ?? 'Bailey'
   const tierColor = TIER_COLORS[tier] ?? '#9B1B30'
-  const threshold = tier === 'palatine' ? 6 : 12
+  const threshold = 12
 
   const hasCard = !!primaryCard || cardSaved
   const hasAddress = !!defaultAddress
@@ -561,7 +561,7 @@ export default function DashboardClient({
                 <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Cellar</p>
                 <p className="font-serif text-xl" style={{ color: '#1C0E09' }}>{bottles}</p>
                 <p className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.35)' }}>
-                  bottle{bottles !== 1 ? 's' : ''} · free ship at {threshold}
+                  bottle{bottles !== 1 ? 's' : ''} · {tier === 'palatine' ? 'free shipping any time' : `free ship at ${threshold}`}
                 </p>
               </div>
             </div>

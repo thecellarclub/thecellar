@@ -71,7 +71,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 | `wines` | Wine catalogue. |
 | `orders` | Customer wine orders. `credit_used_pence` records store credit applied at redemption. |
 | `credit_ledger` | Append-only store-credit ledger. `reason`: `rebate` \| `redemption` \| `admin_grant`. Written only via the `apply_credit()` SQL function — see `lib/credit.ts`. |
-| `milestone_awards` | Lifetime one-time-ever rewards at cases 1/3/5/6 (tiers-v3). `unique(customer_id, milestone)` is the one-time guarantee; never deleted. Admin fulfilment queue at `/admin/milestones`. |
+| `milestone_awards` | Lifetime one-time-ever rewards at cases 1/3/5/7 (tiers-v3.1). `unique(customer_id, milestone)` is the one-time guarantee; never deleted. Admin fulfilment queue at `/admin/milestones`. |
 | `cellar` | Bottles accumulated but not yet shipped. `shipment_id` links to a shipment when reserved; `shipped_at` is set when actually shipped/collected. |
 | `shipments` | Case shipments. `type`: `'delivery'` (posted to customer) or `'collection'` (picked up at bar). See shipments section below. |
 | `sms_messages` | All inbound/outbound SMS log. **Being deprecated** — see `claude-code-prompt-inbox-twilio-history.md` (table dropped once inbox reads live from Twilio). |
@@ -84,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `048_enable_rls_credit_and_milestones.sql` (note: there are multiple `039_*` migrations). New work numbers from **049**.
+Latest migration: `049_milestone_seven.sql` (note: there are multiple `039_*` migrations). New work numbers from **050**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 

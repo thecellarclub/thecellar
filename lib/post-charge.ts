@@ -327,13 +327,11 @@ export async function handlePostCharge({
     )
   }
 
-  // Lifetime milestone detection (cases 1/3/5/6) — runs after the scenario SMS
+  // Lifetime milestone detection (cases 1/3/5/7) — runs after the scenario SMS
   // above so a milestone congratulations text never arrives before the order
   // confirmation it's congratulating them alongside. Fire-and-forget, never
-  // blocks order confirmation. Suppress milestone 6's own SMS when this call
-  // also just upgraded the customer to Palatine — they get one combined text
-  // instead (see the palatine congrats copy in lib/tiers.ts).
-  await awardMilestones(customerId, sb, {
-    skipSmsForMilestone: upgradedTier === 'palatine' ? 6 : undefined,
-  })
+  // blocks order confirmation. Milestone 7 (Coravin) no longer coincides with
+  // the Palatine upgrade (that's now at case 6, a case earlier) — each gets
+  // its own SMS.
+  await awardMilestones(customerId, sb)
 }

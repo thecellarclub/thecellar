@@ -24,14 +24,19 @@ changes in the log, don't silently reword mechanics.
 
 ### Things this page must get right (checklist)
 
-- Rebate is **credit back**, not a discount at checkout: Bailey 5%, Elvet 10%,
+(Updated 2026-07-22 for the v3.1 ladder — see `claude-code-prompt-tiers-v3-1.md`.
+This page must describe the v3.1 ladder, not original v3.)
+
+- Rebate is **credit back**, not a discount at checkout: Bailey 5%, **Elvet 7%**,
   Palatine 10%.
-- Delivery under a full case: £10 standard / £7 Bailey / £5 Elvet & Palatine. Free
-  shipping at 12 bottles (a full case); Palatine ships free at 6.
+- Delivery under a full case: £10 standard / £7 Bailey / £5 Elvet. **Palatine ships
+  free — any amount, anytime.** Free shipping at 12 bottles (a full case) for
+  everyone.
 - Tiers are earned at 2 / 4 / 6 **cases** (1 case = 12 bottles) counted over the
-  **membership year** — an anniversary-reset window, NOT a continuously sliding
-  12-month window (this was a deliberate implementation decision; don't say
-  "rolling spend" or imply the window slides daily).
+  **membership year** — twelve months from the customer's **first order** (the day
+  they began their first case). It's an anniversary-reset window, NOT a continuously
+  sliding 12-month window (deliberate implementation decision; don't say "rolling
+  spend" or imply the window slides daily).
 - At each anniversary the case count starts fresh and members drop **one tier at
   most** (soft landing; Bailey is never taken away once earned).
 - Milestones are **lifetime and one-time-ever**; never clawed back, unaffected by the
@@ -64,19 +69,20 @@ look works well):
 
 ### 3. The ladder (hero section)
 
-A vertical case-by-case list, cases 1–6. Each row: a large serif case number (accent
-colour), a dotted leader (existing pattern), and the reward. Tier rows get their tier
-name as a small-caps eyebrow above the reward. Suggested rendering — one component,
-six entries:
+A vertical case-by-case list, cases 1–7. Each row: a large serif case number (accent
+colour), a dotted leader (existing pattern), an eyebrow ("GIFT" or "NEW TIER:
+BAILEY" etc.), and the reward. Copy below is Julia's own wording — use it verbatim
+(em-dash/punctuation tidying only):
 
 | Case | Eyebrow | Reward text |
 |---|---|---|
-| 1 | — | "A free-shipping voucher — your next shipment goes free at just 6 bottles." |
-| 2 | BAILEY | "You're Bailey. 5% of every order back as credit, delivery drops to £7." |
-| 3 | — | "Six Riedel glasses, or two tasting tickets — your pick." |
-| 4 | ELVET | "You're Elvet. Credit back doubles to 10%, delivery drops to £5." |
-| 5 | — | "A free bottle chosen by Daniel, or two tasting tickets." |
-| 6 | PALATINE | "You're Palatine. Wine texts two hours before everyone else, free shipping at 6 bottles — and a Coravin." |
+| 1 | GIFT | "A free shipping voucher — your next shipment goes free at just 6 bottles." |
+| 2 | NEW TIER: BAILEY | "5% of every order back as credit, deliver less than a case for £7." |
+| 3 | GIFT | "A free bottle chosen by Daniel, or two tickets to our wine tasting events." |
+| 4 | NEW TIER: ELVET | "7% of every order back as credit, deliver less than a case for £5." |
+| 5 | GIFT | "Six Riedel glasses, or two tickets to our wine tasting events." |
+| 6 | NEW TIER: PALATINE | "10% of every order back as credit, get texts two hours before everyone else, free shipping of any amount anytime." |
+| 7 | GIFT | "A Coravin Timeless — so you can try your wine without removing the cork." |
 
 Visually distinguish the two kinds of rung subtly (e.g. tier rows slightly bolder /
 milestone rows with a small gift glyph or italic) — but keep it one ladder; the whole
@@ -96,15 +102,14 @@ Bailey:
 - Concierge requests — "2 / month"
 
 Elvet:
-- Credit back — "10% of every order"
+- Credit back — "7% of every order"
 - Delivery (under a case) — "£5"
 - Wine texts — "2 / week"
 - Concierge requests — "5 / month"
 
 Palatine:
 - Credit back — "10% of every order"
-- Delivery (under a case) — "£5"
-- Free shipping — "at 6 bottles"
+- Shipping — "free, any amount, anytime"
 - Wine texts — "2 / week, 2 hrs early"
 - Concierge requests — "unlimited"
 
@@ -136,12 +141,13 @@ shelf changes from year to year, so there's always something new ahead of you."
 
 Heading: **How the year works.**
 
-"Your case count runs over your membership year — twelve months from your first case.
-When your anniversary comes round, the count starts fresh for the new year, and your
-tier eases down a single step at most: Palatine begins the new year as Elvet, Elvet as
-Bailey. Bailey is yours for good. Your credit and your gifts are untouched — only the
-climb resets. Order like you did last year and you'll be back where you were (and
-collecting anything on the ladder you haven't earned yet)."
+"Your case count runs over your membership year — twelve months from your first
+order, the day you began your first case. When your anniversary comes round, the
+count starts fresh for the new year, and your tier eases down a single step at most:
+Palatine begins the new year as Elvet, Elvet as Bailey. Bailey is yours for good.
+Your credit and your gifts are untouched — only the climb resets. Order like you did
+last year and you'll be back where you were, collecting the new rewards we put on
+the ladder each year."
 
 ### 8. Footnote + CTA
 
@@ -180,7 +186,9 @@ first.
   `deliveryFeePence`, `tierFromCases`, `deliveryThreshold`) and
   `lib/milestones.ts` (milestone set {1,3,5,6} and reward options).
 - No occurrence of: "spend", "£500", "£1,000", "discount", "rolling twelve-month
-  spend" — grep the file.
+  spend" — grep the file. Also no "10%" attached to Elvet, no "free shipping at 6"
+  attached to Palatine, and the ladder has seven rungs ending in the Coravin
+  Timeless (v3.1).
 - Tier order on the page is Bailey → Elvet → Palatine.
 - Page builds statically (`npx next build`), renders correctly at mobile width
   (single column, ladder rows don't wrap awkwardly), and the `/join` CTA + back link

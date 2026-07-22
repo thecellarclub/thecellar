@@ -135,8 +135,8 @@ export async function checkAndApplyTierUpgrade(customerId: string, sb: SB): Prom
   if (customer.phone) {
     const messages: Record<string, string> = {
       bailey: `Welcome to Bailey tier! You'll now earn 5% back in credit on every order, and delivery drops to £7 under a full case.`,
-      elvet: `You're up to Elvet tier - your rebate doubles to 10% and delivery drops to £5.`,
-      palatine: `You've reached Palatine, our top tier! You'll now get wine texts 2 hours before everyone else, unlimited concierge - and Daniel will be in touch about your Coravin.`,
+      elvet: `You're up to Elvet tier - your rebate climbs to 7% and delivery drops to £5.`,
+      palatine: `You've reached Palatine, our top tier! 10% back in credit, wine texts 2 hours before everyone else, and free shipping on any amount, any time - no more delivery fees, ever. One more case and your Coravin's on its way.`,
     }
     const message = messages[qualifyingTier]
     if (message) {
@@ -151,33 +151,36 @@ export async function checkAndApplyTierUpgrade(customerId: string, sb: SB): Prom
 
 /**
  * Tier rebate percentage, applied to full order value on every confirmed order.
- * Rates per the tiers-v3 ladder. Gated behind CREDIT_REBATE_ENABLED at the call
- * site — see lib/post-charge.ts.
+ * Rates per the tiers-v3.1 ladder. Gated behind CREDIT_REBATE_ENABLED at the
+ * call site — see lib/post-charge.ts.
  */
 export function rebatePctForTier(tier: string): number {
   if (tier === 'palatine') return 0.10
-  if (tier === 'elvet') return 0.10
+  if (tier === 'elvet') return 0.07
   if (tier === 'bailey') return 0.05
   return 0
 }
 
 /**
  * Delivery fee for shipments under the free-shipping threshold, per the
- * tiers-v3 ladder: £10 / £7 / £5 / £5 for none / bailey / elvet / palatine.
+ * tiers-v3.1 ladder: £10 / £7 / £5 / £0 for none / bailey / elvet / palatine.
+ * Palatine never pays for delivery, at any bottle count.
  */
 export function deliveryFeePence(tier: string): number {
-  if (tier === 'elvet' || tier === 'palatine') return 500
+  if (tier === 'palatine') return 0
+  if (tier === 'elvet') return 500
   if (tier === 'bailey') return 700
   return 1000
 }
 
 /**
  * The number of bottles a customer needs to trigger free shipping.
- * - Palatine members get 6 (existing behaviour).
  * - Any customer with a one-shot free_shipping_at_6 grant gets 6.
- * - Everyone else gets 12.
+ * - Everyone else gets 12 — including Palatine (tiers-v3.1: a case is a case;
+ *   Palatine's perk is zero-fee delivery at any amount, not an early
+ *   auto-complete — see deliveryFeePence).
  */
 export function deliveryThreshold(tier: string, freeShippingAt6 = false): number {
-  if (tier === 'palatine' || freeShippingAt6) return 6
+  if (freeShippingAt6) return 6
   return 12
 }

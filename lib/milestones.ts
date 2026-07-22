@@ -5,31 +5,40 @@ import { getLifetimeCases } from '@/lib/tiers'
 
 type SB = ReturnType<typeof createServiceClient>
 
-const MILESTONES = [1, 3, 5, 6] as const
+/** Lifetime milestones (v3.1 ladder). Single source of truth — consumed by
+ * the admin milestones page, the PATCH validation route, and the portal
+ * milestones display. */
+export const MILESTONES = [1, 3, 5, 7] as const
 
-const AUTO_REWARD: Partial<Record<number, string>> = {
+/** Milestones that self-fulfil with a fixed reward — no choice to record. */
+export const AUTO_REWARD: Partial<Record<number, string>> = {
   1: 'free_ship_at_6',
-  6: 'coravin',
+  7: 'coravin',
+}
+
+/** Reward options for milestones where the customer/admin picks one. */
+export const MILESTONE_OPTIONS: Record<number, string[]> = {
+  3: ['free_bottle', 'tasting_tickets'],
+  5: ['riedel_glasses', 'tasting_tickets'],
+}
+
+export const REWARD_LABELS: Record<string, string> = {
+  free_ship_at_6: 'Free shipping at 6 (auto)',
+  riedel_glasses: '6 Riedel glasses',
+  tasting_tickets: '2 tasting tickets',
+  free_bottle: "Free bottle (Daniel's pick)",
+  coravin: 'Coravin Timeless (auto)',
 }
 
 const UNIQUE_VIOLATION = '23505'
 
 /**
- * Detect and award any lifetime milestones (cases 1/3/5/6) the customer has
+ * Detect and award any lifetime milestones (cases 1/3/5/7) the customer has
  * newly reached. Idempotent (unique constraint on customer_id+milestone) and
  * fire-and-forget — never throws, caller should not block order confirmation
  * on this.
- *
- * `skipSmsForMilestone` suppresses that milestone's own customer SMS when the
- * caller already sent a combined message covering it — milestone 6 coincides
- * with the Palatine tier-upgrade congrats SMS (see lib/tiers.ts /
- * lib/post-charge.ts), so the two are never sent separately.
  */
-export async function awardMilestones(
-  customerId: string,
-  sb: SB,
-  opts?: { skipSmsForMilestone?: number }
-): Promise<void> {
+export async function awardMilestones(customerId: string, sb: SB): Promise<void> {
   try {
     const { data: customer } = await sb
       .from('customers')
@@ -104,17 +113,17 @@ export async function awardMilestones(
           `Milestone ${milestone} reached`,
           `Customer ${customerId} has reached lifetime case ${milestone} and needs their reward choice recorded in the admin fulfilment queue.`
         )
-      } else if (milestone === 6) {
-        if (customer.phone && opts?.skipSmsForMilestone !== 6) {
+      } else if (milestone === 7) {
+        if (customer.phone) {
           await sendSms(
             customer.phone,
-            sanitiseGsm7(`Case 6 done - you've earned a Coravin! Daniel will be in touch to arrange it.`),
-            { trigger: 'milestone:6', customerId }
-          ).catch((e: unknown) => console.error('[milestones] milestone 6 SMS failed:', e))
+            sanitiseGsm7(`Seven cases. Your Coravin Timeless is on its way - Daniel will be in touch. Thank you for being one of our very best members.`),
+            { trigger: 'milestone:7', customerId }
+          ).catch((e: unknown) => console.error('[milestones] milestone 7 SMS failed:', e))
         }
         void notifyAdmin(
-          `Milestone 6 (Coravin) reached`,
-          `Customer ${customerId} has reached lifetime case 6 and earned a Coravin. Mark fulfilled once arranged.`
+          `Milestone 7 (Coravin) reached`,
+          `Customer ${customerId} has reached lifetime case 7 and earned a Coravin Timeless. Mark fulfilled once arranged.`
         )
       }
     }

@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { formatDateTime } from '@/lib/format'
 import Link from 'next/link'
 import MilestoneRowActions from '@/app/admin/_components/MilestoneRowActions'
+import { MILESTONE_OPTIONS, REWARD_LABELS } from '@/lib/milestones'
 
 type MilestoneRow = {
   id: string
@@ -16,19 +17,6 @@ type MilestoneRow = {
   fulfilled_by: string | null
   created_at: string
   customers: { first_name: string | null; last_name: string | null; phone: string } | null
-}
-
-const REWARD_LABELS: Record<string, string> = {
-  free_ship_at_6: 'Free shipping at 6 (auto)',
-  riedel_glasses: '6 Riedel glasses',
-  tasting_tickets: '2 tasting tickets',
-  free_bottle: "Free bottle (Daniel's pick)",
-  coravin: 'Coravin (auto)',
-}
-
-const MILESTONE_OPTIONS: Record<number, string[]> = {
-  3: ['free_bottle', 'tasting_tickets'],
-  5: ['riedel_glasses', 'tasting_tickets'],
 }
 
 export default async function MilestonesPage() {
@@ -63,7 +51,7 @@ export default async function MilestonesPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Milestone fulfilment</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Lifetime rewards earned at cases 1, 3, 5 and 6. Milestone 1 and 6 are self-fulfilling — 3 and 5 need a reward choice recorded and a fulfilment date.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Lifetime rewards earned at cases 1, 3, 5 and 7. Milestone 1 and 7 are self-fulfilling — 3 and 5 need a reward choice recorded and a fulfilment date.</p>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200">

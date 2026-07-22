@@ -1,6 +1,7 @@
 /**
- * One-time backfill for tiers-v3 lifetime milestones (cases 1/3/5/6).
- * See claude-code-prompt-tiers-v3.md §2c.
+ * One-time backfill for tiers-v3 lifetime milestones (cases 1/3/5/7 as of
+ * tiers-v3.1). See claude-code-prompt-tiers-v3.md §2c /
+ * claude-code-prompt-tiers-v3-1.md §3.
  *
  * Run with: npx tsx scripts/backfill-milestones.ts        (dry-run, report only)
  *           npx tsx scripts/backfill-milestones.ts --live (actually writes)
@@ -18,11 +19,11 @@
  */
 import { createClient } from '@supabase/supabase-js'
 
-const MILESTONES = [1, 3, 5, 6] as const
+const MILESTONES = [1, 3, 5, 7] as const
 
 const AUTO_REWARD: Partial<Record<number, string>> = {
   1: 'free_ship_at_6',
-  6: 'coravin',
+  7: 'coravin',
 }
 
 async function main() {
@@ -69,7 +70,7 @@ async function main() {
   let milestone1PreGranted = 0
   let milestone3Count = 0
   let milestone5Count = 0
-  let milestone6Count = 0
+  let milestone7Count = 0
   const rows: string[] = []
 
   for (const c of customers ?? []) {
@@ -112,7 +113,7 @@ async function main() {
       } else {
         if (milestone === 3) milestone3Count++
         if (milestone === 5) milestone5Count++
-        if (milestone === 6) milestone6Count++
+        if (milestone === 7) milestone7Count++
         toCreate.push(String(milestone))
 
         if (live) {
@@ -133,7 +134,7 @@ async function main() {
 
   console.log(`\n${live ? 'LIVE RUN' : 'DRY RUN'} — tiers-v3 milestone backfill\n`)
   console.log(rows.length > 0 ? rows.join('\n') : '(nothing to backfill)')
-  console.log(`\nSummary: milestone 1: ${milestone1Count} (${milestone1PreGranted} pre-granted, ${milestone1Count - milestone1PreGranted} new flag grants) | milestone 3: ${milestone3Count} | milestone 5: ${milestone5Count} | milestone 6: ${milestone6Count}`)
+  console.log(`\nSummary: milestone 1: ${milestone1Count} (${milestone1PreGranted} pre-granted, ${milestone1Count - milestone1PreGranted} new flag grants) | milestone 3: ${milestone3Count} | milestone 5: ${milestone5Count} | milestone 7: ${milestone7Count}`)
   console.log(`No SMS sent by this script — Julia messages backfilled members personally.\n`)
 
   if (!live) {

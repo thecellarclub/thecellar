@@ -160,7 +160,7 @@ const FAQS: Array<{ q: string; a: React.ReactNode }> = [
     q: 'How much does it cost to join?',
     a: (
       <>
-        Nothing. The Cellar Club is free to join — you just need to have bought at least one bottle through us to unlock the benefits. Tier perks (more concierge access, tasting tickets, discounts) scale with your rolling twelve-month spend.{' '}
+        Nothing. The Cellar Club is free to join — you just need to have bought at least one bottle through us to unlock the benefits. Every case you complete earns credit back and unlocks perks, building up over your membership year.{' '}
         <Link href="/club" className="underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: TEXT_DARK }}>
           See tiers
         </Link>
