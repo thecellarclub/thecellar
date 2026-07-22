@@ -31,6 +31,24 @@ should be able to understand what changed and what to watch out for.
 
 <!-- NEW ENTRIES GO BELOW THIS LINE -->
 
+### 2026-07-22 — Manual data repair: undo an unwanted free-at-6 shipment (ops, no spec)
+
+**State changes**
+- Julia asked (via chat) to undo Kelvin Robinson's (`+447467100410`) auto-created 6-bottle shipment — he wants to wait for a full 12-bottle case instead. His `milestone_awards` milestone-1 grant had set `free_shipping_at_6 = true` earlier; a subsequent order brought his cellar to 6 bottles, which `post-charge.ts` Scenario 2 auto-completed into a `pending`, £0-fee shipment (`6576bb7b-6a4a-4cb0-9c14-b6c6bc32c460`) and consumed the flag — all before Julia caught it. Confirmed via direct query the shipment was still `pending` (no address confirmed, no dispatch, no Stripe PI — fee was £0) before touching anything.
+- Direct SQL against the `fqywjskvgkvgbtqzckqe` Supabase project: unlinked the 3 cellar rows (6 bottles, none `shipped_at`) from the shipment; set the shipment's `status` to `paused` (same end state as the customer-initiated PAUSE flow, rather than deleting the row outright, to preserve the audit trail); restored `customers.case_started_at` to `2026-07-08 17:14:45` (the oldest of the 3 now-unlinked cellar rows' `added_at` — reconstructs what Scenario 1 would have originally set it to, so the day-90 reminder cron keeps tracking him correctly) and cleared `case_reminder_sent_at`. `free_shipping_at_6` was already `false` (auto-consumed at shipment creation) — nothing further needed there. Logged `inbox_activity` (`actor_id: null` — no `admin_users` row matches Julia's `julia@thebothy.club` email in production, see Gotchas; `action: 'shipment_paused'`, detail noting the admin request).
+
+**Deviations & decisions**
+- Chose `status = 'paused'` over deleting the shipment row, matching the existing PAUSE keyword flow's exact end state (unlinked cellar rows + a paused shipment shell) rather than inventing a new "cancelled" state — `shipments_status_check` doesn't have one anyway.
+- No SMS sent to the customer — Julia didn't ask for one and this was a proactive correction, not something he flagged himself.
+
+**Gotchas & future context**
+- `admin_users` in production doesn't match CLAUDE.md's documented team table: no row for `julia@thebothy.club` exists at all, and Daniel/Craig are `daniel@crushwines.co`/`members@thecellar.club` rather than the `@thecellar.club` addresses CLAUDE.md lists (there's also a fourth admin, Donna, at `hello@crushwines.co`, distinct from Craig's login despite CLAUDE.md saying they share one). Worth reconciling CLAUDE.md against reality next time someone touches the team table — not fixed here since it's out of scope for this repair.
+
+**Verification**
+- Confirmed post-repair via direct query: shipment `status = 'paused'`; all 3 cellar rows `shipment_id: null`, `shipped_at: null`; customer `free_shipping_at_6: false`, `case_started_at: 2026-07-08 17:14:45`, `case_reminder_sent_at: null`.
+
+---
+
 ### 2026-07-22 — Security audit fixes & hardening sweep (`claude-code-prompt-security-hardening.md`)
 
 **State changes**
