@@ -313,10 +313,16 @@ export async function handlePostCharge({
 
     const remainingBottles = totalBottles - threshold
 
+    // The case size just fulfilled (`threshold`) can be 6 from a one-shot
+    // free-at-6 grant, which is now consumed above — the NEXT case always
+    // goes back to 12 unless the customer is Palatine (permanent 6) or has
+    // been granted a fresh one-shot since. Never reuse `threshold` here.
+    const nextCaseThreshold = deliveryThreshold(upgradedTier ?? currentTier, false)
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     await sendSms(
       customerPhone,
-      `${notePrefix}Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case of ${threshold} for free shipping.${creditBalanceLine}`,
+      `${notePrefix}Your case of ${threshold} is ready! Confirm your address here: ${appUrl}/ship?token=${shipToken}\n\nYou have ${remainingBottles} bottle${remainingBottles !== 1 ? 's' : ''} left in your cellar. Complete your next case of ${nextCaseThreshold} for free shipping.${creditBalanceLine}`,
       { trigger: 'post-charge:case-ready', customerId }
     )
   }

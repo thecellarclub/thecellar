@@ -33,6 +33,24 @@ should be able to understand what changed and what to watch out for.
 
 ---
 
+### 2026-07-21 — Fix "next case" size wrongly repeating a one-shot free-at-6 grant (bug fix, no spec)
+
+**State changes**
+- `lib/post-charge.ts` Scenario 3 (more than the current threshold's worth of bottles — splits off a shipment and starts a fresh case for the remainder): the SMS reused the same `threshold` value for both "Your case of X is ready!" (correct — describes what's shipping now) and "Complete your next case of X for free shipping" (wrong — described the *next* case). When `threshold` was 6 because of a one-shot `free_shipping_at_6` grant, the grant is consumed in this same function call (flag flipped to `false` a few lines above), so the next case should almost always be 12 — but the message kept saying 6, implying the discount repeats indefinitely.
+- Fixed by computing a separate `nextCaseThreshold = deliveryThreshold(upgradedTier ?? currentTier, false)` for that line, reflecting the *post*-consumption state (and any tier upgrade that happened in this same order) rather than reusing the pre-order snapshot. For a genuine Palatine member (permanent 6, unrelated to the one-shot flag) this still correctly says 6, since `deliveryThreshold` checks tier before the flag.
+- Reported case: `+447778572928` (Daniel) got "Your case of 6 is ready!... Complete your next case of 6 for free shipping" after his one-shot grant fulfilled a 6-bottle shipment. Checked his actual `free_shipping_at_6` flag — it was already correctly `false` (the consumption logic itself was fine); this was purely a copy bug, not a data bug. No customer data needed correcting for him.
+
+**Deviations & decisions**
+- Checked every other `threshold` usage in the file (Scenario 1's "complete your case of X" describes the *current*, still-open case and isn't affected — no flag consumption happens in Scenario 1; Scenario 2 has no "next case" line at all) and `handleShip`/`handleShipConfirm` in the inbound webhook (no "next case" copy there either) — this was the only spot with a pre/post-consumption mismatch.
+- Did not send Daniel a correction text — the flag itself was already right, so nothing about his account is actually wrong, just a confusing sentence in a message he's already received. Flagging in case Julia wants to send a quick clarifying text anyway.
+
+**Verification**
+- `npx tsc --noEmit`: clean. `npx eslint lib/post-charge.ts`: 0 errors, 1 pre-existing unrelated warning.
+- Confirmed via direct query that `+447778572928`'s `free_shipping_at_6` is `false` and his last two shipments before this one were both full 12-bottle cases — consistent with one-shot behaviour working correctly at the data level.
+- Not yet deployed.
+
+---
+
 ### 2026-07-21 — Enable RLS on `credit_ledger` and `milestone_awards` (security fix, no spec)
 
 **State changes**
