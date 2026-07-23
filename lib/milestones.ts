@@ -57,7 +57,7 @@ export const GIFT_CATALOGUE: Record<number, Partial<Record<number, GiftEntry>>> 
     },
     3: {
       options: ['free_bottle', 'tasting_tickets'],
-      ladderLabel: 'Free bottle or tasting tickets',
+      ladderLabel: 'Free bottle or 2 tasting tickets',
       customerSms: `Case 3 done - nice work! You've earned your choice of a free bottle (Daniel's pick) or 2 tasting tickets. Daniel will be in touch to sort it.`,
       adminNotify: {
         subject: 'Milestone 3 reached',
@@ -66,7 +66,7 @@ export const GIFT_CATALOGUE: Record<number, Partial<Record<number, GiftEntry>>> 
     },
     5: {
       options: ['riedel_glasses', 'tasting_tickets'],
-      ladderLabel: 'Riedel glasses or tasting tickets',
+      ladderLabel: 'Riedel glasses or 2 tasting tickets',
       customerSms: `Case 5 done - nice work! You've earned your choice of 6 Riedel glasses or 2 tasting tickets. Daniel will be in touch to sort it.`,
       adminNotify: {
         subject: 'Milestone 5 reached',
@@ -75,7 +75,7 @@ export const GIFT_CATALOGUE: Record<number, Partial<Record<number, GiftEntry>>> 
     },
     7: {
       auto: 'coravin',
-      ladderLabel: 'Coravin Timeless',
+      ladderLabel: 'Coravin Timeless, or 4 tasting tickets',
       customerSms: `Seven cases. Your Coravin Timeless is on its way - Daniel will be in touch. Thank you for being one of our very best members.`,
       adminNotify: {
         subject: 'Milestone 7 (Coravin) reached',
