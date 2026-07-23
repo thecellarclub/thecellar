@@ -62,7 +62,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 | Table | Purpose |
 |-------|---------|
-| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by`, `free_shipping_at_6` (one-shot admin grant, see `lib/tiers.ts`/`lib/post-charge.ts`), `credit_balance_pence` (see `credit_ledger`), `tier`/`tier_since`/`tier_review_at` (tiers-v3 case ladder — `tier_since` anchors the current case-counting cycle, not just "last changed") |
+| `customers` | Club members. Key fields: `phone`, `status` (`'active'` \| `'dormant'` \| `'deactivated'`), `concierge_status`, `inbox_assigned_to`, `inbox_assigned_at`, `inbox_follow_up_date`, `inbox_follow_up_note`, `inbox_follow_up_set_by`, `free_shipping_at_6` (one-shot admin grant, see `lib/tiers.ts`/`lib/post-charge.ts`), `credit_balance_pence` (see `credit_ledger`), `tier`/`tier_since`/`tier_review_at` (tiers-v3 case ladder — `tier_since` anchors the current case-counting cycle, not just "last changed"), `cycle_start_rung`/`cycle_year` (tiers-v3.2 relative climb — ladder position = `cycle_start_rung` + cases this cycle, see `lib/tiers.ts` `getLadderPosition`) |
 | `admin_users` | Admin team. Fields: `id`, `email`, `name`, `password_hash`. Passwords set via `scripts/seed-admin-users.ts`. |
 | `concierge_messages` | Inbound/outbound SMS in the inbox. `direction`: `inbound`/`outbound`. |
 | `special_requests` | Customer requests surfaced in the inbox. `status`: `open`/`resolved`. |
@@ -71,7 +71,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 | `wines` | Wine catalogue. |
 | `orders` | Customer wine orders. `credit_used_pence` records store credit applied at redemption. |
 | `credit_ledger` | Append-only store-credit ledger. `reason`: `rebate` \| `redemption` \| `admin_grant`. Written only via the `apply_credit()` SQL function — see `lib/credit.ts`. |
-| `milestone_awards` | Lifetime one-time-ever rewards at cases 1/3/5/7 (tiers-v3.1). `unique(customer_id, milestone)` is the one-time guarantee; never deleted. Admin fulfilment queue at `/admin/milestones`. |
+| `milestone_awards` | Gift-rung rewards at rungs 1/3/5/7, one row per rung passed per membership year (tiers-v3.2). `cycle_year` + `unique(customer_id, milestone, cycle_year)` let a re-passed rung earn a new gift each year; never deleted. Admin fulfilment queue at `/admin/milestones`. |
 | `cellar` | Bottles accumulated but not yet shipped. `shipment_id` links to a shipment when reserved; `shipped_at` is set when actually shipped/collected. |
 | `shipments` | Case shipments. `type`: `'delivery'` (posted to customer) or `'collection'` (picked up at bar). See shipments section below. |
 | `sms_messages` | All inbound/outbound SMS log. **Being deprecated** — see `claude-code-prompt-inbox-twilio-history.md` (table dropped once inbox reads live from Twilio). |
@@ -84,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `050_security_advisor_fixes.sql` (note: there are multiple `039_*` migrations). New work numbers from **051**.
+Latest migration: `051_relative_climb.sql` (note: there are multiple `039_*` migrations). New work numbers from **052**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 

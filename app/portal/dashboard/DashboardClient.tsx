@@ -4,6 +4,8 @@ import { useState, FormEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import ClubProgress from './ClubProgress'
+import type { LadderNode } from './ladder'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -20,7 +22,11 @@ interface Props {
   bottles: number
   cellar: CellarItem[]
   casesThisCycle: number
-  milestones: Array<{ milestone: number; rewardChoice: string | null; fulfilledAt: string | null }>
+  bottlesThisCycle: number
+  ladderNodes: LadderNode[]
+  topOfLadder: boolean
+  renewalDate: string | null
+  twilioPhoneNumber: string
   primaryCard: Card | null
   backupCard: Card | null
   defaultAddress: Address | null
@@ -46,7 +52,7 @@ interface Props {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  none: 'Bailey',
+  none: 'Member',
   bailey: 'Bailey',
   elvet: 'Elvet',
   palatine: 'Palatine',
@@ -84,63 +90,6 @@ function CardPill({ card, label }: { card: Card; label: string }) {
           Expires {card.exp_month.toString().padStart(2, '0')}/{card.exp_year}
         </p>
       </div>
-    </div>
-  )
-}
-
-function TierProgress({ tier, cases }: { tier: string; cases: number }) {
-  type TierConfig = { label: string; nextLabel: string | null; target: number | null; color: string }
-  const config: TierConfig = (() => {
-    if (tier === 'palatine') return { label: 'Palatine', nextLabel: null, target: null, color: '#C9851D' }
-    if (tier === 'elvet') return { label: 'Elvet', nextLabel: 'Palatine', target: 6, color: '#C9851D' }
-    if (tier === 'bailey') return { label: 'Bailey', nextLabel: 'Elvet', target: 4, color: '#9B1B30' }
-    return { label: 'Member', nextLabel: 'Bailey', target: 2, color: '#9B1B30' }
-  })()
-
-  const pct = config.target ? Math.min(100, Math.round((cases / config.target) * 100)) : 100
-
-  return (
-    <div className="mb-6">
-      <div className="flex items-baseline justify-between mb-2">
-        <span className="font-sans text-xs uppercase tracking-[0.2em]" style={{ color: config.color }}>
-          {config.label}
-        </span>
-        {config.nextLabel ? (
-          <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>
-            {cases} / {config.target} cases towards {config.nextLabel}
-          </span>
-        ) : (
-          <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.40)' }}>{cases} case{cases === 1 ? '' : 's'} this cycle</span>
-        )}
-      </div>
-      <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(42,24,16,0.10)' }}>
-        <div className="absolute left-0 top-0 h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: config.color }} />
-      </div>
-      {config.target && (
-        <p className="font-sans text-xs mt-1.5" style={{ color: 'rgba(42,24,16,0.35)' }}>
-          {Math.max(0, config.target - cases)} more case{Math.max(0, config.target - cases) === 1 ? '' : 's'} to go
-        </p>
-      )}
-    </div>
-  )
-}
-
-function MilestonesList({ milestones }: { milestones: Array<{ milestone: number; rewardChoice: string | null; fulfilledAt: string | null }> }) {
-  if (milestones.length === 0) return null
-  const labels: Record<number, string> = { 1: 'Case 1', 3: 'Case 3', 5: 'Case 5', 7: 'Case 7' }
-  return (
-    <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(42,24,16,0.10)' }}>
-      <p className="font-sans text-xs uppercase tracking-wide mb-1.5" style={{ color: 'rgba(42,24,16,0.45)' }}>Milestones</p>
-      <ul className="space-y-1">
-        {milestones.map((m) => (
-          <li key={m.milestone} className="font-sans text-xs flex items-center justify-between" style={{ color: 'rgba(42,24,16,0.65)' }}>
-            <span>{labels[m.milestone] ?? `Case ${m.milestone}`}</span>
-            <span style={{ color: m.fulfilledAt ? '#2d6a4f' : 'rgba(42,24,16,0.40)' }}>
-              {m.fulfilledAt ? 'Fulfilled' : m.rewardChoice ? 'Choice recorded' : 'Awaiting your choice'}
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
@@ -247,7 +196,11 @@ export default function DashboardClient({
   bottles,
   cellar,
   casesThisCycle,
-  milestones,
+  bottlesThisCycle,
+  ladderNodes,
+  topOfLadder,
+  renewalDate,
+  twilioPhoneNumber,
   primaryCard,
   backupCard,
   defaultAddress,
@@ -315,13 +268,16 @@ export default function DashboardClient({
     if (res.ok) router.refresh()
   }
 
-  const tierLabel = TIER_LABELS[tier] ?? 'Bailey'
+  const tierLabel = TIER_LABELS[tier] ?? 'Member'
   const tierColor = TIER_COLORS[tier] ?? '#9B1B30'
   const threshold = 12
 
   const hasCard = !!primaryCard || cardSaved
   const hasAddress = !!defaultAddress
-  const setupIncomplete = !hasCard || !hasAddress
+  // Sticky bar only covers the missing-card case — a card-but-no-address
+  // customer gets the dedicated amber reminder banner below instead, so the
+  // two don't both render at once.
+  const setupIncomplete = !hasCard
 
   const inputClass = 'w-full bg-[#EDE8DF] border px-4 py-3 focus:outline-none transition-colors font-sans text-sm'
   const inputStyle = { borderColor: 'rgba(42,24,16,0.18)', color: '#1C0E09' }
@@ -488,18 +444,16 @@ export default function DashboardClient({
             }}
           >
             <p className="font-sans text-xs" style={{ color: 'rgba(240,230,220,0.80)' }}>
-              Add a {!hasCard && !hasAddress ? 'payment card and delivery address' : !hasCard ? 'payment card' : 'delivery address'} to start ordering by text.
+              Add a {hasAddress ? 'payment card' : 'payment card and delivery address'} to start ordering by text.
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-              {!hasCard && (
-                <button
-                  onClick={() => setActiveModal('card')}
-                  className="font-sans text-xs font-medium px-3 py-1.5 transition-opacity hover:opacity-90"
-                  style={{ background: '#9B1B30', color: '#F0E6DC' }}
-                >
-                  Add card
-                </button>
-              )}
+              <button
+                onClick={() => setActiveModal('card')}
+                className="font-sans text-xs font-medium px-3 py-1.5 transition-opacity hover:opacity-90"
+                style={{ background: '#9B1B30', color: '#F0E6DC' }}
+              >
+                Add card
+              </button>
               {!hasAddress && (
                 <button
                   onClick={() => setActiveModal('address')}
@@ -566,15 +520,15 @@ export default function DashboardClient({
               </div>
             </div>
 
-            <TierProgress tier={tier} cases={casesThisCycle} />
-
-            {creditBalancePence > 0 && (
-              <p className="font-sans text-xs mt-2" style={{ color: 'rgba(42,24,16,0.55)' }}>
-                Credit: £{(creditBalancePence / 100).toFixed(2)}
-              </p>
-            )}
-
-            <MilestonesList milestones={milestones} />
+            <ClubProgress
+              casesThisCycle={casesThisCycle}
+              bottlesThisCycle={bottlesThisCycle}
+              creditBalancePence={creditBalancePence}
+              ladderNodes={ladderNodes}
+              topOfLadder={topOfLadder}
+              renewalDate={renewalDate}
+              twilioPhoneNumber={twilioPhoneNumber}
+            />
 
             {/* Inner tab bar */}
             <div className="flex gap-4 border-b mb-4 pt-3" style={{ borderColor: 'rgba(42,24,16,0.12)' }}>

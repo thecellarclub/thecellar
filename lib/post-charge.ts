@@ -327,11 +327,12 @@ export async function handlePostCharge({
     )
   }
 
-  // Lifetime milestone detection (cases 1/3/5/7) — runs after the scenario SMS
-  // above so a milestone congratulations text never arrives before the order
-  // confirmation it's congratulating them alongside. Fire-and-forget, never
-  // blocks order confirmation. Milestone 7 (Coravin) no longer coincides with
-  // the Palatine upgrade (that's now at case 6, a case earlier) — each gets
-  // its own SMS.
+  // Gift-rung milestone detection (rungs 1/3/5/7 passed this membership-year
+  // cycle — tiers-v3-2) — runs after the scenario SMS above so a milestone
+  // congratulations text never arrives before the order confirmation it's
+  // congratulating them alongside. Fire-and-forget, never blocks order
+  // confirmation. Milestone 7 (Coravin) no longer coincides with the
+  // Palatine upgrade (that's now at case 6, a case earlier) — each gets its
+  // own SMS.
   await awardMilestones(customerId, sb)
 }

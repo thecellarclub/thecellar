@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { getPortalSession } from '@/lib/portal-auth'
 import { createServiceClient } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
-import { getRollingCases } from '@/lib/tiers'
+import { getRollingBottles, getLadderPosition } from '@/lib/tiers'
+import { buildLadderNodes } from './ladder'
 import DashboardClient from './DashboardClient'
 
 type CellarRow = {
@@ -18,7 +19,7 @@ export default async function PortalDashboardPage() {
 
   const { data: customer } = await sb
     .from('customers')
-    .select('id, first_name, phone, tier, tier_since, stripe_payment_method_id, backup_payment_method_id, default_address, credit_balance_pence')
+    .select('id, first_name, phone, tier, tier_since, tier_review_at, cycle_start_rung, cycle_year, stripe_payment_method_id, backup_payment_method_id, default_address, credit_balance_pence')
     .eq('id', session.customerId)
     .maybeSingle()
 
@@ -33,15 +34,62 @@ export default async function PortalDashboardPage() {
 
   const bottles = (cellarRows ?? []).reduce((s, r) => s + r.quantity, 0)
 
-  // Cases within the current tier cycle (tiers-v3)
-  const casesThisCycle = await getRollingCases(customer.id, sb)
+  // Cases + bottles within the current membership-year cycle (tiers-v3.2),
+  // and the member's ladder position (cycle_start_rung + cases this cycle).
+  const bottlesThisCycle = await getRollingBottles(customer.id, sb)
+  const casesThisCycle = Math.floor(bottlesThisCycle / 12)
+  const ladderPosition = await getLadderPosition(customer.id, sb)
+  const cycleYear = customer.cycle_year ?? 1
+  const cycleStartRung = customer.cycle_start_rung ?? 0
 
-  // Lifetime milestones
+  // This cycle year's milestone (gift-rung) awards only — a prior year's
+  // award for the same rung must never render as "done" this year (tiers-v3.2:
+  // a re-passed rung carries a new gift).
   const { data: milestoneRows } = await sb
     .from('milestone_awards')
     .select('milestone, reward_choice, fulfilled_at')
     .eq('customer_id', customer.id)
+    .eq('cycle_year', cycleYear)
     .order('milestone', { ascending: true })
+
+  const ladderNodes = buildLadderNodes({
+    cycleStartRung,
+    position: ladderPosition,
+    cycleYear,
+    tier: customer.tier ?? 'none',
+    milestones: (milestoneRows ?? []).map((m) => ({
+      milestone: m.milestone,
+      rewardChoice: m.reward_choice,
+      fulfilledAt: m.fulfilled_at,
+    })),
+  })
+  const topOfLadder = ladderPosition >= 7
+
+  // Renewal date fallback chain: tier_review_at -> tier_since+1yr -> first
+  // confirmed order date +1yr -> null (brand-new member, no orders — hide
+  // the renewal line entirely). Migration 044 hasn't run for everyone, so
+  // tier/tier_since can still be null here.
+  let renewalDate: string | null = customer.tier_review_at ?? null
+  if (!renewalDate && customer.tier_since) {
+    const d = new Date(customer.tier_since)
+    d.setFullYear(d.getFullYear() + 1)
+    renewalDate = d.toISOString()
+  }
+  if (!renewalDate) {
+    const { data: firstOrder } = await sb
+      .from('orders')
+      .select('created_at')
+      .eq('customer_id', customer.id)
+      .eq('order_status', 'confirmed')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (firstOrder) {
+      const d = new Date(firstOrder.created_at)
+      d.setFullYear(d.getFullYear() + 1)
+      renewalDate = d.toISOString()
+    }
+  }
 
   // Past payments
   const { data: paymentRows } = await sb
@@ -97,11 +145,11 @@ export default async function PortalDashboardPage() {
         pricePence: r.wines?.price_pence ?? 0,
       }))}
       casesThisCycle={casesThisCycle}
-      milestones={(milestoneRows ?? []).map((m) => ({
-        milestone: m.milestone,
-        rewardChoice: m.reward_choice,
-        fulfilledAt: m.fulfilled_at,
-      }))}
+      bottlesThisCycle={bottlesThisCycle}
+      ladderNodes={ladderNodes}
+      topOfLadder={topOfLadder}
+      renewalDate={renewalDate}
+      twilioPhoneNumber={process.env.TWILIO_PHONE_NUMBER ?? ''}
       primaryCard={primaryCard}
       backupCard={backupCard}
       defaultAddress={addr ? {

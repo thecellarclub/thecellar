@@ -95,6 +95,7 @@ async function main() {
           await sb.from('milestone_awards').insert({
             customer_id: c.id,
             milestone: 1,
+            cycle_year: 1,
             reward_choice: AUTO_REWARD[1],
             fulfilled_at: new Date().toISOString(),
             fulfilled_by: null,
@@ -120,6 +121,7 @@ async function main() {
           await sb.from('milestone_awards').insert({
             customer_id: c.id,
             milestone,
+            cycle_year: 1,
             reward_choice: AUTO_REWARD[milestone] ?? null,
             notes: 'backfilled at v3 launch',
           })

@@ -18,11 +18,29 @@ export const TIER_NAMES: Record<string, string> = {
   palatine: 'Palatine',
 }
 
-/** Tier from case count, per the tiers-v3 ladder (2 / 4 / 6 cases). */
+/** Tier from case count, per the tiers-v3 ladder (2 / 4 / 6 cases). Still used
+ * as a display fallback for tier-less customers in the inbound SMS webhook —
+ * the milestone/upgrade path uses `tierFromRung` (tiers-v3-2) instead. */
 export function tierFromCases(cases: number): 'none' | 'bailey' | 'elvet' | 'palatine' {
   if (cases >= 6) return 'palatine'
   if (cases >= 4) return 'elvet'
   if (cases >= 2) return 'bailey'
+  return 'none'
+}
+
+/** The ladder rung a tier's floor sits at (tiers-v3-2 relative climb). */
+export function rungOfTier(tier: string): number {
+  if (tier === 'palatine') return 6
+  if (tier === 'elvet') return 4
+  if (tier === 'bailey') return 2
+  return 0
+}
+
+/** Tier implied by a ladder position (cycle_start_rung + cases this cycle). */
+export function tierFromRung(rung: number): 'none' | 'bailey' | 'elvet' | 'palatine' {
+  if (rung >= 6) return 'palatine'
+  if (rung >= 4) return 'elvet'
+  if (rung >= 2) return 'bailey'
   return 'none'
 }
 
@@ -43,14 +61,13 @@ export async function getRefundedQuantityByOrder(orderIds: string[], sb: SB): Pr
 }
 
 /**
- * Bottles from confirmed orders within the customer's current tier cycle,
- * net of refunds, floor-divided into cases (12 bottles each). The cycle
- * starts at `tier_since` — set once on a customer's first-ever tier upgrade,
- * then only moved by the annual tier-review cron's soft-demote step (see
- * case-nudges cron) — and falls back to `subscribed_at` for customers who
- * haven't earned a tier yet.
+ * Un-floored bottle count from confirmed orders within the customer's
+ * current tier cycle, net of refunds. The cycle starts at `tier_since` — set
+ * once on a customer's first-ever tier upgrade, then only moved by the
+ * annual tier-review cron's soft-demote step (see case-nudges cron) — and
+ * falls back to `subscribed_at` for customers who haven't earned a tier yet.
  */
-export async function getRollingCases(customerId: string, sb: SB): Promise<number> {
+export async function getRollingBottles(customerId: string, sb: SB): Promise<number> {
   const { data: customer } = await sb
     .from('customers')
     .select('tier_since, subscribed_at')
@@ -68,25 +85,32 @@ export async function getRollingCases(customerId: string, sb: SB): Promise<numbe
 
   const orders = data ?? []
   const refundedByOrder = await getRefundedQuantityByOrder(orders.map((o) => o.id), sb)
-  const bottles = orders.reduce((sum, o) => sum + Math.max(0, (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0)), 0)
+  return orders.reduce((sum, o) => sum + Math.max(0, (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0)), 0)
+}
+
+/** Rolling bottles for the current tier cycle, floor-divided into cases (12
+ * bottles each). */
+export async function getRollingCases(customerId: string, sb: SB): Promise<number> {
+  const bottles = await getRollingBottles(customerId, sb)
   return Math.floor(bottles / 12)
 }
 
 /**
- * Lifetime bottles from ALL confirmed orders ever, net of refunds, no window
- * — used for milestone detection (lifetime cases 1/3/5/6), which never resets.
+ * A member's position on the ladder under the relative-climb model
+ * (tiers-v3-2): their cycle start rung (where this membership year's climb
+ * resumes from) plus cases completed since. Every completed case moves them
+ * exactly one rung. Single source of truth for both tier-upgrade checks and
+ * the portal's ladder view.
  */
-export async function getLifetimeCases(customerId: string, sb: SB): Promise<number> {
-  const { data } = await sb
-    .from('orders')
-    .select('id, quantity')
-    .eq('customer_id', customerId)
-    .eq('order_status', 'confirmed')
+export async function getLadderPosition(customerId: string, sb: SB): Promise<number> {
+  const { data: customer } = await sb
+    .from('customers')
+    .select('cycle_start_rung')
+    .eq('id', customerId)
+    .maybeSingle()
 
-  const orders = data ?? []
-  const refundedByOrder = await getRefundedQuantityByOrder(orders.map((o) => o.id), sb)
-  const bottles = orders.reduce((sum, o) => sum + Math.max(0, (o.quantity ?? 0) - (refundedByOrder[o.id] ?? 0)), 0)
-  return Math.floor(bottles / 12)
+  const cases = await getRollingCases(customerId, sb)
+  return (customer?.cycle_start_rung ?? 0) + cases
 }
 
 /**
@@ -106,8 +130,8 @@ export async function checkAndApplyTierUpgrade(customerId: string, sb: SB): Prom
 
   if (!customer) return null
 
-  const cases = await getRollingCases(customerId, sb)
-  const qualifyingTier = tierFromCases(cases)
+  const position = await getLadderPosition(customerId, sb)
+  const qualifyingTier = tierFromRung(position)
 
   const currentRank = TIER_RANK[customer.tier ?? 'none'] ?? 0
   const qualifyingRank = TIER_RANK[qualifyingTier] ?? 0

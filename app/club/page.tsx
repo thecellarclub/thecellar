@@ -235,14 +235,14 @@ export default function ClubPage() {
                 How the year works.
               </h2>
               <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-                Your case count runs over your membership year - twelve months from your
-                first order, the day you began your first case. When your anniversary
-                comes round, the count starts fresh for the new year, and your tier eases
-                down a single step at most: Palatine begins the new year as Elvet, Elvet
-                as Bailey. Bailey is yours for good. Your credit and your gifts are
-                untouched - only the climb resets. Order like you did last year and
-                you&rsquo;ll be back where you were, collecting the new rewards we put on
-                the ladder each year.
+                Your climb runs over your membership year - twelve months from your first
+                order, the day you began your first case. When your anniversary comes
+                round, you step back to the tier below where you finished - Palatine
+                begins the new year as Elvet, Elvet as Bailey, and Bailey is yours for
+                good - then climb on from there: every case still moves you up one rung.
+                Your credit and your gifts are untouched. Order like you did last year
+                and you&rsquo;ll be back where you were, collecting the new rewards we put
+                on the ladder each year.
               </p>
             </div>
           </div>

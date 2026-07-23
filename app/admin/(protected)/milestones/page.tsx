@@ -5,12 +5,13 @@ import { createServiceClient } from '@/lib/supabase'
 import { formatDateTime } from '@/lib/format'
 import Link from 'next/link'
 import MilestoneRowActions from '@/app/admin/_components/MilestoneRowActions'
-import { MILESTONE_OPTIONS, REWARD_LABELS } from '@/lib/milestones'
+import { getMilestoneOptions, REWARD_LABELS } from '@/lib/milestones'
 
 type MilestoneRow = {
   id: string
   customer_id: string
   milestone: number
+  cycle_year: number
   reward_choice: string | null
   chosen_at: string | null
   fulfilled_at: string | null
@@ -28,12 +29,12 @@ export default async function MilestonesPage() {
   const [{ data: unfulfilledRaw }, { data: fulfilledRaw }] = await Promise.all([
     sb
       .from('milestone_awards')
-      .select('id, customer_id, milestone, reward_choice, chosen_at, fulfilled_at, fulfilled_by, created_at, customers(first_name, last_name, phone)')
+      .select('id, customer_id, milestone, cycle_year, reward_choice, chosen_at, fulfilled_at, fulfilled_by, created_at, customers(first_name, last_name, phone)')
       .is('fulfilled_at', null)
       .order('created_at', { ascending: true }),
     sb
       .from('milestone_awards')
-      .select('id, customer_id, milestone, reward_choice, chosen_at, fulfilled_at, fulfilled_by, created_at, customers(first_name, last_name, phone)')
+      .select('id, customer_id, milestone, cycle_year, reward_choice, chosen_at, fulfilled_at, fulfilled_by, created_at, customers(first_name, last_name, phone)')
       .not('fulfilled_at', 'is', null)
       .order('fulfilled_at', { ascending: false })
       .limit(20),
@@ -68,18 +69,19 @@ export default async function MilestonesPage() {
                   <p className="text-sm font-medium text-gray-900">
                     <Link href={`/admin/customers/${row.customer_id}`} className="hover:underline">{customerName(row)}</Link>
                     {' '}— case {row.milestone}
+                    <span className="text-gray-400 font-normal"> · year {row.cycle_year}</span>
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {row.reward_choice
                       ? REWARD_LABELS[row.reward_choice] ?? row.reward_choice
-                      : `Not yet chosen — options: ${(MILESTONE_OPTIONS[row.milestone] ?? []).map((o) => REWARD_LABELS[o] ?? o).join(' or ')}`}
+                      : `Not yet chosen — options: ${getMilestoneOptions(row.milestone, row.cycle_year).map((o) => REWARD_LABELS[o] ?? o).join(' or ')}`}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">Earned {formatDateTime(row.created_at)}</p>
                 </div>
                 <MilestoneRowActions
                   id={row.id}
                   currentChoice={row.reward_choice}
-                  options={MILESTONE_OPTIONS[row.milestone] ?? []}
+                  options={getMilestoneOptions(row.milestone, row.cycle_year)}
                   rewardLabels={REWARD_LABELS}
                 />
               </div>
@@ -100,7 +102,7 @@ export default async function MilestonesPage() {
               <div key={row.id} className="px-4 py-3 flex items-center justify-between gap-4 flex-wrap text-sm">
                 <div>
                   <Link href={`/admin/customers/${row.customer_id}`} className="font-medium text-gray-900 hover:underline">{customerName(row)}</Link>
-                  <span className="text-gray-500"> — case {row.milestone} — {row.reward_choice ? (REWARD_LABELS[row.reward_choice] ?? row.reward_choice) : '—'}</span>
+                  <span className="text-gray-500"> — case {row.milestone} · year {row.cycle_year} — {row.reward_choice ? (REWARD_LABELS[row.reward_choice] ?? row.reward_choice) : '—'}</span>
                 </div>
                 <span className="text-xs text-gray-400">{row.fulfilled_at ? formatDateTime(row.fulfilled_at) : ''}</span>
               </div>

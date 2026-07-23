@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { sendSms } from '@/lib/twilio'
-import { deliveryThreshold, TIER_NAMES } from '@/lib/tiers'
+import { deliveryThreshold, TIER_NAMES, rungOfTier, tierFromRung } from '@/lib/tiers'
 
 /**
  * GET /api/cron/case-nudges
@@ -104,16 +104,18 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Tier review (annual soft-demote, tiers-v3) ────────────────────────────
-  // On each member's first-purchase anniversary: soft-demote one rank as a
-  // floor (palatine -> elvet, elvet -> bailey, bailey stays bailey), and start
-  // a fresh case-counting cycle (tier_since reset). Credit and milestones are
-  // never touched here — this only ever moves `tier`/`tier_since`/`tier_review_at`.
+  // ── Tier review (annual soft-demote, tiers-v3.2 relative climb) ───────────
+  // On each member's first-purchase anniversary: they don't restart from
+  // zero — they resume one tier-rung below where they finished (palatine ->
+  // elvet, elvet -> bailey, bailey's floor is never stripped), and start a
+  // fresh membership-year cycle (tier_since reset, cycle_year incremented).
+  // Credit and milestones are never touched here — this only ever moves
+  // `tier`/`tier_since`/`tier_review_at`/`cycle_start_rung`/`cycle_year`.
   const TIER_DEMOTE: Record<string, string> = { palatine: 'elvet', elvet: 'bailey', bailey: 'bailey' }
 
   const { data: tierCustomers } = await sb
     .from('customers')
-    .select('id, phone, tier, tier_review_at')
+    .select('id, phone, tier, tier_review_at, cycle_year')
     .not('tier_review_at', 'is', null)
     .lte('tier_review_at', now.toISOString())
     .neq('tier', 'none')
@@ -121,20 +123,27 @@ export async function GET(req: NextRequest) {
   for (const tc of tierCustomers ?? []) {
     tierReviewed++
     const newTier = TIER_DEMOTE[tc.tier] ?? tc.tier
+    const newCycleStartRung = rungOfTier(newTier)
 
     const nextReview = new Date(now)
     nextReview.setFullYear(nextReview.getFullYear() + 1)
 
     await sb
       .from('customers')
-      .update({ tier: newTier, tier_since: now.toISOString(), tier_review_at: nextReview.toISOString() })
+      .update({
+        tier: tierFromRung(newCycleStartRung),
+        tier_since: now.toISOString(),
+        tier_review_at: nextReview.toISOString(),
+        cycle_start_rung: newCycleStartRung,
+        cycle_year: (tc.cycle_year ?? 1) + 1,
+      })
       .eq('id', tc.id)
 
     if (newTier !== tc.tier) {
       tierDowngrades++
       await sendSms(
         tc.phone,
-        `Your membership has moved to ${TIER_NAMES[newTier] ?? newTier} tier for the new year. Keep collecting to work your way back up - every case counts.`,
+        `You're starting your new Club year at ${TIER_NAMES[newTier] ?? newTier} - two cases puts you back on top.`,
         { trigger: 'cron:tier-downgrade', customerId: tc.id }
       ).catch((e: unknown) => console.error('[cron] tier downgrade SMS failed:', e))
     }

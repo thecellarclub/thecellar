@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireAdminSession } from '@/lib/adminAuth'
-import { MILESTONE_OPTIONS } from '@/lib/milestones'
+import { getMilestoneOptions } from '@/lib/milestones'
 
 export async function PATCH(
   req: NextRequest,
@@ -20,7 +20,7 @@ export async function PATCH(
 
   const { data: award } = await sb
     .from('milestone_awards')
-    .select('id, milestone, reward_choice, fulfilled_at')
+    .select('id, milestone, cycle_year, reward_choice, fulfilled_at')
     .eq('id', id)
     .maybeSingle()
 
@@ -31,8 +31,8 @@ export async function PATCH(
   const updates: Record<string, unknown> = {}
 
   if (body.rewardChoice !== undefined) {
-    const options = MILESTONE_OPTIONS[award.milestone]
-    if (!options || !options.includes(body.rewardChoice)) {
+    const options = getMilestoneOptions(award.milestone, award.cycle_year)
+    if (options.length === 0 || !options.includes(body.rewardChoice)) {
       return NextResponse.json({ error: 'Invalid reward choice for this milestone' }, { status: 400 })
     }
     updates.reward_choice = body.rewardChoice
