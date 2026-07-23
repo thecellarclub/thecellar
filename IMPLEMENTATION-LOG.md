@@ -31,6 +31,25 @@ should be able to understand what changed and what to watch out for.
 
 <!-- NEW ENTRIES GO BELOW THIS LINE -->
 
+### 2026-07-23 — Portal ladder: dark-red caps tier labels, expandable perk rows (ops, no spec)
+
+**State changes**
+- Craig reviewed the newly-shipped portal ladder (previous entry, same day) live and asked for the tier rungs to read more distinctly and "enticingly" than the gift rungs. `app/portal/dashboard/ClubProgress.tsx`: tier rungs (2/4/6) now render as an uppercase, letter-spaced, accent-red eyebrow (matching the `/club` page's "New tier: X" label styling) instead of plain serif text. Tier rows are now clickable — expand to show that tier's perk rows (credit rate, delivery fee, wine-text frequency, concierge requests), collapse to hide them. The rung a member is currently climbing toward (`status: 'here'`) starts pre-expanded, so the very next thing worth achieving is visible without a click; every other tier row starts collapsed. Gift rungs are unchanged (not expandable — they already carry their own status copy).
+- New `TIER_PERKS` export in `lib/tiers.ts`, keyed by tier slug (`bailey`/`elvet`/`palatine`) — the exact same perk copy that was previously hardcoded only inside `/club/page.tsx`'s `TIERS` const. `/club/page.tsx` now builds its `TIERS` array by referencing `TIER_PERKS` instead of duplicating the four perk rows per tier; verified the rendered page is byte-identical before/after. `app/portal/dashboard/ladder.ts`'s `LadderNode` gained a `perks: {label, value}[] | null` field, populated from `TIER_PERKS` for tier rungs, `null` for gift rungs.
+
+**Deviations & decisions**
+- Not a `claude-code-prompt-*.md` spec — a direct design request made in chat after seeing the live result of the tiers-v3-2/portal-club-progress work above. Logged anyway since it introduces a new shared constant (`TIER_PERKS`) a future spec might reasonably expect to already exist.
+- Auto-expanding the "here" tier row (rather than leaving every row collapsed by default, or expanding all of them) was my own call, not explicitly requested — reasoned that showing the very next reward without requiring a tap is what "make it look like they really want to achieve it" was asking for. Easy to revert to all-collapsed if Julia/Craig prefer a quieter default.
+
+**Verification**
+- `npx tsc --noEmit`: clean (no new errors). `npx eslint` on all four touched files: 0 errors, 0 warnings.
+- `npx next build`: clean — confirms the tier-row `useState` addition didn't reintroduce the client-bundle issue from the previous entry (`ClubProgress.tsx` still only imports from `./ladder`, a type-only import).
+- `/club` re-rendered in-browser post-refactor: identical text output to before the `TIER_PERKS` extraction.
+- Portal ladder itself: not screenshotted against the live authenticated dashboard (same limitation as the previous entry — no real OTP session available). Published a static HTML reconstruction of the exact component markup/colors as a Claude Artifact for Craig to sanity-check the direction before relying on code review alone.
+- Deployed via the same push-to-master → Vercel flow as the previous entry; production deployment confirmed `READY` before reporting done.
+
+---
+
 ### 2026-07-23 — Tiers v3.2 relative climb + portal "Your Club" view (`claude-code-prompt-tiers-v3-2-relative-climb.md`, `claude-code-prompt-portal-club-progress.md`)
 
 **State changes**
