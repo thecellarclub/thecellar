@@ -85,7 +85,7 @@ const LADDER: { caseNumber: number; eyebrow: string; text: string }[] = [
   { caseNumber: 4, eyebrow: 'New tier: Elvet', text: '7% of every order back as credit, deliver less than a case for £5.' },
   { caseNumber: 5, eyebrow: 'Gift', text: 'Six Riedel glasses, or two tickets to our wine tasting events.' },
   { caseNumber: 6, eyebrow: 'New tier: Palatine', text: '10% of every order back as credit, get texts two hours before everyone else, free shipping of any amount anytime.' },
-  { caseNumber: 7, eyebrow: 'Gift', text: 'A Coravin Timeless - so you can try your wine without removing the cork.' },
+  { caseNumber: 7, eyebrow: 'Gift', text: 'A Coravin Timeless, or four tickets to our wine tasting events.' },
 ]
 
 const TIERS: { name: string; cases: string; perks: { label: string; value: string }[] }[] = [
@@ -114,7 +114,7 @@ const TIERS: { name: string; cases: string; perks: { label: string; value: strin
     cases: '6 cases',
     perks: [
       { label: 'Credit back', value: '10% of every order' },
-      { label: 'Shipping', value: 'free, any amount, anytime' },
+      { label: 'Delivery (under a case)', value: 'free, any amount, anytime' },
       { label: 'Wine texts', value: '2 / week, 2 hrs early' },
       { label: 'Concierge requests', value: 'unlimited' },
     ],
@@ -161,7 +161,7 @@ export default function ClubPage() {
               The Ladder
             </p>
             <p className="font-serif mb-6" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              Each number below is a case you&rsquo;ve completed - twelve bottles bought.
+              Each number below is a completed case, 12 bottles.
             </p>
             {LADDER.map((row) => (
               <LadderRow key={row.caseNumber} {...row} />
@@ -187,42 +187,64 @@ export default function ClubPage() {
           {/* Divider */}
           <div style={{ borderTop: '1px solid rgba(42,24,16,0.10)' }} className="my-8" />
 
-          {/* 5. Credit, plainly */}
-          <div className="mb-10">
-            <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>Credit, not coupons.</h2>
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              Your rebate lands as credit on your account - real money against your next
-              order. When you order and have credit, we&rsquo;ll offer it automatically:
-              reply BALANCE and it covers as much of the order as it can, with any
-              remainder going to your card. Text BALANCE any time to check what
-              you&rsquo;ve got. Credit never expires.
+          {/* 5. In plain English */}
+          <div className="mb-10 space-y-8">
+            <p
+              className="font-sans text-xs uppercase tracking-[0.28em]"
+              style={{ color: 'rgba(42,24,16,0.38)' }}
+            >
+              In Plain English
             </p>
-          </div>
 
-          {/* 6. Gifts are forever */}
-          <div className="mb-10">
-            <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>Earn it once, keep it.</h2>
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              The gifts on the ladder - the glasses, the bottle, the Coravin - are
-              lifetime milestones. You earn each one once, it&rsquo;s yours, and it&rsquo;s
-              never taken back. The gift shelf changes from year to year, so there&rsquo;s
-              always something new ahead of you.
-            </p>
-          </div>
+            <div>
+              <h2
+                className="font-sans text-xs uppercase tracking-[0.2em] mb-3"
+                style={{ color: ACCENT }}
+              >
+                Credit, not coupons.
+              </h2>
+              <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
+                Your rebate lands as credit on your account - real money against your next
+                order. When you order and have credit, we&rsquo;ll offer it automatically:
+                reply BALANCE and it covers as much of the order as it can, with any
+                remainder going to your card. Text BALANCE any time to check what
+                you&rsquo;ve got. Credit never expires.
+              </p>
+            </div>
 
-          {/* 7. Your membership year */}
-          <div>
-            <h2 className="font-serif text-xl mb-3" style={{ color: TEXT_DARK }}>How the year works.</h2>
-            <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
-              Your case count runs over your membership year - twelve months from your
-              first order, the day you began your first case. When your anniversary
-              comes round, the count starts fresh for the new year, and your tier eases
-              down a single step at most: Palatine begins the new year as Elvet, Elvet
-              as Bailey. Bailey is yours for good. Your credit and your gifts are
-              untouched - only the climb resets. Order like you did last year and
-              you&rsquo;ll be back where you were, collecting the new rewards we put on
-              the ladder each year.
-            </p>
+            <div>
+              <h2
+                className="font-sans text-xs uppercase tracking-[0.2em] mb-3"
+                style={{ color: ACCENT }}
+              >
+                Earn it once, keep it.
+              </h2>
+              <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
+                The gifts on the ladder - the glasses, the bottle, the Coravin - are
+                lifetime milestones. You earn each one once, it&rsquo;s yours, and it&rsquo;s
+                never taken back. The gift shelf changes from year to year, so there&rsquo;s
+                always something new ahead of you.
+              </p>
+            </div>
+
+            <div>
+              <h2
+                className="font-sans text-xs uppercase tracking-[0.2em] mb-3"
+                style={{ color: ACCENT }}
+              >
+                How the year works.
+              </h2>
+              <p className="font-serif" style={{ fontSize: '1.05rem', color: 'rgba(42,24,16,0.7)' }}>
+                Your case count runs over your membership year - twelve months from your
+                first order, the day you began your first case. When your anniversary
+                comes round, the count starts fresh for the new year, and your tier eases
+                down a single step at most: Palatine begins the new year as Elvet, Elvet
+                as Bailey. Bailey is yours for good. Your credit and your gifts are
+                untouched - only the climb resets. Order like you did last year and
+                you&rsquo;ll be back where you were, collecting the new rewards we put on
+                the ladder each year.
+              </p>
+            </div>
           </div>
 
           {/* 8. Footnote */}
