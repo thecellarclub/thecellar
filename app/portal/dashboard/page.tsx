@@ -19,7 +19,7 @@ export default async function PortalDashboardPage() {
 
   const { data: customer } = await sb
     .from('customers')
-    .select('id, first_name, phone, tier, tier_since, tier_review_at, cycle_start_rung, cycle_year, stripe_payment_method_id, backup_payment_method_id, default_address, credit_balance_pence')
+    .select('id, first_name, phone, tier, tier_since, tier_review_at, cycle_start_rung, cycle_year, subscribed_at, stripe_payment_method_id, backup_payment_method_id, default_address, credit_balance_pence')
     .eq('id', session.customerId)
     .maybeSingle()
 
@@ -148,6 +148,7 @@ export default async function PortalDashboardPage() {
       bottlesThisCycle={bottlesThisCycle}
       ladderNodes={ladderNodes}
       topOfLadder={topOfLadder}
+      membershipStartDate={customer.subscribed_at ?? null}
       renewalDate={renewalDate}
       twilioPhoneNumber={process.env.TWILIO_PHONE_NUMBER ?? ''}
       primaryCard={primaryCard}

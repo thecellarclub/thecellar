@@ -25,6 +25,7 @@ interface Props {
   bottlesThisCycle: number
   ladderNodes: LadderNode[]
   topOfLadder: boolean
+  membershipStartDate: string | null
   renewalDate: string | null
   twilioPhoneNumber: string
   primaryCard: Card | null
@@ -199,6 +200,7 @@ export default function DashboardClient({
   bottlesThisCycle,
   ladderNodes,
   topOfLadder,
+  membershipStartDate,
   renewalDate,
   twilioPhoneNumber,
   primaryCard,
@@ -526,6 +528,7 @@ export default function DashboardClient({
               creditBalancePence={creditBalancePence}
               ladderNodes={ladderNodes}
               topOfLadder={topOfLadder}
+              membershipStartDate={membershipStartDate}
               renewalDate={renewalDate}
               twilioPhoneNumber={twilioPhoneNumber}
             />

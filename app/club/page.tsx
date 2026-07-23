@@ -82,11 +82,11 @@ function TierBlock({
 const LADDER: { caseNumber: number; eyebrow: string; text: string }[] = [
   { caseNumber: 1, eyebrow: 'Gift', text: 'A free shipping voucher - your next shipment goes free at just 6 bottles.' },
   { caseNumber: 2, eyebrow: 'New tier: Bailey', text: "5% of every order back as credit, deliver less than a case for £7." },
-  { caseNumber: 3, eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or two tickets to our wine tasting events.' },
+  { caseNumber: 3, eyebrow: 'Gift', text: 'A free bottle chosen by Daniel, or 2 tasting tickets.' },
   { caseNumber: 4, eyebrow: 'New tier: Elvet', text: '7% of every order back as credit, deliver less than a case for £5.' },
-  { caseNumber: 5, eyebrow: 'Gift', text: 'Six Riedel glasses, or two tickets to our wine tasting events.' },
+  { caseNumber: 5, eyebrow: 'Gift', text: 'Six Riedel glasses, or 2 tasting tickets.' },
   { caseNumber: 6, eyebrow: 'New tier: Palatine', text: '10% of every order back as credit, get texts two hours before everyone else, free shipping of any amount anytime.' },
-  { caseNumber: 7, eyebrow: 'Gift', text: 'A Coravin Timeless, or four tickets to our wine tasting events.' },
+  { caseNumber: 7, eyebrow: 'Gift', text: 'A Coravin Timeless, or 4 tasting tickets.' },
 ]
 
 const TIERS: { name: string; cases: string; perks: { label: string; value: string }[] }[] = [

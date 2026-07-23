@@ -14,6 +14,7 @@ interface Props {
   creditBalancePence: number
   ladderNodes: LadderNode[]
   topOfLadder: boolean
+  membershipStartDate: string | null
   renewalDate: string | null
   twilioPhoneNumber: string
 }
@@ -180,6 +181,7 @@ export default function ClubProgress({
   creditBalancePence,
   ladderNodes,
   topOfLadder,
+  membershipStartDate,
   renewalDate,
   twilioPhoneNumber,
 }: Props) {
@@ -243,15 +245,25 @@ export default function ClubProgress({
         </p>
       )}
 
-      {/* 3d. Membership year footer */}
-      {renewalDate && (
-        <p className="font-sans text-xs pt-3 border-t" style={{ color: 'rgba(42,24,16,0.40)', borderColor: 'rgba(42,24,16,0.10)' }}>
-          Your membership year renews on{' '}
-          {new Date(renewalDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.{' '}
-          <a href="/club" className="underline underline-offset-2" style={{ color: 'rgba(42,24,16,0.55)' }}>
-            How the year works →
-          </a>
-        </p>
+      {/* 3d. Membership start + renewal footer */}
+      {(membershipStartDate || renewalDate) && (
+        <div className="font-sans text-xs pt-3 border-t space-y-1" style={{ color: 'rgba(42,24,16,0.40)', borderColor: 'rgba(42,24,16,0.10)' }}>
+          {membershipStartDate && (
+            <p>
+              Member since{' '}
+              {new Date(membershipStartDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
+            </p>
+          )}
+          {renewalDate && (
+            <p>
+              Your membership year renews on{' '}
+              {new Date(renewalDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.{' '}
+              <a href="/club" className="underline underline-offset-2" style={{ color: 'rgba(42,24,16,0.55)' }}>
+                How the year works →
+              </a>
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
