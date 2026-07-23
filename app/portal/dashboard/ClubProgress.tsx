@@ -1,6 +1,10 @@
+'use client'
+
+import { useState } from 'react'
 import type { LadderNode } from './ladder'
 
 const ACCENT = '#9B1B30'
+const ACCENT_FADE = 'rgba(155,27,48,0.45)'
 const INK = '#1C0E09'
 const FADE = 'rgba(42,24,16,0.35)'
 
@@ -35,7 +39,25 @@ function BottleGlyph({ filled, delayMs }: { filled: boolean; delayMs: number }) 
   )
 }
 
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="10"
+      height="10"
+      className="shrink-0 transition-transform duration-200"
+      style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+      aria-hidden="true"
+    >
+      <path d="M5 2.5l6 5.5-6 5.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function LadderNodeRow({ node, twilioPhoneNumber }: { node: LadderNode; twilioPhoneNumber: string }) {
+  // The tier rung a member is climbing toward starts open — no click needed
+  // to see what it's worth. Every other tier row starts collapsed.
+  const [expanded, setExpanded] = useState(node.isTier && node.status === 'here')
   const smsHref = twilioPhoneNumber ? `sms:${twilioPhoneNumber}` : null
 
   const dot = (() => {
@@ -98,13 +120,46 @@ function LadderNodeRow({ node, twilioPhoneNumber }: { node: LadderNode; twilioPh
         {dot}
         {node.rung < 7 && <div className="w-px flex-1 mt-1" style={{ background: 'rgba(42,24,16,0.14)' }} />}
       </div>
-      <div className="min-w-0 pt-0.5">
+      <div className="min-w-0 pt-0.5 w-full">
         <p className="font-sans text-xs uppercase tracking-wide" style={{ color: faded ? FADE : 'rgba(42,24,16,0.45)' }}>
           Case {node.rung}
         </p>
-        <p className="font-serif" style={{ fontSize: '0.95rem', color: faded ? FADE : INK }}>
-          {node.label}
-        </p>
+
+        {node.isTier ? (
+          <div>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1.5 -ml-0.5 py-0.5 px-0.5 rounded transition-colors hover:bg-black/[0.03]"
+              aria-expanded={expanded}
+            >
+              <span
+                className="font-sans font-semibold tracking-[0.16em] uppercase"
+                style={{ fontSize: '0.85rem', color: faded ? ACCENT_FADE : ACCENT }}
+              >
+                {node.label}
+              </span>
+              <span style={{ color: faded ? ACCENT_FADE : ACCENT }}>
+                <Chevron open={expanded} />
+              </span>
+            </button>
+            {expanded && node.perks && (
+              <div className="club-expand mt-2 mb-1 pl-0.5 space-y-1.5">
+                {node.perks.map((p) => (
+                  <div key={p.label} className="flex items-baseline justify-between gap-3">
+                    <span className="font-sans text-xs" style={{ color: 'rgba(42,24,16,0.55)' }}>{p.label}</span>
+                    <span className="font-serif text-right" style={{ fontSize: '0.85rem', color: INK }}>{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="font-serif" style={{ fontSize: '0.95rem', color: faded ? FADE : INK }}>
+            {node.label}
+          </p>
+        )}
+
         {node.copy && (
           smsHref && node.smsLink ? (
             <a href={smsHref} className="font-sans text-xs underline underline-offset-2" style={{ color: ACCENT }}>
@@ -136,9 +191,11 @@ export default function ClubProgress({
       <style>{`
         @keyframes club-bottle-fill { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
         @keyframes club-pulse-ring { 0%, 100% { box-shadow: 0 0 0 3px rgba(155,27,48,0.25); } 50% { box-shadow: 0 0 0 6px rgba(155,27,48,0.12); } }
+        @keyframes club-expand-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: no-preference) {
           .club-bottle-filled { animation: club-bottle-fill 0.4s ease-out backwards; }
           .club-pulse { animation: club-pulse-ring 2.2s ease-in-out infinite; }
+          .club-expand { animation: club-expand-in 0.18s ease-out; }
         }
       `}</style>
 

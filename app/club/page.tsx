@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { TIER_PERKS } from '@/lib/tiers'
 
 export const metadata: Metadata = {
   title: 'How the Club works - The Cellar Club',
@@ -89,36 +90,9 @@ const LADDER: { caseNumber: number; eyebrow: string; text: string }[] = [
 ]
 
 const TIERS: { name: string; cases: string; perks: { label: string; value: string }[] }[] = [
-  {
-    name: 'Bailey',
-    cases: '2 cases',
-    perks: [
-      { label: 'Credit back', value: '5% of every order' },
-      { label: 'Delivery (under a case)', value: '£7' },
-      { label: 'Wine texts', value: '2 / week' },
-      { label: 'Concierge requests', value: '2 / month' },
-    ],
-  },
-  {
-    name: 'Elvet',
-    cases: '4 cases',
-    perks: [
-      { label: 'Credit back', value: '7% of every order' },
-      { label: 'Delivery (under a case)', value: '£5' },
-      { label: 'Wine texts', value: '2 / week' },
-      { label: 'Concierge requests', value: '5 / month' },
-    ],
-  },
-  {
-    name: 'Palatine',
-    cases: '6 cases',
-    perks: [
-      { label: 'Credit back', value: '10% of every order' },
-      { label: 'Delivery (under a case)', value: 'free, any amount, anytime' },
-      { label: 'Wine texts', value: '2 / week, 2 hrs early' },
-      { label: 'Concierge requests', value: 'unlimited' },
-    ],
-  },
+  { name: 'Bailey', cases: '2 cases', perks: TIER_PERKS.bailey },
+  { name: 'Elvet', cases: '4 cases', perks: TIER_PERKS.elvet },
+  { name: 'Palatine', cases: '6 cases', perks: TIER_PERKS.palatine },
 ]
 
 export default function ClubPage() {

@@ -1,5 +1,5 @@
 import { getLadderLabel } from '@/lib/milestones'
-import { TIER_RANK } from '@/lib/tiers'
+import { TIER_RANK, TIER_PERKS } from '@/lib/tiers'
 
 // Server-only: builds the portal ladder view model. Deliberately NOT imported
 // by ClubProgress.tsx (a client-bundled component) — lib/tiers and
@@ -9,7 +9,7 @@ import { TIER_RANK } from '@/lib/tiers'
 // pre-resolved nodes down as props instead.
 
 const RUNG_TIER_LABEL: Record<number, string> = { 2: 'Bailey', 4: 'Elvet', 6: 'Palatine' }
-const RUNG_TIER: Record<number, string> = { 2: 'bailey', 4: 'elvet', 6: 'palatine' }
+const RUNG_TIER: Record<number, 'bailey' | 'elvet' | 'palatine'> = { 2: 'bailey', 4: 'elvet', 6: 'palatine' }
 
 export type NodeStatus = 'held' | 'done' | 'toBeRevealed' | 'choose' | 'onItsWay' | 'here' | 'ahead'
 
@@ -20,6 +20,9 @@ export type LadderNode = {
   label: string
   copy: string | null
   smsLink: boolean
+  /** Perk rows for tier rungs (2/4/6) — null for gift rungs. Lets the
+   * portal ladder expand a tier row to show what it's worth. */
+  perks: { label: string; value: string }[] | null
 }
 
 type Milestone = { milestone: number; rewardChoice: string | null; fulfilledAt: string | null }
@@ -53,6 +56,7 @@ export function buildLadderNodes({
   for (let rung = 1; rung <= 7; rung++) {
     const isTier = rung === 2 || rung === 4 || rung === 6
     const label = isTier ? RUNG_TIER_LABEL[rung] : getLadderLabel(rung, cycleYear)
+    const perks = isTier ? TIER_PERKS[RUNG_TIER[rung]] : null
 
     let status: NodeStatus
     let copy: string | null = null
@@ -93,7 +97,7 @@ export function buildLadderNodes({
       status = 'ahead'
     }
 
-    nodes.push({ rung, isTier, status, label, copy, smsLink })
+    nodes.push({ rung, isTier, status, label, copy, smsLink, perks })
   }
   return nodes
 }

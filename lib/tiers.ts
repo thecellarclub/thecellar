@@ -198,6 +198,33 @@ export function deliveryFeePence(tier: string): number {
 }
 
 /**
+ * Perk rows per tier, keyed by tier slug — single source of truth for the
+ * /club page's tier-detail blocks and the portal ladder's expandable tier
+ * rungs. Keep in sync with rebatePctForTier/deliveryFeePence above (these
+ * are the same numbers, spelled out for display).
+ */
+export const TIER_PERKS: Record<'bailey' | 'elvet' | 'palatine', { label: string; value: string }[]> = {
+  bailey: [
+    { label: 'Credit back', value: '5% of every order' },
+    { label: 'Delivery (under a case)', value: '£7' },
+    { label: 'Wine texts', value: '2 / week' },
+    { label: 'Concierge requests', value: '2 / month' },
+  ],
+  elvet: [
+    { label: 'Credit back', value: '7% of every order' },
+    { label: 'Delivery (under a case)', value: '£5' },
+    { label: 'Wine texts', value: '2 / week' },
+    { label: 'Concierge requests', value: '5 / month' },
+  ],
+  palatine: [
+    { label: 'Credit back', value: '10% of every order' },
+    { label: 'Delivery (under a case)', value: 'free, any amount, anytime' },
+    { label: 'Wine texts', value: '2 / week, 2 hrs early' },
+    { label: 'Concierge requests', value: 'unlimited' },
+  ],
+}
+
+/**
  * The number of bottles a customer needs to trigger free shipping.
  * - Any customer with a one-shot free_shipping_at_6 grant gets 6.
  * - Everyone else gets 12 — including Palatine (tiers-v3.1: a case is a case;
