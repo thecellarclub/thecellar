@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'] as const
 
 function buildPhone(raw: string): string {
   let s = raw.replace(/[\s\-]/g, '')
@@ -58,8 +58,9 @@ function JoinPageInner() {
     let utmCampaign = sp.get('utm_campaign') ?? undefined
     let utmTerm = sp.get('utm_term') ?? undefined
     let utmContent = sp.get('utm_content') ?? undefined
+    let gclid = sp.get('gclid') ?? undefined
 
-    if (!utmSource && !utmMedium && !utmCampaign) {
+    if (!utmSource && !utmMedium && !utmCampaign && !gclid) {
       try {
         const stored = sessionStorage.getItem('cellar_utm')
         if (stored) {
@@ -69,6 +70,7 @@ function JoinPageInner() {
           utmCampaign = p.utm_campaign || undefined
           utmTerm     = p.utm_term     || undefined
           utmContent  = p.utm_content  || undefined
+          gclid       = p.gclid        || undefined
         }
       } catch {}
     }
@@ -84,6 +86,7 @@ function JoinPageInner() {
           utmCampaign,
           utmTerm,
           utmContent,
+          gclid,
         }),
       })
 

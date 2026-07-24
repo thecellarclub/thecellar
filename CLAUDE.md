@@ -84,7 +84,7 @@ These appear in the codebase as venue/location options (e.g. `'crush'` / `'norse
 
 ## Migrations
 
-Latest migration: `051_relative_climb.sql` (note: there are multiple `039_*` migrations). New work numbers from **052**.
+Latest migration: `052_gclid_field.sql` (note: there are multiple `039_*` migrations). New work numbers from **053**.
 
 Migration files live in `supabase/migrations/`. Apply them manually via Supabase Studio or CLI.
 
@@ -147,6 +147,7 @@ Specs live in the project root as `claude-code-prompt-*.md`. Current active (uni
 
 | File | What it covers |
 |------|---------------|
+| `claude-code-prompt-drop-landing-page.md` | Google Ads message-match. **Done:** `/drop` acquisition landing page, gclid capture (migration 052). **Deferred:** activation-by-acquisition-source report, Google Ads secondary-conversion wiring. **Homepage hero rework explicitly not done** — Craig overrode it in-session, see the spec file's deviation note. |
 | `claude-code-prompt-shared-inbox.md` | Remaining inbox work: @mentions in notes, default "Mine" filter, deep links |
 | `claude-code-prompt-collection-workflow.md` | Bar pickup scheduling (venue, date/time, pending → collected) |
 | `claude-code-prompt-courier-booking.md` | Courier booking stage for delivery shipments |

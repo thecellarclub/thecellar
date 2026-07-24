@@ -19,6 +19,7 @@ export interface SignupSessionData {
   utmCampaign?: string
   utmTerm?: string
   utmContent?: string
+  gclid?: string
 }
 
 export const sessionOptions: SessionOptions = {

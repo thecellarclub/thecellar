@@ -57,6 +57,7 @@ export async function DELETE(
       utm_campaign: null,
       utm_term: null,
       utm_content: null,
+      gclid: null,
       status: 'deactivated',
       gdpr_marketing_consent: false,
       unsubscribed_at: new Date().toISOString(),

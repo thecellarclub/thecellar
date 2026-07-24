@@ -84,11 +84,11 @@ export async function POST(req: NextRequest) {
       customerId = existingCustomer.id
       stripeCustomerId = existingCustomer.stripe_customer_id
 
-      // Backfill UTMs if we have attribution data in the session and the
-      // customer row doesn't yet have any (first-touch attribution).
+      // Backfill UTMs + gclid if we have attribution data in the session and
+      // the customer row doesn't yet have any (first-touch attribution).
       if (
         !existingCustomer.utm_source &&
-        (session.utmSource || session.utmMedium || session.utmCampaign)
+        (session.utmSource || session.utmMedium || session.utmCampaign || session.gclid)
       ) {
         await supabase
           .from('customers')
@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
             utm_campaign: session.utmCampaign ?? null,
             utm_term: session.utmTerm ?? null,
             utm_content: session.utmContent ?? null,
+            gclid: session.gclid ?? null,
           })
           .eq('id', customerId)
       }
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
           utm_campaign: session.utmCampaign ?? null,
           utm_term: session.utmTerm ?? null,
           utm_content: session.utmContent ?? null,
+          gclid: session.gclid ?? null,
         })
         .select('id')
         .single()

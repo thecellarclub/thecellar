@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       utmCampaign,
       utmTerm,
       utmContent,
+      gclid,
     } = await req.json()
 
     if (!rawPhone) {
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
     if (utmCampaign) session.utmCampaign = utmCampaign
     if (utmTerm) session.utmTerm = utmTerm
     if (utmContent) session.utmContent = utmContent
+    if (gclid) session.gclid = gclid
     await session.save()
 
     return NextResponse.json({ ok: true })

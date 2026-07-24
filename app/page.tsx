@@ -60,7 +60,7 @@ function SectionTitle({ title }: { title: string }) {
 
 // ── Sign-up form ────────────────────────────────────────────────────────────
 
-const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'] as const
 
 function SignupForm({
   buttonText = 'JOIN THE CLUB',
