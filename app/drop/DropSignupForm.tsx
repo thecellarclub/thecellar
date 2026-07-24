@@ -14,7 +14,7 @@ const ACCENT = '#9B1B30'
 
 const TRACKING_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'] as const
 
-export function DropSignupForm({ buttonText = "GET THIS WEEK'S DROP" }: { buttonText?: string }) {
+export function DropSignupForm({ buttonText = 'GET THE DROP' }: { buttonText?: string }) {
   const [phone, setPhone] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()

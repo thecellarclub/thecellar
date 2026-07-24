@@ -6,8 +6,8 @@ import { DropSignupForm } from './DropSignupForm'
 import { DropPhoneMockup } from './DropPhoneMockup'
 
 export const metadata: Metadata = {
-  title: 'The Drop — 48 bottles, twice a week | The Cellar Club',
-  description: "A real sommelier texts you a wine drop twice a week. Reply how many bottles you want — first come, first served. Trade prices, direct import.",
+  title: 'Text Your Personal Sommelier | The Cellar Club',
+  description: "A real sommelier texts you a wine drop twice a week — 48 bottles, usually gone within the hour. Reply how many you want. Trade prices, direct import.",
 }
 
 // Wine showcase + sell-out stat are live data — without this, Next.js
@@ -60,8 +60,37 @@ async function getDropData() {
   const statSample = distinctWines.slice(0, 20)
   const soldOutCount = statSample.filter((w) => w.stock_bottles === 0).length
 
-  // Showcase: the most recent handful, for the "recently sent" strip.
-  const showcase = distinctWines.slice(0, 6)
+  // Showcase: sold-out drops only, ranked by real bottles-sold (best sellers)
+  // rather than recency, capped at one per country so the strip stays varied
+  // rather than getting dominated by whichever country Daniel's featured most.
+  const soldOut = distinctWines.filter((w) => w.stock_bottles === 0)
+  const salesByWine = new Map<string, number>()
+
+  if (soldOut.length > 0) {
+    const { data: orderRows } = await sb
+      .from('orders')
+      .select('wine_id, quantity')
+      .eq('order_status', 'confirmed')
+      .in('wine_id', soldOut.map((w) => w.id))
+
+    for (const o of orderRows ?? []) {
+      salesByWine.set(o.wine_id, (salesByWine.get(o.wine_id) ?? 0) + o.quantity)
+    }
+  }
+
+  const bestSellersFirst = [...soldOut].sort(
+    (a, b) => (salesByWine.get(b.id) ?? 0) - (salesByWine.get(a.id) ?? 0)
+  )
+
+  const seenCountries = new Set<string>()
+  const showcase: ShowcaseWine[] = []
+  for (const wine of bestSellersFirst) {
+    const country = wine.country ?? 'Unknown'
+    if (seenCountries.has(country)) continue
+    seenCountries.add(country)
+    showcase.push(wine)
+    if (showcase.length >= 6) break
+  }
 
   return {
     showcase,
@@ -91,13 +120,14 @@ export default async function DropPage() {
               className="font-serif uppercase leading-tight mb-5"
               style={{ color: TEXT_DARK, letterSpacing: '0.03em', fontSize: 'clamp(2rem, 4.5vw, 2.75rem)' }}
             >
-              48 bottles. Twice a week.<br />Usually gone within the hour.
+              Text your personal sommelier.
             </h1>
 
             <div className="font-serif mb-7 space-y-3" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.15rem)' }}>
               <p>
-                Daniel — former sommelier at the 2-Michelin-star Raby Hunt — texts the drop
-                himself, twice a week. Fancy it? Reply how many bottles. First come, first served.
+                Daniel — former sommelier at the 2-Michelin-star Raby Hunt — picks 48 bottles
+                and texts the drop himself, twice a week. Fancy it? Reply how many you want.
+                First come, first served — drops are usually gone within the hour.
               </p>
               <p>
                 We import direct, so you get trade prices. No middleman, no markup for the label.
@@ -125,14 +155,14 @@ export default async function DropPage() {
         </div>
       </section>
 
-      {/* ── Recently sent ────────────────────────────────────────────── */}
+      {/* ── Recent sell-outs ─────────────────────────────────────────── */}
       {showcase.length > 0 && (
         <section className="px-6 py-10 md:py-12">
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-4 mb-7 justify-center">
               <div className="w-24 h-px shrink-0" style={{ background: 'rgba(100,50,20,0.2)' }} />
               <p className="font-sans text-sm uppercase tracking-[0.28em] shrink-0" style={{ color: 'rgba(42,24,16,0.65)' }}>
-                Members Recently Received
+                Recent Sell-Outs
               </p>
               <div className="w-24 h-px shrink-0" style={{ background: 'rgba(100,50,20,0.2)' }} />
             </div>
@@ -156,11 +186,8 @@ export default async function DropPage() {
                     <p className="font-serif" style={{ fontSize: '1.05rem', color: TEXT_DARK }}>
                       £{(wine.price_pence / 100).toFixed(0)}
                     </p>
-                    <p
-                      className="font-sans text-xs uppercase tracking-wide mt-0.5"
-                      style={{ color: wine.stock_bottles === 0 ? ACCENT : TEXT_FAINT }}
-                    >
-                      {wine.stock_bottles === 0 ? 'Sold out' : `${wine.stock_bottles} left`}
+                    <p className="font-sans text-xs uppercase tracking-wide mt-0.5" style={{ color: ACCENT }}>
+                      Sold out
                     </p>
                   </div>
                 </div>
