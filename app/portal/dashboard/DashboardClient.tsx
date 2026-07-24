@@ -512,6 +512,11 @@ export default function DashboardClient({
                     Since {new Date(tierSince).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                   </p>
                 )}
+                {renewalDate && (
+                  <p className="font-sans text-xs mt-0.5" style={{ color: '#9B1B30' }}>
+                    Renews {new Date(renewalDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="font-sans text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(42,24,16,0.45)' }}>Cellar</p>

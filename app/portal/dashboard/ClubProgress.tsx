@@ -116,7 +116,7 @@ function LadderNodeRow({ node, twilioPhoneNumber }: { node: LadderNode; twilioPh
   const faded = node.status === 'ahead'
 
   return (
-    <div className="flex gap-3 pb-5 last:pb-0">
+    <div className="flex gap-3 pb-5 last:pb-4">
       <div className="flex flex-col items-center">
         {dot}
         {node.rung < 7 && <div className="w-px flex-1 mt-1" style={{ background: 'rgba(42,24,16,0.14)' }} />}
